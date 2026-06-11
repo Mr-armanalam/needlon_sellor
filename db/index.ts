@@ -14,6 +14,7 @@ import * as userAddress from './schema/user-address';
 import * as usersTable from './schema/users';
 import * as wishListItems from './schema/wishlist-items';
 import * as passwordResetToken from './schema/password-reset-tokens';
+import * as sellers from './schema/seller';
 
 export const schema = {
   cartItems: cartItems.cartItems,
@@ -24,8 +25,10 @@ export const schema = {
   users: usersTable.usersTable,
   wishlistItems: wishListItems.wishListItems,
   passwordResetToken: passwordResetToken.passwordResetTokens,
+  sellers: sellers.seller,
+  sellerSession: sellers.sessions,
+  sellerPasswordResetToken: sellers.passwordResetTokens
 };
 
 const client = postgres(process.env.DATABASE_URL!);
-
 export const db = drizzle(client, { schema });
