@@ -27,7 +27,7 @@ export const schema = {
   passwordResetToken: passwordResetToken.passwordResetTokens,
   sellers: sellers.seller,
   sellerSession: sellers.sessions,
-  sellerPasswordResetToken: sellers.passwordResetTokens
+  sellerPasswordResetToken: sellers.sellerpasswordResetTokens
 };
 
 const client = postgres(process.env.DATABASE_URL!);

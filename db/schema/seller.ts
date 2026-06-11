@@ -28,7 +28,7 @@ export const sessions = pgTable("sessions", {
   revokedAt: timestamp("revoked_at"), // null = still valid
 });
 
-export const passwordResetTokens = pgTable("password_reset_tokens", {
+export const sellerpasswordResetTokens = pgTable("seller_pass_reset_tokens", {
   id: uuid("id").defaultRandom().primaryKey(),
   sellerId: uuid("seller_id")
     .notNull()

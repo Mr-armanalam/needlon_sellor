@@ -1,6 +1,7 @@
 // src/lib/tokens.ts
 import { SignJWT, jwtVerify } from "jose";
 import { createHash, randomBytes } from "crypto";
+import { redis } from "./redis";
 
 const ACCESS_SECRET  = new TextEncoder().encode(process.env.JWT_ACCESS_SECRET!);
 const REFRESH_SECRET = new TextEncoder().encode(process.env.JWT_REFRESH_SECRET!);
@@ -39,11 +40,9 @@ export async function verifyAccessToken(token: string): Promise<AccessTokenPaylo
 
 // Check if a JTI has been blocklisted (logout/rotation)
 export async function isTokenBlocklisted(jti: string): Promise<boolean> {
-  const { redis } = await import("./redis.js");
   return (await redis.exists(`blocklist:${jti}`)) === 1;
 }
 
 export async function blocklistToken(jti: string, ttlSeconds: number) {
-  const { redis } = await import("./redis.js");
   await redis.set(`blocklist:${jti}`, 1, { ex: ttlSeconds });
 }
