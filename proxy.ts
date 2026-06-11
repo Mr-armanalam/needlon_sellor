@@ -5,7 +5,7 @@ import { jwtVerify } from "jose";
 const ACCESS_SECRET  = new TextEncoder().encode(process.env.JWT_ACCESS_SECRET!);
 const PUBLIC_ROUTES  = ["/", "/login", "/api/auth/send-otp", "/api/auth/verify-otp", "/api/auth/refresh"];
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const path = req.nextUrl.pathname;
   if (PUBLIC_ROUTES.some(r => path.startsWith(r))) return NextResponse.next();
 
