@@ -1,6 +1,7 @@
 import {
   ForgotPasswordRequest,
   LoginRequest,
+  ResetOtpRequest,
   ResetPasswordRequest,
   SignupRequest,
   VerifyEmailRequest,
@@ -38,7 +39,7 @@ export const authApi = {
     }),
 
   verifyEmail: (body: VerifyEmailRequest) =>
-    request("/verify-email", {
+    request("/verify-otp", {
       method: "POST",
       body: JSON.stringify(body),
     }),
@@ -50,7 +51,13 @@ export const authApi = {
     }),
 
   verifyResetOtp: (body: VerifyResetOtpRequest) =>
-    request("/verify-reset-otp", {
+    request("/verify-otp", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  resendOtp: (body: ResetOtpRequest) =>
+    request("/send-otp", {
       method: "POST",
       body: JSON.stringify(body),
     }),

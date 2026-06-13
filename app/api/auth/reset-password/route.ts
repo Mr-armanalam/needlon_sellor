@@ -1,28 +1,76 @@
-
-import { db } from "@/db";
-import { seller, sessions } from "@/db/schema/seller";
-import { verifyOtp } from "@/modules/auth/lib/otp";
-import bcrypt from "bcryptjs";
+import { hash } from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
+import { db } from "@/db";
+
+import { seller, sessions } from "@/db/schema/seller";
+import { consumePasswordResetToken } from "@/modules/auth/lib/password-reset";
+
+
 export async function POST(req: NextRequest) {
-  const { email, code, newPassword } = await req.json();
+  try {
+    const body = await req.json();
 
-  const result = await verifyOtp(`reset:${email}`, code);
-  if (!result.valid) return NextResponse.json({ error: result.error }, { status: 401 });
+    const token = body?.token;
 
-  if (newPassword.length < 12) {
-    return NextResponse.json({ error: "Password must be at least 12 characters." }, { status: 400 });
+    const password = body?.password;
+
+    if (!token || !password) {
+      return NextResponse.json(
+        {
+          error: "Invalid request",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    const sellerId = await consumePasswordResetToken(token);
+
+    if (!sellerId) {
+      return NextResponse.json(
+        {
+          error: "Reset link expired",
+        },
+        {
+          status: 401,
+        },
+      );
+    }
+
+    const passwordHash = await hash(password, 12);
+
+    await db
+      .update(seller)
+      .set({
+        passwordHash,
+        updatedAt: new Date(),
+      })
+      .where(eq(seller.id, sellerId));
+
+    await db
+      .update(sessions)
+      .set({
+        revokedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(sessions.sellerId, sellerId));
+
+    return NextResponse.json({
+      success: true,
+    });
+  } catch (error) {
+    console.error("RESET_PASSWORD_ERROR", error);
+
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+      },
+      {
+        status: 500,
+      },
+    );
   }
-
-  const passwordHash = await bcrypt.hash(newPassword, 12);
-  await db.update(seller).set({ passwordHash }).where(eq(seller.email, email));
-
-  // Invalidate all existing sessions for this user
-  // await db.update(sessions)
-  //   .set({ revokedAt: new Date() })
-  //   .where(eq(sessions.sellerId, /* userId */));
-
-  return NextResponse.json({ message: "Password updated. Please log in again." });
 }

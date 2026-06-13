@@ -2,27 +2,43 @@
 
 import { Button } from "@/components/ui/button";
 import { useCountdown } from "../hooks/use-countdown";
+import { authApi } from "../api/auth";
+import { toast } from "sonner";
+import { useState } from "react";
 
-export function ResendOtp() {
-  const {
-    completed,
-    seconds,
-    restart,
-  } = useCountdown(30);
+type ResendOtpInputProps = {
+  email: string;
+  type: string;
+};
+
+export function ResendOtp({ email, type }: ResendOtpInputProps) {
+  const [error, setError] = useState("");
+  const { completed, seconds, restart } = useCountdown(30);
 
   const handleResend = async () => {
+    const response = await authApi.resendOtp({
+      email,
+      type,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      setError(data.error);
+      throw new Error(data.error);
+    }
+
     restart();
+
+    toast.success(data.message);
   };
 
   return (
-    <Button
-      variant="link"
-      disabled={!completed}
-      onClick={handleResend}
-    >
-      {completed
-        ? "Resend OTP"
-        : `Resend in ${seconds}s`}
-    </Button>
+    <div>
+      <Button variant="link" className={`cursor-pointer`} disabled={!completed} onClick={handleResend}>
+        {completed ? "Resend OTP" : `Resend in ${seconds}s`}
+      </Button>
+      {error && <p className="text-red-500">{error}</p>}
+    </div>
   );
 }

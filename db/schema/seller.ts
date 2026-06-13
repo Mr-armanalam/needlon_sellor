@@ -1,15 +1,10 @@
-import {
-  pgTable,
-  uuid,
-  text,
-  timestamp,
-  boolean,
-} from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, boolean, integer } from "drizzle-orm/pg-core";
 
 export const seller = pgTable("seller", {
   id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
   email: text("email").notNull().unique(),
-  passwordHash: text("password_hash"), 
+  passwordHash: text("password_hash"),
   emailVerified: boolean("email_verified").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -25,7 +20,10 @@ export const sessions = pgTable("sessions", {
   ipAddress: text("ip_address"),
   expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
   revokedAt: timestamp("revoked_at"), // null = still valid
+  refreshTokenVersion: integer("refresh_token_version").default(0).notNull(),
+  lastRotatedAt: timestamp("last_rotated_at"),
 });
 
 export const sellerpasswordResetTokens = pgTable("seller_pass_reset_tokens", {

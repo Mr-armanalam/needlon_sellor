@@ -1,0 +1,1 @@
+ALTER TABLE "seller" ADD COLUMN "name" text NOT NULL;

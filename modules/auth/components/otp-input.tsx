@@ -5,9 +5,11 @@ import {
   useState,
 } from "react";
 
-export function OtpInput() {
-  const [otp, setOtp] =
-    useState(Array(6).fill(""));
+type OtpInputProps = {
+  otp: string[];
+  setOtp: (value: string[]) => void;
+};
+export function OtpInput({otp, setOtp}: OtpInputProps) {
 
   const refs = useRef<
     HTMLInputElement[]

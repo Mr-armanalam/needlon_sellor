@@ -50,6 +50,27 @@
       "when": 1781189405848,
       "tag": "0006_tired_cannonball",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1781248267703,
+      "tag": "0007_thin_solo",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1781257681064,
+      "tag": "0008_flowery_hercules",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1781260854760,
+      "tag": "0009_dashing_mephistopheles",
+      "breakpoints": true
     }
   ]
 }

@@ -1,39 +1,83 @@
-// src/middleware.ts
 import { NextRequest, NextResponse } from "next/server";
-import { jwtVerify } from "jose";
 
-const ACCESS_SECRET  = new TextEncoder().encode(process.env.JWT_ACCESS_SECRET!);
-const PUBLIC_ROUTES  = ["/", "/login", "/api/auth/send-otp", "/api/auth/verify-otp", "/api/auth/refresh"];
+import { verifyAccessToken } from "@/modules/auth/lib/tokens";
+import {
+  ACCESS_COOKIE,
+  AUTH_ROUTES,
+  PROTECTED_ROUTES,
+} from "@/modules/auth/lib/auth-config";
 
-export async function proxy(req: NextRequest) {
-  const path = req.nextUrl.pathname;
-  if (PUBLIC_ROUTES.some(r => path.startsWith(r))) return NextResponse.next();
-
-  const token = req.cookies.get("access_token")?.value;
-
-  if (!token) {
-    // Try to refresh silently before redirecting
-    const refreshRes = await fetch(new URL("/api/auth/refresh", req.url), {
-      method: "POST",
-      headers: { cookie: req.headers.get("cookie") ?? "" },
-    });
-    if (!refreshRes.ok) {
-      return NextResponse.redirect(new URL("/login", req.url));
-    }
-    // Re-forward with new cookies
-    const res = NextResponse.next();
-    refreshRes.headers.getSetCookie().forEach(c => res.headers.append("set-cookie", c));
-    return res;
-  }
-
-  try {
-    const { payload } = await jwtVerify(token, ACCESS_SECRET);
-    const res = NextResponse.next();
-    res.headers.set("x-user-id", payload.sub as string);
-    return res;
-  } catch {
-    return NextResponse.redirect(new URL("/login", req.url));
-  }
+function isProtectedRoute(pathname: string) {
+  return PROTECTED_ROUTES.some((route) =>
+    pathname.startsWith(route)
+  );
 }
 
-export const config = { matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"] };
+function isAuthRoute(pathname: string) {
+  return AUTH_ROUTES.some((route) =>
+    pathname.startsWith(route)
+  );
+}
+
+export async function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+
+  const accessToken =
+    request.cookies.get(ACCESS_COOKIE)?.value;
+
+  let authenticated = false;
+
+  if (accessToken) {
+    const payload =
+      await verifyAccessToken(accessToken);
+
+    authenticated = !!payload;
+  }
+
+  /**
+   * Guest -> Protected Route
+   */
+  if (
+    isProtectedRoute(pathname) &&
+    !authenticated
+  ) {
+    const loginUrl = new URL(
+      "/login",
+      request.url
+    );
+
+    loginUrl.searchParams.set(
+      "callbackUrl",
+      pathname
+    );
+
+    return NextResponse.redirect(loginUrl);
+  }
+
+  /**
+   * Logged In -> Auth Pages
+   */
+  if (
+    isAuthRoute(pathname) &&
+    authenticated
+  ) {
+    return NextResponse.redirect(
+      new URL("/dashboard", request.url)
+    );
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: [
+    /*
+     * Exclude:
+     * - api
+     * - _next
+     * - favicon
+     * - static files
+     */
+    "/((?!api|_next|favicon.ico|.*\\..*).*)",
+  ],
+};

@@ -20,18 +20,21 @@ import {
 import { PasswordInput } from "@/modules/auth/components/password-input";
 import { AuthShell } from "@/modules/auth/components/auth-shell";
 import { authApi } from "@/modules/auth/api/auth";
-import { LoginFormValues, loginSchema } from "@/modules/auth/validations/login";
+import {
+  LoginRequestInput,
+  loginRequestSchema,
+} from "@/modules/auth/validations/login-request-schema";
 
 export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
+  const form = useForm<LoginRequestInput>({
+    resolver: zodResolver(loginRequestSchema),
     mode: "onBlur",
   });
 
-  const onSubmit = async (values: LoginFormValues) => {
+  const onSubmit = async (values: LoginRequestInput) => {
     try {
       setLoading(true);
 
@@ -42,10 +45,10 @@ export default function LoginPage() {
       if (!response.ok) {
         form.setError("email", {
           type: "server",
-          message: data.message || "Something went wrong on our end",
+          message: data.error || "Something went wrong",
         });
-        toast.error(data.message || "Something went wrong");
-        throw new Error(data.message || "Something went wrong");
+        toast.error(data.error || "Something went wrong");
+        throw new Error(data.error || "Something went wrong");
       }
 
       toast.success("Login successful");
@@ -100,10 +103,17 @@ export default function LoginPage() {
         </Button>
       </form>
 
-      <div className="flex justify-between text-sm">
-        <Link href="/forgot-password">Forgot Password?</Link>
+      <div className="flex flex-col text-sm">
+        <Link
+          href="/forgot-password"
+          className="w-fit hover:underline cursor-pointer"
+        >
+          Forgot Password?
+        </Link>
 
-        <Link href="/signup">Sign Up</Link>
+        <Link href="/signup" className="hover:underline w-fit cursor-pointer">
+          Don&apos;t have an account? Sign Up
+        </Link>
       </div>
     </AuthShell>
   );

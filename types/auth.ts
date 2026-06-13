@@ -7,11 +7,13 @@ export interface SignupRequest {
   name: string;
   email: string;
   password: string;
+  confirmPassword: string;
 }
 
 export interface VerifyEmailRequest {
+  type: "signup" | "reset";
   email: string;
-  otp: string;
+  code: string;
 }
 
 export interface ForgotPasswordRequest {
@@ -19,12 +21,25 @@ export interface ForgotPasswordRequest {
 }
 
 export interface VerifyResetOtpRequest {
+  type: "signup" | "reset";
   email: string;
-  otp: string;
+  code: string;
 }
 
-export interface ResetPasswordRequest {
+export interface ResetOtpRequest {
   email: string;
-  otp: string;
-  password: string;
+  type?: string;
 }
+
+export type ResetPasswordRequest = {
+  token: string;
+  password: string;
+};
+
+
+export type AuthSeller = {
+  id: string;
+  name: string;
+  email: string;
+  emailVerified: boolean;
+};

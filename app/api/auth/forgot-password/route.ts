@@ -1,20 +1,70 @@
-import { db } from "@/db";
-import { seller } from "@/db/schema/seller";
-import { sendResetEmail } from "@/modules/auth/lib/email";
-import { createOtp } from "@/modules/auth/lib/otp";
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
+import { db } from "@/db";
+import { seller } from "@/db/schema/seller";
+
+import { createOtp } from "@/modules/auth/lib/otp";
+import { sendResetEmail } from "@/modules/auth/lib/email";
+import { limitForgotPassword } from "@/modules/auth/lib/rate-limit";
+
+const GENERIC_RESPONSE = {
+  message: "If an account exists, a reset code has been sent.",
+};
+
 export async function POST(req: NextRequest) {
-  const { email } = await req.json();
-  const [seller_data] = await db.select().from(seller).where(eq(seller.email, email)).limit(1);
+  try {
+    const body = await req.json();
 
-  // Always return 200 to prevent email enumeration
-  if (!seller_data) return NextResponse.json({ message: "If that email exists, you'll receive an OTP." });
+    const email = body?.email?.trim()?.toLowerCase();
 
-  const result = await createOtp(`reset:${email}`); // namespace prevents OTP reuse
-  if ("error" in result) return NextResponse.json({ error: result.error }, { status: 429 });
+    if (!email) {
+      return NextResponse.json(GENERIC_RESPONSE);
+    }
 
-  await sendResetEmail(email, result.code);
-  return NextResponse.json({ message: "If that email exists, you'll receive an OTP." });
+    const allowed = await limitForgotPassword(email);
+
+    if (!allowed) {
+      return NextResponse.json(GENERIC_RESPONSE);
+    }
+
+    const existingSeller = await db.query.sellers.findFirst({
+      where: eq(seller.email, email),
+    });
+
+    /**
+     * Prevent email enumeration.
+     */
+    if (!existingSeller || !existingSeller.emailVerified) {
+      return NextResponse.json(GENERIC_RESPONSE);
+    }
+
+    const otp = await createOtp(email, "reset");
+
+    if ("error" in otp) {
+      return NextResponse.json(
+        {
+          error: otp.error,
+        },
+        {
+          status: 429,
+        },
+      );
+    }
+
+    await sendResetEmail(email, otp.code);
+
+    return NextResponse.json(GENERIC_RESPONSE);
+  } catch (error) {
+    console.error("FORGOT_PASSWORD_ERROR", error);
+
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+      },
+      {
+        status: 500,
+      },
+    );
+  }
 }

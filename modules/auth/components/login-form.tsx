@@ -4,76 +4,47 @@ import { useState } from "react";
 
 import { Eye, EyeOff } from "lucide-react";
 
-import {
-  useForm,
-} from "react-hook-form";
+import { useForm } from "react-hook-form";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-
 
 import { Button } from "@/components/ui/button";
 
 import { Input } from "@/components/ui/input";
-import { loginSchema, LoginSchema } from "../validations/login";
+import { loginSchema, LoginSchema } from "../validations/login-request-schema";
 
 export function LoginForm() {
-  const [showPassword, setShowPassword] =
-    useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = async (
-    values: LoginSchema
-  ) => {
+  const onSubmit = async (values: LoginSchema) => {
     console.log(values);
   };
 
   return (
-    <form
-      className="space-y-5"
-      onSubmit={form.handleSubmit(onSubmit)}
-    >
-      <Input
-        placeholder="Email"
-        {...form.register("email")}
-      />
+    <form className="space-y-5" onSubmit={form.handleSubmit(onSubmit)}>
+      <Input placeholder="Email" {...form.register("email")} />
 
       <div className="relative">
         <Input
-          type={
-            showPassword
-              ? "text"
-              : "password"
-          }
+          type={showPassword ? "text" : "password"}
           placeholder="Password"
-          {...form.register(
-            "password"
-          )}
+          {...form.register("password")}
         />
 
         <button
           type="button"
           className="absolute right-3 top-3"
-          onClick={() =>
-            setShowPassword(
-              !showPassword
-            )
-          }
+          onClick={() => setShowPassword(!showPassword)}
         >
-          {showPassword ? (
-            <EyeOff size={18} />
-          ) : (
-            <Eye size={18} />
-          )}
+          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
         </button>
       </div>
 
-      <Button
-        className="w-full"
-        type="submit"
-      >
+      <Button className="w-full" type="submit">
         Sign In
       </Button>
     </form>
