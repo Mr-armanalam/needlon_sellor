@@ -72,4 +72,16 @@ export const authApi = {
     request("/logout", {
       method: "POST",
     }),
+    
+  getSessions: () => request("/sessions"),
+
+  logoutSession: (sessionId: string) =>
+    request(`/sessions/${sessionId}`, {
+      method: "DELETE",
+    }),
+
+  logoutAllSessions: () =>
+    request("/sessions/logout-all", {
+      method: "POST",
+    }),
 };

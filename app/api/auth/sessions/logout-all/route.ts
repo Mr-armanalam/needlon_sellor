@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
+import { eq, ne, and } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import { sessions } from "@/db/schema/seller";
@@ -8,16 +8,32 @@ import { sessions } from "@/db/schema/seller";
 import {
   blocklistToken,
   getAccessTokenPayload,
-  hashRefreshToken,
 } from "@/modules/auth/lib/tokens";
+
+import { requireSeller } from "@/modules/auth/lib/require-seller";
 
 export async function POST() {
   try {
+    const seller = await requireSeller();
+
     const cookieStore = await cookies();
 
-    const accessToken = cookieStore.get("access_token")?.value;
+    const currentSessionId = cookieStore.get("session_id")?.value;
 
-    const refreshToken = cookieStore.get("refresh_token")?.value;
+    await db
+      .update(sessions)
+      .set({
+        revokedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(sessions.sellerId, seller.id),
+          ne(sessions.id, currentSessionId ?? ""),
+        ),
+      );
+
+    const accessToken = cookieStore.get("access_token")?.value;
 
     if (accessToken) {
       const payload = await getAccessTokenPayload(accessToken);
@@ -29,18 +45,13 @@ export async function POST() {
       }
     }
 
-    if (refreshToken) {
-      const refreshTokenHash = hashRefreshToken(refreshToken);
-
-      await db
-        .update(sessions)
-        .set({
-          revokedAt: new Date(),
-
-          updatedAt: new Date(),
-        })
-        .where(eq(sessions.refreshToken, refreshTokenHash));
-    }
+    await db
+      .update(sessions)
+      .set({
+        revokedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(sessions.id, currentSessionId!));
 
     cookieStore.set("access_token", "", {
       expires: new Date(0),
@@ -61,7 +72,7 @@ export async function POST() {
       success: true,
     });
   } catch (error) {
-    console.error("LOGOUT_ERROR", error);
+    console.error("LOGOUT_ALL_ERROR", error);
 
     return NextResponse.json(
       {

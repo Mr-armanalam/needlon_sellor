@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { and, eq, gt, isNull } from "drizzle-orm";
+import { and, eq, gt, isNull, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 import { db } from "@/db";
@@ -88,9 +88,9 @@ export async function POST() {
       .update(sessions)
       .set({
         refreshToken: newRefreshTokenHash,
-
         expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL * 1000),
-
+        lastRotatedAt: new Date(),
+        refreshTokenVersion: sql`${sessions.refreshTokenVersion} + 1`,
         updatedAt: new Date(),
       })
       .where(eq(sessions.id, session.id));

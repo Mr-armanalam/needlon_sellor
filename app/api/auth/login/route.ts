@@ -140,17 +140,22 @@ export async function POST(req: NextRequest) {
 
     const ipAddress = forwardedFor?.split(",")[0]?.trim() ?? null;
 
-    await db.insert(sessions).values({
-      sellerId: existingSeller.id,
+    const [session] = await db
+      .insert(sessions)
+      .values({
+        sellerId: existingSeller.id,
 
-      refreshToken: hash,
+        refreshToken: hash,
 
-      userAgent: req.headers.get("user-agent") ?? null,
+        userAgent: req.headers.get("user-agent") ?? null,
 
-      ipAddress,
+        ipAddress,
 
-      expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL * 1000),
-    });
+        expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL * 1000),
+      })
+      .returning({
+        id: sessions.id,
+      });
 
     const cookieStore = await cookies();
 
@@ -160,6 +165,11 @@ export async function POST(req: NextRequest) {
       sameSite: "strict" as const,
       path: "/",
     };
+
+    cookieStore.set("session_id", session.id, {
+      ...cookieOptions,
+      maxAge: REFRESH_TOKEN_TTL,
+    });
 
     cookieStore.set("access_token", accessToken, {
       ...cookieOptions,

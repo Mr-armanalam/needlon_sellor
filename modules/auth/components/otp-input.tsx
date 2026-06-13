@@ -2,7 +2,6 @@
 
 import {
   useRef,
-  useState,
 } from "react";
 
 type OtpInputProps = {

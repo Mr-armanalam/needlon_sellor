@@ -3,22 +3,16 @@ import { randomBytes } from "crypto";
 
 const RESET_TOKEN_TTL = 60 * 10; // 10 minutes
 
-export async function createPasswordResetToken(
-  sellerId: string
-) {
+export async function createPasswordResetToken(sellerId: string) {
   const token = randomBytes(32).toString("hex");
 
-  await redis.set(
-    `password-reset:${token}`,
-    sellerId,
-    { ex: RESET_TOKEN_TTL }
-  );
+  await redis.set(`password-reset:${token}`, sellerId, { ex: RESET_TOKEN_TTL });
 
   return token;
 }
 
 export async function consumePasswordResetToken(
-  token: string
+  token: string,
 ): Promise<string | null> {
   const key = `password-reset:${token}`;
 
@@ -32,7 +26,7 @@ export async function consumePasswordResetToken(
 }
 
 export async function getPasswordResetToken(
-  token: string
+  token: string,
 ): Promise<string | null> {
   return redis.get<string>(`password-reset:${token}`);
 }
