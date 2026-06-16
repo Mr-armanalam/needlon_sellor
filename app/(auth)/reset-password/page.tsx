@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -26,7 +26,7 @@ import {
   resetPasswordSchema,
 } from "@/modules/auth/validations/reset-password-request-schema";
 
-export default function ResetPasswordPage() {
+ function ResetPasswordForm() {
   const router = useRouter();
 
   const searchParams = useSearchParams();
@@ -99,6 +99,21 @@ export default function ResetPasswordPage() {
           )}
         </Button>
       </form>
+    </AuthShell>
+  );
+}
+
+
+export default function ResetPasswordPage() {
+  return (
+    <AuthShell title="Reset Password" description="Create a new password">
+      <Suspense fallback={
+        <div className="flex items-center justify-center p-4">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      }>
+        <ResetPasswordForm />
+      </Suspense>
     </AuthShell>
   );
 }

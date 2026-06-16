@@ -11,16 +11,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 
 import { Input } from "@/components/ui/input";
-import { loginSchema, LoginSchema } from "../validations/login-request-schema";
+import { loginRequestSchema, LoginRequestInput } from "../validations/login-request-schema";
 
 export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
 
-  const form = useForm<LoginSchema>({
-    resolver: zodResolver(loginSchema),
+  const form = useForm<LoginRequestInput>({
+    resolver: zodResolver(loginRequestSchema),
   });
 
-  const onSubmit = async (values: LoginSchema) => {
+  const onSubmit = async (values: LoginRequestInput) => {
     console.log(values);
   };
 

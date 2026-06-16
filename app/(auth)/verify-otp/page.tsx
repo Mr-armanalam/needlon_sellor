@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -16,7 +16,7 @@ import { AuthShell } from "@/modules/auth/components/auth-shell";
 import { OtpInput } from "@/modules/auth/components/otp-input";
 import { ResendOtp } from "@/modules/auth/components/resend-otp";
 
-export default function VerifyOtpPage() {
+ function VerifyOtpView() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -103,6 +103,21 @@ export default function VerifyOtpPage() {
           <ResendOtp email={email} type={type} />
         </div>
       </div>
+    </AuthShell>
+  );
+}
+
+
+export default function VerifyOtpPage() {
+  return (
+    <AuthShell title="Reset Password" description="Create a new password">
+      <Suspense fallback={
+        <div className="flex items-center justify-center p-4">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      }>
+        <VerifyOtpView />
+      </Suspense>
     </AuthShell>
   );
 }
