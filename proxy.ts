@@ -8,28 +8,22 @@ import {
 } from "@/modules/auth/lib/auth-config";
 
 function isProtectedRoute(pathname: string) {
-  return PROTECTED_ROUTES.some((route) =>
-    pathname.startsWith(route)
-  );
+  return PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
 }
 
 function isAuthRoute(pathname: string) {
-  return AUTH_ROUTES.some((route) =>
-    pathname.startsWith(route)
-  );
+  return AUTH_ROUTES.some((route) => pathname.startsWith(route));
 }
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
-  const accessToken =
-    request.cookies.get(ACCESS_COOKIE)?.value;
+  const accessToken = request.cookies.get(ACCESS_COOKIE)?.value;
 
   let authenticated = false;
 
   if (accessToken) {
-    const payload =
-      await verifyAccessToken(accessToken);
+    const payload = await verifyAccessToken(accessToken);
 
     authenticated = !!payload;
   }
@@ -37,19 +31,10 @@ export async function proxy(request: NextRequest) {
   /**
    * Guest -> Protected Route
    */
-  if (
-    isProtectedRoute(pathname) &&
-    !authenticated
-  ) {
-    const loginUrl = new URL(
-      "/login",
-      request.url
-    );
+  if (isProtectedRoute(pathname) && !authenticated) {
+    const loginUrl = new URL("/login", request.url);
 
-    loginUrl.searchParams.set(
-      "callbackUrl",
-      pathname
-    );
+    loginUrl.searchParams.set("callbackUrl", pathname);
 
     return NextResponse.redirect(loginUrl);
   }
@@ -57,13 +42,8 @@ export async function proxy(request: NextRequest) {
   /**
    * Logged In -> Auth Pages
    */
-  if (
-    isAuthRoute(pathname) &&
-    authenticated
-  ) {
-    return NextResponse.redirect(
-      new URL("/dashboard", request.url)
-    );
+  if (isAuthRoute(pathname) && authenticated) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   return NextResponse.next();

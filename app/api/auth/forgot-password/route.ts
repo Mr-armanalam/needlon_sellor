@@ -7,6 +7,7 @@ import { seller } from "@/db/schema/seller";
 import { createOtp } from "@/modules/auth/lib/otp";
 import { sendResetEmail } from "@/modules/auth/lib/email";
 import { limitForgotPassword } from "@/modules/auth/lib/rate-limit";
+import { forgotPasswordSchema } from "@/modules/auth/validations/forgot-password";
 
 const GENERIC_RESPONSE = {
   message: "If an account exists, a reset code has been sent.",
@@ -15,8 +16,22 @@ const GENERIC_RESPONSE = {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    const parsed = forgotPasswordSchema.safeParse(body);
 
-    const email = body?.email?.trim()?.toLowerCase();
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          error: "Invalid input",
+          issues: parsed.error.issues,
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+    const data = parsed.data;
+
+    const email = data?.email?.trim()?.toLowerCase();
 
     if (!email) {
       return NextResponse.json(GENERIC_RESPONSE);

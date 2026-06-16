@@ -4,8 +4,8 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { sessions } from "@/db/schema/seller";
 
-import { requireSeller } from "@/modules/auth/lib/require-seller";
 import { cookies } from "next/headers";
+import { getCurrentSeller } from "@/modules/auth/lib/get-current-seller";
 
 type Params = {
   params: Promise<{
@@ -15,7 +15,11 @@ type Params = {
 
 export async function DELETE(req: Request, { params }: Params) {
   try {
-    const seller = await requireSeller();
+    const seller = await getCurrentSeller();
+
+    if (!seller) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const { id } = await params;
 

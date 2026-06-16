@@ -5,11 +5,15 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { sessions } from "@/db/schema/seller";
 
-import { requireSeller } from "@/modules/auth/lib/require-seller";
+import { getCurrentSeller } from "@/modules/auth/lib/get-current-seller";
 
 export async function GET() {
   try {
-    const currentSeller = await requireSeller();
+    const currentSeller = await getCurrentSeller();
+
+    if (!currentSeller) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const cookieStore = await cookies();
 

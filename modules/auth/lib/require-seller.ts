@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
-
-import { getCurrentSeller } from "./current-seller";
+import { getCurrentSeller } from "./get-current-seller";
 
 export async function requireSeller() {
   const seller =

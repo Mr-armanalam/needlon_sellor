@@ -6,26 +6,27 @@ import { db } from "@/db";
 
 import { seller, sessions } from "@/db/schema/seller";
 import { consumePasswordResetToken } from "@/modules/auth/lib/password-reset";
-
+import { resetPasswordRequestSchema } from "@/modules/auth/validations/reset-password";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    const parsed = resetPasswordRequestSchema.safeParse(body);
 
-    const token = body?.token;
-
-    const password = body?.password;
-
-    if (!token || !password) {
+    if (!parsed.success) {
       return NextResponse.json(
         {
-          error: "Invalid request",
+          error: "Invalid input",
+          issues: parsed.error.issues,
         },
         {
           status: 400,
         },
       );
     }
+
+    const { password, token } = parsed.data;
+
 
     const sellerId = await consumePasswordResetToken(token);
 

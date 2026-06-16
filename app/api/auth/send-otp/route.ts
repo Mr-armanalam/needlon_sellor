@@ -7,7 +7,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { z } from "zod";
 
-const schema = z.object({ email: z.email(), type: z.string().nullable() });
+const schema = z.object({
+  email: z.email(),
+  type: z.enum(["signup", "reset"]),
+});
 
 export async function POST(req: NextRequest) {
   const body = schema.safeParse(await req.json());
@@ -24,18 +27,19 @@ export async function POST(req: NextRequest) {
   const otpType = type === "reset" ? "reset" : "signup";
 
   const result = await createOtp(email, otpType);
+
   if ("error" in result)
     return NextResponse.json({ error: result.error }, { status: 429 });
 
-  if (type === "reset" && seller_data) {
+  if (type === "reset" && seller_data && seller_data.emailVerified) {
     await sendResetEmail(email, result.code);
-  } else if (seller_data && type === "signin") {
-    await sendOtpEmail(email, result.code);
-  } else {
-    return NextResponse.json(
-      { error: "Unauthorised acccess" },
-      { status: 401 },
-    );
   }
-  return NextResponse.json({ message: "OTP sent successfully" });
+
+  if (type === "signup" && seller_data && !seller_data.emailVerified) {
+    await sendOtpEmail(email, result.code);
+  }
+
+  return NextResponse.json({
+    message: "If the request is valid, an OTP has been sent.",
+  });
 }

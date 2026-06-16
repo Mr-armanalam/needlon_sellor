@@ -10,11 +10,15 @@ import {
   getAccessTokenPayload,
 } from "@/modules/auth/lib/tokens";
 
-import { requireSeller } from "@/modules/auth/lib/require-seller";
+import { getCurrentSeller } from "@/modules/auth/lib/get-current-seller";
 
 export async function POST() {
   try {
-    const seller = await requireSeller();
+    const seller = await getCurrentSeller();
+
+    if (!seller) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const cookieStore = await cookies();
 
