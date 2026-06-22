@@ -52,35 +52,3 @@ export async function apiFetch(
   });
 }
 
-// Signup
-//  ↓
-// POST /signup
-//  ↓
-// OTP Sent
-//  ↓
-// Verify Email
-//  ↓
-// POST /verify-email
-//  ↓
-// Login
-//  ↓
-// POST /login
-//  ↓
-// Access Cookie
-// Refresh Cookie
-//  ↓
-// Dashboard
-
-// Access Expired
-//  ↓
-// POST /refresh
-//  ↓
-// New Access Token
-
-// Logout
-//  ↓
-// POST /logout
-//  ↓
-// Cookies Removed
-//  ↓
-// Login

@@ -18,6 +18,14 @@ function isAuthRoute(pathname: string) {
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
+  const PUBLIC_ROUTES = ["/", "/about", "/pricing"];
+  console.log(pathname, PUBLIC_ROUTES);
+  
+
+  if (pathname === "/" || PUBLIC_ROUTES.includes(pathname)) {
+    return NextResponse.next();
+  }
+
   const accessToken = request.cookies.get(ACCESS_COOKIE)?.value;
 
   let authenticated = false;
