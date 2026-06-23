@@ -110,7 +110,7 @@ import { ResendOtp } from "@/modules/auth/components/resend-otp";
 
 export default function VerifyOtpPage() {
   return (
-    <AuthShell title="Reset Password" description="Create a new password">
+    <div>
       <Suspense fallback={
         <div className="flex items-center justify-center p-4">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -118,6 +118,6 @@ export default function VerifyOtpPage() {
       }>
         <VerifyOtpView />
       </Suspense>
-    </AuthShell>
+    </div>
   );
 }

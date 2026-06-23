@@ -1,20 +1,25 @@
+import { z } from "zod";
 import { hash } from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 import { db } from "@/db";
-import { seller } from "@/db/schema/seller";
+import { roleEnum, seller } from "@/db/schema/seller";
 
 import { createOtp } from "@/modules/auth/lib/otp";
 import { sendOtpEmail } from "@/modules/auth/lib/email";
 
 import { signupRequestSchema } from "@/modules/auth/validations/signup-request-schema";
 
+const apiSignupSchema = signupRequestSchema.extend({
+  role: z.enum(roleEnum.enumValues).default("seller"),
+});
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    const parsed = signupRequestSchema.safeParse(body);
+    const parsed = apiSignupSchema.safeParse(body);
 
     if (!parsed.success) {
       return NextResponse.json(
@@ -27,7 +32,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { name, email, password } = parsed.data;
+    const { name, email, password, role } = parsed.data;
 
     const existingSeller = await db.query.sellers.findFirst({
       where: eq(seller.email, email),
@@ -72,6 +77,7 @@ export async function POST(req: Request) {
       email,
       passwordHash,
       emailVerified: false,
+      role,
     });
 
     const otp = await createOtp(email, "signup");
