@@ -1,4 +1,16 @@
-import { pgTable, uuid, text, timestamp, boolean, integer } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  uuid,
+  text,
+  timestamp,
+  boolean,
+  integer,
+  pgEnum,
+} from "drizzle-orm/pg-core";
+
+export const roleEnum = pgEnum("role", ["seller", "admin"]);
+
+export type Role = (typeof roleEnum.enumValues)[number];
 
 export const seller = pgTable("seller", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -6,6 +18,7 @@ export const seller = pgTable("seller", {
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash"),
   emailVerified: boolean("email_verified").default(false).notNull(),
+  role: roleEnum("role").default("seller").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

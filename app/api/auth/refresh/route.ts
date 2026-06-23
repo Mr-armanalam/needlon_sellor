@@ -79,6 +79,7 @@ export async function POST() {
     const accessToken = await signAccessToken({
       sub: sellerData.id,
       email: sellerData.email,
+      role: sellerData.role,
     });
 
     const { raw: newRefreshToken, hash: newRefreshTokenHash } =

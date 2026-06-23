@@ -53,7 +53,8 @@ export default function LoginPage() {
 
       toast.success("Login successful");
 
-      router.push("/dashboard");
+      const destination = data.user.role === "admin" ? "/admin" : "/dashboard";
+      router.push(destination);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Login failed");
     } finally {

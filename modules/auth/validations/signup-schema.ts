@@ -21,6 +21,7 @@ export const signupSchema = z
       .regex(/[0-9]/, "Must contain at least one number"),
 
     confirmPassword: z.string(),
+    role: z.enum(["seller", "admin"]),
   })
   .refine((data) => data.password === data.confirmPassword, {
     path: ["confirmPassword"],

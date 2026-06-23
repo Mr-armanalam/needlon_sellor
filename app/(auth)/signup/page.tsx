@@ -22,6 +22,8 @@ import {
   signupSchema,
 } from "@/modules/auth/validations/signup-schema";
 import { useForm, useWatch } from "react-hook-form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Field, FieldError } from "@/components/ui/field";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -31,6 +33,8 @@ export default function SignupPage() {
   const {
     setError,
     register,
+    setValue,
+    watch,
     handleSubmit,
     control,
     formState: { errors },
@@ -41,6 +45,7 @@ export default function SignupPage() {
       email: "",
       password: "",
       confirmPassword: "",
+      role: "seller",
     },
   });
 
@@ -49,6 +54,9 @@ export default function SignupPage() {
     name: "password",
     defaultValue: "",
   });
+
+  // Track state for the select element
+  const currentRole = watch("role");
 
   const onSubmit = async (values: SignupFormValues) => {
     try {
@@ -59,6 +67,7 @@ export default function SignupPage() {
         email: values.email,
         password: values.password,
         confirmPassword: values.confirmPassword,
+        role: values.role,
       });
 
       const data = await response.json();
@@ -147,6 +156,25 @@ export default function SignupPage() {
               {errors.confirmPassword.message}
             </p>
           )}
+        </div>
+
+        <div className="space-y-2">
+          <Field>
+            <Select
+              value={currentRole}
+              defaultValue="seller"
+              onValueChange={(value) => setValue("role", (value ?? "seller") as "seller" | "admin", { shouldValidate: true })}
+            >
+              <SelectTrigger id="role" className={'w-full'}>
+                <SelectValue placeholder="Select an account" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="seller">Seller Account</SelectItem>
+                <SelectItem value="admin">Admin Account</SelectItem>
+              </SelectContent>
+            </Select>
+            <FieldError>{errors.role?.message}</FieldError>
+          </Field>
         </div>
 
         <Button type="submit" className="w-full" disabled={loading}>
