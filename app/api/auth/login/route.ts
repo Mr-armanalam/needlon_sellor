@@ -129,9 +129,15 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Issue Tokens
+    // Role is embedded in the JWT so the middleware can make routing decisions
+    // without a DB round-trip. The DB remains authoritative — getCurrentSeller()
+    // always re-reads role from Postgres for real data requests.
+
     const accessToken = await signAccessToken({
       sub: existingSeller.id,
       email: existingSeller.email,
+      role: existingSeller.role,
     });
 
     const { raw, hash } = generateRefreshToken();
@@ -144,13 +150,9 @@ export async function POST(req: NextRequest) {
       .insert(sessions)
       .values({
         sellerId: existingSeller.id,
-
         refreshToken: hash,
-
         userAgent: req.headers.get("user-agent") ?? null,
-
         ipAddress,
-
         expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL * 1000),
       })
       .returning({
@@ -188,6 +190,7 @@ export async function POST(req: NextRequest) {
         id: existingSeller.id,
         name: existingSeller.name,
         email: existingSeller.email,
+        role: existingSeller.role,
       },
     });
   } catch (error) {

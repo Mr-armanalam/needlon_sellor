@@ -1,3 +1,5 @@
+import { Role } from "@/db/schema/seller";
+
 export interface LoginRequest {
   email: string;
   password: string;
@@ -42,4 +44,5 @@ export type AuthSeller = {
   name: string;
   email: string;
   emailVerified: boolean;
+  role: Role;
 };

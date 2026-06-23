@@ -27,6 +27,9 @@ export const getCurrentSeller = cache(async (): Promise<AuthSeller | null> => {
     return null;
   }
 
+  // Authoritative blocklist check — unlike the middleware, this path is reached
+  // by every real data request, so the Redis round-trip is justified here.
+
   const blocked = await isTokenBlocklisted(payload.jti);
 
   if (blocked) {
@@ -39,10 +42,16 @@ export const getCurrentSeller = cache(async (): Promise<AuthSeller | null> => {
       name: seller.name,
       email: seller.email,
       emailVerified: seller.emailVerified,
+      role: seller.role,
     })
     .from(seller)
     .where(eq(seller.id, payload.sub))
     .limit(1);
+
+  // Role is re-read from the DB on every authenticated data request.
+  // This means a role change takes effect immediately for data access,
+  // even though the middleware still reads the (potentially stale) JWT
+  // role until the token rotates.
 
   return result[0] ?? null;
 });

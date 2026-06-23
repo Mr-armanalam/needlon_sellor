@@ -1,13 +1,21 @@
 import { SignJWT, jwtVerify } from "jose";
 import { createHash, randomBytes } from "crypto";
 import { redis } from "./redis";
+import { Role } from "@/db/schema/seller";
 
 const ACCESS_SECRET = new TextEncoder().encode(process.env.JWT_ACCESS_SECRET!);
+
+// ─── Payload ──────────────────────────────────────────────────────────────────
+// `role` in the JWT - middleware can make role-based routing
+// decisions without a database round-trip on every page navigation.
+// The DB remains the authoritative source — getCurrentSeller() always re-reads
+// the role from Postgres for any request that touches real data.
 
 export type AccessTokenPayload = {
   sub: string;
   email: string;
   jti: string;
+  role: Role;
 };
 
 export const ACCESS_TOKEN_TTL = 60 * 15;
