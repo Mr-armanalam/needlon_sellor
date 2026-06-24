@@ -1,11 +1,26 @@
+@import url("https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-/* 
----break---
-*/
+
+
 @custom-variant dark (&:is(.dark *));
 
+@theme {
+  --font-garamond: "EB Garamond", serif;
+  --font-roboto-sans: "Roboto", sans-serif;
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
 /* 
 @theme inline {
   --color-background: var(--background);
