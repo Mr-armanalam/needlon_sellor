@@ -31,7 +31,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       {/* Added pt-28 (Desktop default) to body to keep elements from starting at absolute 0 under your fixed nav */}
-      <body className="min-h-full flex flex-col pt-28 md:pt-30">
+      <body className="min-h-full flex flex-col pt-28 md:pt-9 ">
         <AuthProvider>
           <NavbarView />
           <main className="flex-1 w-full">{children}</main>

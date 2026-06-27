@@ -58,8 +58,8 @@ const NavbarView = () => {
 
       {/* Main Navigation Bar */}
       <nav
-        className={`h-18 text-lg px-6 flex justify-between items-center transition-all duration-300 bg-white ${
-          isScrolled ? "bg-white/80 backdrop-blur-md shadow-sm" : "border-b"
+        className={`h-18 text-lg px-6 flex justify-between items-center transition-all duration-300 bg-whie ${
+          isScrolled ? "bg-white/80 backdrop-blur-md shadow-sm" : ""
         }`}
       >
         <Logo />
