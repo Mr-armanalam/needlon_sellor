@@ -1,6 +1,8 @@
+import EarningsCalculator from '@/modules/home/earning-calculator/section/EarnCalc'
 import HeroSection from '@/modules/home/hero-section/section/HeroSection'
 import HowItWorksSection from '@/modules/home/how-it-work/section/HowItWorks'
 import ProblemSolution from '@/modules/home/problem-solution/section/ProblemSolution'
+import WhySellersLoveUs from '@/modules/home/why-seller-love-us/section/WhyUs'
 
 const page = () => {
   return (
@@ -8,6 +10,8 @@ const page = () => {
       <HeroSection />
       <ProblemSolution />
       <HowItWorksSection/>
+      <WhySellersLoveUs />
+      <EarningsCalculator />
     </div>
   )
 }
