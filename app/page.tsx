@@ -4,6 +4,7 @@ import HowItWorksSection from '@/modules/home/how-it-work/section/HowItWorks'
 import PricingSection from '@/modules/home/pricing/section/PricingSection'
 import ProblemSolution from '@/modules/home/problem-solution/section/ProblemSolution'
 import SuccessStories from '@/modules/home/success-story/section/SuccessStory'
+import TrustSection from '@/modules/home/trust-section/section/TrustSection'
 import WhySellersLoveUs from '@/modules/home/why-seller-love-us/section/WhyUs'
 
 const page = () => {
@@ -16,6 +17,7 @@ const page = () => {
       <EarningsCalculator />
       <SuccessStories />
       <PricingSection />
+      <TrustSection />
     </div>
   )
 }
