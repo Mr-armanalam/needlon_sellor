@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/modules/auth/components/auth-provider";
 import NavbarView from "@/modules/Navbar/view/navbar-view";
+import MasterFooter from "@/modules/footer/section/FooterSection";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,6 +36,7 @@ export default function RootLayout({
         <AuthProvider>
           <NavbarView />
           <main className="flex-1 w-full">{children}</main>
+          <MasterFooter />
           <Toaster />
         </AuthProvider>
       </body>
