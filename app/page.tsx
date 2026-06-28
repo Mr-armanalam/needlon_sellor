@@ -1,11 +1,13 @@
 import HeroSection from '@/modules/home/hero-section/section/HeroSection'
+import HowItWorksSection from '@/modules/home/how-it-work/section/HowItWorks'
 import ProblemSolution from '@/modules/home/problem-solution/section/ProblemSolution'
 
 const page = () => {
   return (
-    <div className='h-[200vh]'>
+    <div className=''>
       <HeroSection />
       <ProblemSolution />
+      <HowItWorksSection/>
     </div>
   )
 }

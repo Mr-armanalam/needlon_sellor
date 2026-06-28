@@ -1,7 +1,7 @@
 import { ArrowRight } from "lucide-react";
-import { TransformationDataType } from "../section/ProblemSolution";
+import { TransformationDataType } from "../../data/transformationData";
 
-const Differentiator = ({ item }: { item: TransformationDataType[0] }) => {
+const Differentiator = ({ item }: { item: TransformationDataType}) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
       <div className="opacity-60 group-hover:opacity-75 transition-opacity">
