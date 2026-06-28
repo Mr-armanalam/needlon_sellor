@@ -7,14 +7,15 @@ import LanguageSwitcher from "../components/LanguageSwitcher";
 import LoginButton from "../components/LoginButton";
 import CTAButton from "../components/CTAButton";
 import AnnouncementBar from "../components/AnnouncementBar";
+import { useRouter } from "next/navigation";
 
 const NavbarView = () => {
   const [isNavVisible, setIsNavVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const router= useRouter();
 
-  // Handle Scroll Behavior
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
@@ -65,8 +66,8 @@ const NavbarView = () => {
         <Logo />
         <NavLinks />
         <LanguageSwitcher />
-        <LoginButton />
-        <CTAButton />
+        <LoginButton router={router} />
+        <CTAButton router={router} />
       </nav>
 
       {/* Slide-down Mobile Menu */}
@@ -82,10 +83,10 @@ const NavbarView = () => {
           <hr className="border-gray-200" />
           <div className="flex flex-wrap items-center gap-4 pt-2">
             <LanguageSwitcher />
-            <LoginButton />
+            <LoginButton router={router} />
           </div>
           <div className="pt-2">
-            <CTAButton />
+            <CTAButton router={router} />
           </div>
         </div>
       </div>

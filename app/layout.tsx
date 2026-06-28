@@ -3,8 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/modules/auth/components/auth-provider";
-import NavbarView from "@/modules/Navbar/view/navbar-view";
-import MasterFooter from "@/modules/footer/section/FooterSection";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,11 +30,9 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       {/* Added pt-28 (Desktop default) to body to keep elements from starting at absolute 0 under your fixed nav */}
-      <body className="min-h-full flex flex-col pt-28 md:pt-9 ">
+      <body className="min-h-full flex flex-col ">
         <AuthProvider>
-          <NavbarView />
           <main className="flex-1 w-full">{children}</main>
-          <MasterFooter />
           <Toaster />
         </AuthProvider>
       </body>

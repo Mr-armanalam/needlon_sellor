@@ -1,13 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { User } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
-const LoginButton = () => {
-  const router = useRouter();
+const LoginButton = ({router}:{router:AppRouterInstance}) => {
   const { user } = useCurrentUser();
-
-  if (user?.email) return null;
+  if (user?.email) return null;  
 
   return (
     <Button
