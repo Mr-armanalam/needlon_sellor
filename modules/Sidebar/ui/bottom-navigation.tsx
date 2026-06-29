@@ -1,6 +1,10 @@
+"use client";
+import { useRouter } from "next/navigation";
 import { footerNavItems } from "../data/bottom-navigationData";
 
 const BottomNavigation = () => {
+  const router = useRouter();
+
   return (
     <nav className="flex flex-col gap-1.5">
       {footerNavItems.map((item) => {
@@ -8,6 +12,7 @@ const BottomNavigation = () => {
         return (
           <button
             key={item.name}
+            onClick={() => item.navigateTo && router.push(item.navigateTo)}
             className={`
                   group flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-[14px] font-medium
                   transition-all duration-200 ease-out

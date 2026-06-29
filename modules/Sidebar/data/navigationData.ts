@@ -14,16 +14,16 @@ import {
 } from "lucide-react";
 
 export const mainNavItems = [
-  { name: "Dashboard", icon: Home },
-  { name: "Products", icon: Package, badge: 12 },
-  { name: "Orders", icon: ShoppingCart, badge: 3 },
-  { name: "Messages", icon: MessageSquare, badge: 5 },
-  { name: "Customers", icon: Users },
-  { name: "Reviews", icon: Star },
-  { name: "Earnings", icon: DollarSign },
-  { name: "Analytics", icon: BarChart2 },
-  { name: "Delivery", icon: Truck },
-  { name: "Marketing", icon: Gift },
-  { name: "Subscription", icon: CreditCard },
-  { name: "Settings", icon: Settings },
+  { name: "Dashboard", icon: Home, navigateTo: '/dashboard' },
+  { name: "Products", icon: Package, navigateTo: '/products', badge: 12 },
+  { name: "Orders", icon: ShoppingCart, navigateTo: '/orders', badge: 3 },
+  { name: "Messages", icon: MessageSquare, navigateTo: '/messages', badge: 5 },
+  { name: "Customers", icon: Users, navigateTo: '/customers' },
+  { name: "Reviews", icon: Star, navigateTo: '/reviews' },
+  { name: "Earnings", icon: DollarSign, navigateTo: '/earnings' },
+  { name: "Analytics", icon: BarChart2, navigateTo: '/analytics' },
+  { name: "Delivery", icon: Truck, navigateTo: '/delivery' },
+  { name: "Marketing", icon: Gift, navigateTo: '/marketing' },
+  { name: "Subscription", icon: CreditCard, navigateTo: '/subscription' },
+  { name: "Settings", icon: Settings, navigateTo: '/settings' },
 ];

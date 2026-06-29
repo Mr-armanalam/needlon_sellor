@@ -1,9 +1,8 @@
-import React from 'react'
+import OrdersPage from "@/modules/orders/section/orderSection";
+import React from "react";
 
 const page = () => {
-  return (
-    <div>page</div>
-  )
-}
+  return <OrdersPage />;
+};
 
-export default page
+export default page;

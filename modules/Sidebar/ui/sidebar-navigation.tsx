@@ -1,19 +1,23 @@
 "use client";
-import { useState } from "react";
 import { mainNavItems } from "../data/navigationData";
+import { usePathname, useRouter } from "next/navigation";
 
 const SideBarNavigation = () => {
-  const [activeItem, setActiveItem] = useState("Dashboard");
+  const router = useRouter();
+  const pathname = usePathname();
+
   return (
     <nav className="flex flex-col gap-1.5">
       {mainNavItems.map((item) => {
         const Icon = item.icon;
-        const isActive = activeItem === item.name;
+        const isActive = item.navigateTo.match(pathname);
 
         return (
           <button
             key={item.name}
-            onClick={() => setActiveItem(item.name)}
+            onClick={() => {
+              router.push(item.navigateTo);
+            }}
             className={`
                   group relative flex items-center justify-between w-full px-4 py-2.5 rounded-xl text-[14px] font-medium
                   transition-all duration-200 ease-out outline-none
