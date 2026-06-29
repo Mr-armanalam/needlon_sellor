@@ -12,7 +12,6 @@ export default function TopHeader() {
         <Searchbar />
         <LagnuagesAndNotification />
 
-        {/* Divider */}
         <div className="h-5 w-px bg-neutral-200/60" />
         <ProfileDrop />
       </div>
