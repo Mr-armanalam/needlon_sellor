@@ -12,9 +12,9 @@ export default async function SellerLayout({ children }: Props) {
   await requireSeller();
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen w-screen overflow-hidden">
       <Sidebar />
-      <div className="flex w-full flex-col">
+      <div className="flex w-full overflow-y-auto flex-col">
         <TopHeader />
         {children}
       </div>
