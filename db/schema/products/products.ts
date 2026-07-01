@@ -9,7 +9,7 @@ import {
   uniqueIndex,
   index,
 } from "drizzle-orm/pg-core";
-import { brands } from "../brand";
+import { brands } from "../seller/brand";
 import { categories } from "../category/categories";
 
 // Defining Enums based on lifecycle and visibility rules
