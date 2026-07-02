@@ -15,6 +15,7 @@ import * as usersTable from './schema/users';
 import * as wishListItems from './schema/wishlist-items';
 import * as passwordResetToken from './schema/password-reset-tokens';
 import * as sellers from './schema/seller';
+import { sellerSettings } from './schema/seller/seller-setting';
 
 export const schema = {
   cartItems: cartItems.cartItems,
@@ -27,7 +28,9 @@ export const schema = {
   passwordResetToken: passwordResetToken.passwordResetTokens,
   sellers: sellers.seller,
   sellerSession: sellers.sessions,
-  sellerPasswordResetToken: sellers.sellerpasswordResetTokens
+  sellerPasswordResetToken: sellers.sellerpasswordResetTokens,
+
+  seller_settings: sellerSettings
 };
 
 const client = postgres(process.env.DATABASE_URL!);
