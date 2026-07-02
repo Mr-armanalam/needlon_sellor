@@ -1,0 +1,138 @@
+src/
+│
+├── app/
+│   └── api/
+│       └── seller/
+│           └── settings/
+│               └── route.ts
+│
+├── modules/
+│
+│   └── seller-settings/
+│       │
+│       ├── api/
+│       │   ├── get-seller-settings.ts
+│       │   ├── update-seller-settings.ts
+│       │   └── index.ts
+│       │
+│       ├── hooks/
+│       │   ├── use-seller-settings-query.ts
+│       │   ├── use-update-seller-settings.ts
+│       │   └── index.ts
+│       │
+│       ├── repository/
+│       │   ├── seller-settings.repository.ts
+│       │   └── index.ts
+│       │
+│       ├── server/
+│       │   ├── ensure-seller-settings.ts
+│       │   ├── update-seller-settings.ts
+│       │   └── index.ts
+│       │
+│       ├── validations/
+│       │   ├── update-seller-settings-schema.ts
+│       │   └── index.ts
+│       │
+│       ├── dto/
+│       │   ├── seller-settings.dto.ts
+│       │   ├── update-seller-settings.dto.ts
+│       │   └── index.ts
+│       │
+│       ├── types/
+│       │   ├── seller-settings.types.ts
+│       │   └── index.ts
+│       │
+│       ├── constants.ts
+│       ├── keys.ts
+│       └── index.ts
+│
+├── lib/
+│   ├── api-client.ts
+│   ├── api-response.ts
+│   ├── api-error.ts
+│   └── query-client.ts
+│
+└── providers/
+    └── react-query-provider.tsx
+
+
+
+
+ensure-seller-settings.ts
+    find settings
+      │
+      ▼
+Exists?
+ ┌─────────────┐
+ │             │
+Yes            No
+ │             │
+ ▼             ▼
+Return     Create Default
+                │
+                ▼
+             Return
+
+
+
+flow:
+
+             Browser
+
+↓
+
+GET /api/seller/settings
+
+↓
+
+Route
+
+↓
+
+getCurrentSeller()
+
+↓
+
+ensureSellerSettings()
+
+↓
+
+Repository
+
+↓
+
+PostgreSQL
+
+
+
+client side:
+
+SellerSettingsSection
+
+↓
+
+useSellerSettingsForm()
+
+↓
+
+useSellerSettingsQuery()
+
+↓
+
+Frontend API
+
+↓
+
+GET Route
+
+↓
+
+Service
+
+↓
+
+Repository
+
+
+
+

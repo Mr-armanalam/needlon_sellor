@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/modules/auth/components/auth-provider";
+import Providers from "@/provider/react-query-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,10 +32,12 @@ export default function RootLayout({
     >
       {/* Added pt-28 (Desktop default) to body to keep elements from starting at absolute 0 under your fixed nav */}
       <body className="min-h-full flex flex-col ">
-        <AuthProvider>
-          <main className="flex-1 w-full">{children}</main>
-          <Toaster />
-        </AuthProvider>
+        <Providers>
+          <AuthProvider>
+            <main className="flex-1 w-full">{children}</main>
+            <Toaster />
+          </AuthProvider>
+        </Providers>
       </body>
     </html>
   );
