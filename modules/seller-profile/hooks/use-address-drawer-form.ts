@@ -13,6 +13,8 @@ import { createEmptySellerAddress } from "../lib/create-empty-seller-address";
 
 import { useCreateSellerAddressMutation } from "./use-create-seller-address";
 import { useUpdateSellerAddressMutation } from "./use-update-seller-address";
+import {createSellerAddressSchema} from "@/modules/seller-profile/validations/create-seller-address-schema";
+import {updateSellerAddressSchema} from "@/modules/seller-profile/validations/update-seller-address-schema";
 
 interface Props {
     address?: SellerAddressForm | null;
@@ -45,6 +47,9 @@ export function useAddressDrawerForm({
         useState<SellerAddressForm>(
             createEmptySellerAddress(),
         );
+    const [errors, setErrors] = useState<
+        Partial<Record<keyof SellerAddressForm, string>>
+    >({});
 
     useEffect(() => {
         const snapshot = address
@@ -60,19 +65,60 @@ export function useAddressDrawerForm({
             key: K,
             value: SellerAddressForm[K],
         ) => {
-            setForm((previous) => ({
+            setForm((previous) => {
+                if (!previous) return previous;
+
+                return {
+                    ...previous,
+                    [key]: value,
+                };
+            });
+
+            setErrors((previous) => ({
                 ...previous,
-                [key]: value,
+                [key]: undefined,
             }));
         },
         [],
     );
 
     const save = useCallback(async () => {
+        const schema = address
+            ? updateSellerAddressSchema
+            : createSellerAddressSchema;
+
+        const parsed = schema.safeParse(
+            address
+                ? {
+                    id: address.id,
+                    data: form,
+                }
+                : form,
+        );
+
+        if (!parsed.success) {
+            const fieldErrors =
+                parsed.error.flatten().fieldErrors;
+
+            setErrors({
+                label: fieldErrors.label?.[0],
+                addressLine1:
+                    fieldErrors.addressLine1?.[0],
+                city: fieldErrors.city?.[0],
+                state: fieldErrors.state?.[0],
+                postalCode:
+                    fieldErrors.postalCode?.[0],
+                countryCode:
+                    fieldErrors.countryCode?.[0],
+            });
+
+            return;
+        }
+
+        setErrors({});
+
         if (address) {
             const {
-                id,
-                isVerified,
                 ...data
             } = form;
 
@@ -84,8 +130,6 @@ export function useAddressDrawerForm({
             await updateMutation.mutateAsync(payload);
         } else {
             const {
-                id,
-                isVerified,
                 ...payload
             } = form;
 
@@ -124,15 +168,11 @@ export function useAddressDrawerForm({
 
     return {
         form,
-
         setField,
-
         save,
-
         reset,
-
         isDirty,
-
+        errors,
         isSaving:
             createMutation.isPending ||
             updateMutation.isPending,

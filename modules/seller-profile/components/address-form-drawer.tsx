@@ -43,9 +43,10 @@ const ADDRESS_TYPE_CHIPS = [
     },
 ] as const;
 
-export function AddressFormDrawer({setSaveStatus,  address, onClose, onSuccess }: AddressFormDrawerProps) {
+export function AddressFormDrawer({setSaveStatus, address, onClose, onSuccess }: AddressFormDrawerProps) {
     const {
         form,
+        errors,
         setField,
         save,
         reset,
@@ -133,6 +134,11 @@ export function AddressFormDrawer({setSaveStatus,  address, onClose, onSuccess }
                             }
                             className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                         />
+                        {errors.label && (
+                            <p className=" text-[11px] text-red-600">
+                                {errors.label}
+                            </p>
+                        )}
                     </div>
                     <div className="space-y-1.5">
                         <label className="text-[10px] font-bold text-gray-400 uppercase">
@@ -148,6 +154,11 @@ export function AddressFormDrawer({setSaveStatus,  address, onClose, onSuccess }
                             )}
                             className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                         />
+                        {errors.addressLine1 && (
+                            <p className=" text-[11px] text-red-600">
+                                {errors.addressLine1}
+                            </p>
+                        )}
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1.5">
@@ -161,6 +172,11 @@ export function AddressFormDrawer({setSaveStatus,  address, onClose, onSuccess }
                                 onChange={(e) => setField("city", e.target.value)}
                                 className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                             />
+                            {errors.city && (
+                                <p className=" text-[11px] text-red-600">
+                                    {errors.city}
+                                </p>
+                            )}
                         </div>
 
 
@@ -175,6 +191,11 @@ export function AddressFormDrawer({setSaveStatus,  address, onClose, onSuccess }
                                 onChange={(e) => setField("state", e.target.value)}
                                 className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                             />
+                            {errors.state && (
+                                <p className=" text-[11px] text-red-600">
+                                    {errors.state}
+                                </p>
+                            )}
                         </div>
                         <div className="space-y-1.5">
                             <label className="text-[10px] font-bold text-gray-400 uppercase">
@@ -187,6 +208,11 @@ export function AddressFormDrawer({setSaveStatus,  address, onClose, onSuccess }
                                 onChange={(e) => setField("postalCode", e.target.value)}
                                 className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                             />
+                            {errors.postalCode && (
+                                <p className=" text-[11px] text-red-600">
+                                    {errors.postalCode}
+                                </p>
+                            )}
                         </div>
 
                         <div className="space-y-1.5">
@@ -196,10 +222,15 @@ export function AddressFormDrawer({setSaveStatus,  address, onClose, onSuccess }
                             <input
                                 type="text"
                                 value={form?.countryCode}
-                                placeholder="+1"
+                                placeholder="IN"
                                 onChange={(e) => setField("countryCode", e.target.value)}
                                 className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                             />
+                            {errors.countryCode && (
+                                <p className=" text-[11px] text-red-600">
+                                    {errors.countryCode}
+                                </p>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -221,21 +252,6 @@ export function AddressFormDrawer({setSaveStatus,  address, onClose, onSuccess }
                 </div>
             </div>
 
-            {/*/!* SUBMIT ACTION LAYERS *!/*/}
-            {/*<div className="pt-4 border-t border-gray-100 flex gap-2 bg-white">*/}
-            {/*    <button*/}
-            {/*        type="button"*/}
-            {/*        onClick={save}*/}
-            {/*        disabled={*/}
-            {/*            !isDirty || isSaving*/}
-            {/*        }*/}
-            {/*        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-xs text-center shadow-blue-600/10"*/}
-            {/*    >*/}
-            {/*        {isSaving*/}
-            {/*            ? "Saving..."*/}
-            {/*            : "Apply Changes"}*/}
-            {/*    </button>*/}
-            {/*</div>*/}
             <div className="pt-4 border-t border-gray-100 flex gap-2 bg-white">
 
                 <button
