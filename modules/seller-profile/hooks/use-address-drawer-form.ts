@@ -56,6 +56,7 @@ export function useAddressDrawerForm({
             ? clone(address)
             : createEmptySellerAddress();
 
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setForm(snapshot);
         setInitialForm(clone(snapshot));
     }, [address]);
