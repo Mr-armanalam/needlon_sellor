@@ -27,6 +27,11 @@ export default function SellerFoundationPage() {
     });
   };
 
+  const closeDrawer = () => {
+    setDrawerOpen(false);
+    setDrawerContent(null);
+  };
+
   const triggerDrawer = (contentNode: ReactNode) => {
     setDrawerContent(contentNode);
     setDrawerOpen(true);
@@ -159,7 +164,7 @@ export default function SellerFoundationPage() {
 
                 {activeTab === 'identity' && <BusinessIdentitySection setSaveStatus={setSaveStatus} />}
                 {activeTab === 'store' && <StoreManagementSection setSaveStatus={setSaveStatus} />}
-                {activeTab === 'locations' && <AddressManagementSection triggerDrawer={triggerDrawer} setSaveStatus={setSaveStatus} />}
+                {activeTab === 'locations' && <AddressManagementSection triggerDrawer={triggerDrawer} closeDrawer={closeDrawer} setSaveStatus={setSaveStatus} />}
                 {activeTab === 'payouts' && <BankAndPayoutSection triggerDrawer={triggerDrawer} setSaveStatus={setSaveStatus} />}
                 {activeTab === 'preferences' && <SellerSettingsSection setSaveStatus={setSaveStatus} />}
               </>

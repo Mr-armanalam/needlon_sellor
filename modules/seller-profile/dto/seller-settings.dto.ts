@@ -1,4 +1,4 @@
-import { SellerTheme } from "../seller-profile/types";
+import { SellerTheme } from "../types";
 
 export interface SellerSettingsDto {
   sellerId: string;

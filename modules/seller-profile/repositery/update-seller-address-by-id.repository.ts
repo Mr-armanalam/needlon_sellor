@@ -1,27 +1,47 @@
 import { and, eq, isNull } from "drizzle-orm";
 
-import { db } from "@/db";
-import {UpdateSellerAddressDto} from "@/modules/seller-profile/dto/seller-address.dto";
 import {sellerAddresses} from "@/db/schema/seller/seller-address";
 import {toSellerAddressForm} from "@/modules/seller-profile/mapper/seller-address-mapper";
+import {DbTransaction} from "@/db/transactions";
+import {getDatabase} from "@/db/database";
 
-interface UpdateSellerAddressParams extends UpdateSellerAddressDto {
+import { SellerAddressForm } from "../types/seller-address-form";
+
+interface UpdateSellerAddressParams {
     sellerId: string;
-}
+    id: string;
+    tx?: DbTransaction;
 
-export async function updateSellerAddress({
+    data: Partial<
+        Omit<
+            SellerAddressForm,
+            "id" | "isVerified"
+        >
+    >;
+}
+export async function updateSellerAddressById({
                                               sellerId,
                                               id,
                                               data,
+                                              tx
                                           }: UpdateSellerAddressParams) {
-    const [address] = await db
+    const database = getDatabase(tx);
+
+    const [address] = await database
         .update(sellerAddresses)
         .set({
             ...data,
             updatedAt: new Date(),
 
-            latitude: data.latitude ? String(data.latitude) : null,
-            longitude: data.longitude ? String(data.longitude) : null,
+            latitude:
+                data.latitude == null
+                    ? null
+                    : String(data.latitude),
+
+            longitude:
+                data.longitude == null
+                    ? null
+                    : String(data.longitude),
         })
         .where(
             and(

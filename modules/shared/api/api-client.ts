@@ -1,5 +1,6 @@
 import { ApiError } from "./api-error";
 import {
+    ApiErrorResponse,
     ApiResponse,
     ApiSuccessResponse,
 } from "./api-response";

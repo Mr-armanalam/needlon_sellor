@@ -1,4 +1,4 @@
-import { SellerSettingsDto } from "@/modules/dto";
+import { SellerSettingsDto } from "@/modules/seller-profile/dto";
 
 interface GetSellerSettingsResponse {
   success: boolean;

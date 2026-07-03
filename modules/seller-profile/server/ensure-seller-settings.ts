@@ -1,4 +1,4 @@
-import { SellerSettingsDto } from "@/modules/dto";
+import { SellerSettingsDto } from "@/modules/seller-profile/dto";
 import { sellerSettingsRepository } from "../repositery/seller-settings.repository";
 
 export async function ensureSellerSettings(

@@ -1,4 +1,4 @@
-import { UpdateSellerSettingsDto } from "@/modules/dto";
+import { UpdateSellerSettingsDto } from "@/modules/seller-profile/dto";
 import { updateSellerSettings } from "../repositery/update-seller-settings.repository";
 import { toSellerSettingsDto } from "../mapper/seller-settings.mapper";
 import { createSellerSettingsService } from "../repositery/create-seller-settings.repository";

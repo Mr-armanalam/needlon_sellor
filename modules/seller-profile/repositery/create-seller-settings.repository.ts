@@ -1,6 +1,6 @@
 
 import { db } from "@/db";
-import { UpdateSellerSettingsDto } from "@/modules/dto";
+import { UpdateSellerSettingsDto } from "@/modules/seller-profile/dto";
 import { sellerSettings } from "@/db/schema/seller/seller-setting";
 
 export async function createSellerSettingsService(

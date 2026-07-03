@@ -1,10 +1,14 @@
 import { and, count, eq, isNull } from "drizzle-orm";
-
-import { db } from "@/db";
 import {sellerAddresses} from "@/db/schema/seller/seller-address";
-
-export async function countActiveSellerAddresses(sellerId: string) {
-    const [result] = await db
+import {DbTransaction} from "@/db/transactions";
+import {getDatabase} from "@/db/database";
+interface Params {
+    tx?: DbTransaction;
+    sellerId: string;
+}
+export async function countActiveSellerAddresses({sellerId,tx}: Params) {
+    const database = getDatabase(tx);
+    const [result] = await database
         .select({
             count: count(),
         })

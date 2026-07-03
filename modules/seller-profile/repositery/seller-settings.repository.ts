@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import { sellerSettings } from "@/db/schema/seller/seller-setting";
-import { SellerSettingsDto, UpdateSellerSettingsDto } from "@/modules/dto";
+import { SellerSettingsDto, UpdateSellerSettingsDto } from "@/modules/seller-profile/dto";
 
 type SellerSettingsRow = typeof sellerSettings.$inferSelect;
 

@@ -1,5 +1,5 @@
 import { sellerSettings } from "@/db/schema/seller/seller-setting";
-import { SellerSettingsDto } from "@/modules/dto";
+import { SellerSettingsDto } from "@/modules/seller-profile/dto";
 import { InferSelectModel } from "drizzle-orm";
 
 type SellerSettingsEntity = InferSelectModel<typeof sellerSettings>;

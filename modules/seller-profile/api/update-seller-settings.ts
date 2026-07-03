@@ -1,4 +1,4 @@
-import { SellerSettingsDto, UpdateSellerSettingsDto } from "@/modules/dto";
+import { SellerSettingsDto, UpdateSellerSettingsDto } from "@/modules/seller-profile/dto";
 
 interface UpdateSellerSettingsResponse {
   success: boolean;
