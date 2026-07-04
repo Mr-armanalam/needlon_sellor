@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { Globe, Sun, Moon, Monitor, BellPlus } from "lucide-react";
-import { SaveStatus } from "../section/seller-foundation-page";
+import { SaveStatus } from "../view/seller-foundation-page";
 import { useEffect } from "react";
 import { useSellerSettingsForm } from "../hooks/use-seller-settings-form";
 

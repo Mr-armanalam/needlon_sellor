@@ -6,7 +6,7 @@ import {
   CheckCircle2,
   Edit3,
 } from "lucide-react";
-import { SaveStatus } from "../section/seller-foundation-page";
+import { SaveStatus } from "../view/seller-foundation-page";
 import {useSellerAddressForm} from "@/modules/seller-profile/hooks/use-seller-address-form";
 import {getAddressLine, getAddressLocation} from "@/modules/seller-profile/lib/address-formate";
 import {getAddressTypeLabel} from "@/modules/seller-profile/lib/address-label";

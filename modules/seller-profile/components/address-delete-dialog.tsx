@@ -10,7 +10,7 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import React from "react";
-import {SaveStatus} from "@/modules/seller-profile/section/seller-foundation-page";
+import {SaveStatus} from "@/modules/seller-profile/view/seller-foundation-page";
 
 export function AddressDeleteDialog({isDeleting, setSaveStatus, remove, addressId}:{
     isDeleting:boolean;

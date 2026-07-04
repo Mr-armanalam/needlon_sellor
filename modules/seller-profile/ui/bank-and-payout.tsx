@@ -8,7 +8,7 @@ import {
   Layers,
   CheckCircle,
 } from "lucide-react";
-import { SaveStatus } from "../section/seller-foundation-page";
+import { SaveStatus } from "../view/seller-foundation-page";
 
 export default function BankAndPayoutSection({
   triggerDrawer,

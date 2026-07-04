@@ -49,7 +49,7 @@ export async function limitLogin(
   const ipResult =
     await rateLimit({
       key: `rl:login:ip:${ip}`,
-      limit: 20, // TODO: Wrong
+      limit: 40, // TODO: Wrong
       // limit: 10, // Correct
       window:
         FIFTEEN_MINUTES,

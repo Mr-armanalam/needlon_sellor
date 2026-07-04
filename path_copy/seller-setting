@@ -136,3 +136,34 @@ Repository
 
 
 
+BusinessIdentitySection
+        │
+        ▼
+useBusinessIdentityForm
+        │
+        ▼
+useUpdateProfileImage
+        │
+        ▼
+services/upload-profile-image.ts
+        │
+        ▼
+apiClient.post()
+        │
+        ▼
+POST /api/seller/profile/image
+        │
+        ▼
+parse multipart form-data
+        │
+        ▼
+uploadSellerProfileImageService()
+        │
+        ▼
+Supabase Storage
+        │
+        ▼
+updateSellerProfile()
+        │
+        ▼
+SellerProfileDto

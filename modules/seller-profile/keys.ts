@@ -13,3 +13,10 @@ export const sellerAddressKeys = {
   detail: (id: string) =>
       [...sellerAddressKeys.all, id] as const,
 };
+
+export const sellerProfileKeys = {
+  all: ["seller-profile"] as const,
+
+  profile: () =>
+      [...sellerProfileKeys.all, "profile"] as const,
+};

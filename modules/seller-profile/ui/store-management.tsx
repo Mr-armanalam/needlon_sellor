@@ -8,7 +8,7 @@ import {
   Eye,
   ShieldCheck,
 } from "lucide-react";
-import { SaveStatus } from "../section/seller-foundation-page";
+import { SaveStatus } from "../view/seller-foundation-page";
 
 export default function StoreManagementSection({
   setSaveStatus,

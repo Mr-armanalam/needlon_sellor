@@ -8,7 +8,7 @@ import {
     Receipt,
 } from "lucide-react";
 import {useAddressDrawerForm} from "@/modules/seller-profile/hooks/use-address-drawer-form";
-import {SaveStatus} from "@/modules/seller-profile/section/seller-foundation-page";
+import {SaveStatus} from "@/modules/seller-profile/view/seller-foundation-page";
 
 
 interface AddressFormDrawerProps {

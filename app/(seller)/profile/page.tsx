@@ -1,4 +1,4 @@
-import SellerFoundationPage from '@/modules/seller-profile/section/seller-foundation-page'
+import SellerFoundationPage from '@/modules/seller-profile/view/seller-foundation-page'
 import React from 'react'
 
 const page = () => {
