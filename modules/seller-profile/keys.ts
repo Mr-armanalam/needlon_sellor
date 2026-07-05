@@ -20,3 +20,12 @@ export const sellerProfileKeys = {
   profile: () =>
       [...sellerProfileKeys.all, "profile"] as const,
 };
+
+
+export const sellerStoreKeys = {
+  all: ["seller-store"] as const,
+
+  store: () =>
+      [...sellerStoreKeys.all, "store"] as const,
+};
+

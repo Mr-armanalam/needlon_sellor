@@ -1,8 +1,3 @@
-// import { drizzle } from 'drizzle-orm/postgres-js'
-
-//   export const db = drizzle(process.env.DATABASE_URL!);
-
-// db/index.ts
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 
@@ -18,6 +13,7 @@ import * as sellers from './schema/seller';
 import { sellerSettings } from './schema/seller/seller-setting';
 import {sellerAddresses} from "@/db/schema/seller/seller-address";
 import {sellerProfiles} from "@/db/schema/seller/seller-profile";
+import {sellerStore} from "@/db/schema/seller/seller-store";
 
 export const schema = {
   cartItems: cartItems.cartItems,
@@ -35,6 +31,7 @@ export const schema = {
   seller_settings: sellerSettings,
   sellerAddresses: sellerAddresses,
   sellerProfiles: sellerProfiles,
+  sellerStore: sellerStore,
 };
 
 const client = postgres(process.env.DATABASE_URL!);

@@ -10,5 +10,8 @@ export * from "./count-active-seller-addresses";
 export * from "./unset-default-address";
 export * from "./find-default-seller-address";
 export * from "./create-seller-profiles.repository"
-export * from "./find-seller-profile.repository"
-export * from "./update-seller-profile.repository"
+export * from "./find-seller-profile.repository";
+export * from "./update-seller-profile.repository";
+export * from "./find-seller-store.repository";
+export * from "./update-seller-store-repository";
+export * from "./create-seller-store.repository";

@@ -6,6 +6,7 @@ import {
   boolean,
   timestamp,
   pgEnum,
+  index,
 } from "drizzle-orm/pg-core";
 import { seller } from "../seller";
 
@@ -35,7 +36,7 @@ export const sellerStore = pgTable("seller_store", {
     .references(() => seller.id, { onDelete: "cascade" }),
 
   storeName: varchar("store_name", { length: 150 }).notNull(),
-  storeSlug: varchar("store_slug", { length: 150 }).notNull(),
+  storeSlug: varchar("store_slug", { length: 150 }).notNull().unique(),
 
   logoUrl: text("logo_url"),
   bannerUrl: text("banner_url"),
@@ -59,4 +60,8 @@ export const sellerStore = pgTable("seller_store", {
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
-});
+},
+    (table) => [
+      index("seller_store_name_idx").on(table.storeName),
+      index("seller_store_slug_idx").on(table.storeSlug)
+    ]);
