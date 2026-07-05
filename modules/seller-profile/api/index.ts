@@ -3,3 +3,7 @@ export * from "./update-seller-settings";
 export * from "./seller-address-api";
 export * from "./get-seller-profile";
 export * from "./update-seller-profile";
+export * from "./get-seller-store";
+export * from "./update-seller-store";
+export * from "./upload-store-logo";
+export * from "./upload-store-banner";

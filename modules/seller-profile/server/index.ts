@@ -1,3 +1,6 @@
 export * from "./ensure-seller-settings";
 export * from "./update-seller-settings";
-export * from "./set-default-seller-address"
+export * from "./set-default-seller-address";
+
+export * from "./upload-store-logo";
+export * from "./upload-store-banner";

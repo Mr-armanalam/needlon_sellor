@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, {useEffect, useState} from "react";
 import {
   Camera,
   Star,
@@ -9,6 +9,9 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { SaveStatus } from "../view/seller-foundation-page";
+import {useStoreManagementForm} from "@/modules/seller-profile/hooks/use-store-management-form";
+import {ImageUpload} from "@/modules/shared/image-upload/image-upload";
+
 
 export default function StoreManagementSection({
   setSaveStatus,
@@ -16,34 +19,29 @@ export default function StoreManagementSection({
   setSaveStatus: React.Dispatch<React.SetStateAction<SaveStatus>>;
 }) {
   const [openPolicy, setOpenPolicy] = useState<null | string>(null);
-  const [storeMeta, setStoreMeta] = useState({
-    name: "Needlon Hub Boutique",
-    slug: "needlon-hub-apparel",
-    description:
-      "Premium handcrafted custom garments and localized women's clothing alternatives.",
-    category: "Ethnic Fashion & Custom Tailoring",
-  });
 
-  const [bannerImg, setBannerImg] = useState<null | string>(null);
-  const [logoImg, setLogoImg] = useState<null | string>(null);
+  const {
+    form,
+
+    save,
+    reset,
+
+    setField,
+
+    uploadLogo,
+    uploadBanner,
+
+    isDirty,
+    isSaving,
+
+    isUploadingLogo,
+    isUploadingBanner,
+  } = useStoreManagementForm();
 
   const togglePolicy = (policyKey: string) => {
     setOpenPolicy(openPolicy === policyKey ? null : policyKey);
   };
 
-  const handleInputChange = (field:string, val:string) => {
-    setStoreMeta((prev) => ({ ...prev, [field]: val }));
-    setSaveStatus("Changes pending");
-  };
-
-  const handleMediaUpload = (type:string, e: React.ChangeEvent<HTMLInputElement, HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const url = URL.createObjectURL(e.target.files[0]);
-      if (type === "banner") setBannerImg(url);
-      if (type === "logo") setLogoImg(url);
-      setSaveStatus("Changes pending");
-    }
-  };
 
   const policyItems = [
     {
@@ -65,6 +63,29 @@ export default function StoreManagementSection({
         "Cancellations are accepted within 4 hours of payment settlement before structural fabric trimming operations begin.",
     },
   ];
+
+  useEffect(() => {
+    if (
+        isSaving ||
+        isUploadingLogo ||
+        isUploadingBanner
+    ) {
+      setSaveStatus("Saving...");
+      return;
+    }
+
+    if (isDirty) {
+      setSaveStatus("Changes pending");
+      return;
+    }
+
+    setSaveStatus("Saved ✓");
+  }, [
+    isSaving,
+    isUploadingLogo,
+    isUploadingBanner,
+    isDirty,
+  ]);
 
   return (
     <div className="space-y-6 max-w-6xl animate-in fade-in duration-200">
@@ -90,9 +111,9 @@ export default function StoreManagementSection({
 
             {/* HERO BANNER DROPZONE FRAME */}
             <div className="relative w-full h-32 bg-slate-100 border rounded-xl overflow-hidden flex items-center justify-center group border-gray-200">
-              {bannerImg ? (
+              {form?.bannerUrl ? (
                 <img
-                  src={bannerImg}
+                  src={form?.bannerUrl}
                   alt="Banner"
                   className="w-full h-full object-cover"
                 />
@@ -105,11 +126,18 @@ export default function StoreManagementSection({
                 </div>
               )}
               <label className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer text-white font-bold text-xs gap-1">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => handleMediaUpload("banner", e)}
+                {/*<input*/}
+                {/*  type="file"*/}
+                {/*  accept="image/*"*/}
+                {/*  className="hidden"*/}
+                {/*  onChange={(e) => handleMediaUpload("banner", e)}*/}
+                {/*/>*/}
+                <ImageUpload
+                    title={'banner'}
+                    variant="banner"
+                    imageUrl={form?.bannerUrl ?? ''}
+                    isUploading={isUploadingBanner}
+                    onUpload={uploadBanner}
                 />
                 <Camera className="w-4 h-4" /> Replace Cover
               </label>
@@ -118,21 +146,28 @@ export default function StoreManagementSection({
             {/* INTEGRATED LOGO ROUND THUMBNAIL */}
             <div className="flex items-center gap-4 pt-2">
               <div className="w-16 h-16 rounded-full bg-slate-50 border border-gray-200 flex-shrink-0 relative overflow-hidden flex items-center justify-center group">
-                {logoImg ? (
+                {form?.logoUrl ? (
                   <img
-                    src={logoImg}
                     alt="Logo"
+                    src={form?.logoUrl}
                     className="w-full h-full object-cover"
                   />
                 ) : (
                   <Camera className="w-4 h-4 text-gray-400" />
                 )}
                 <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer text-white text-[10px] font-bold">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => handleMediaUpload("logo", e)}
+                  {/*<input*/}
+                  {/*  type="file"*/}
+                  {/*  accept="image/*"*/}
+                  {/*  className="hidden"*/}
+                  {/*  onChange={(e) => handleMediaUpload("logo", e)}*/}
+                  {/*/>*/}
+                  <ImageUpload
+                      title={'logo'}
+                      variant="logo"
+                      imageUrl={form?.logoUrl ?? ''}
+                      isUploading={isUploadingLogo}
+                      onUpload={uploadLogo}
                   />
                   Edit
                 </label>
@@ -161,8 +196,11 @@ export default function StoreManagementSection({
                 </label>
                 <input
                   type="text"
-                  value={storeMeta.name}
-                  onChange={(e) => handleInputChange("name", e.target.value)}
+                  value={form?.storeName}
+                  onChange={(e) => setField(
+                      "storeName",
+                      e.target.value,
+                  )}
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl text-xs px-4 py-2.5 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
@@ -172,8 +210,11 @@ export default function StoreManagementSection({
                 </label>
                 <input
                   type="text"
-                  value={storeMeta.slug}
-                  onChange={(e) => handleInputChange("slug", e.target.value)}
+                  value={form?.storeSlug}
+                  onChange={(e) => setField(
+                      "storeSlug",
+                      e.target.value,
+                  )}
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl text-xs px-4 py-2.5 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-blue-600 font-mono"
                 />
               </div>
@@ -184,9 +225,12 @@ export default function StoreManagementSection({
               </label>
               <textarea
                 rows={3}
-                value={storeMeta.description}
+                value={form?.description ?? ""}
                 onChange={(e) =>
-                  handleInputChange("description", e.target.value)
+                    setField(
+                        "description",
+                        e.target.value,
+                    )
                 }
                 className="w-full bg-gray-50 border border-gray-200 rounded-xl text-xs px-4 py-2.5 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none leading-relaxed"
               />
@@ -239,9 +283,9 @@ export default function StoreManagementSection({
               <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-xs relative">
                 {/* Simulated Landscape Banner Background */}
                 <div className="w-full h-20 bg-slate-200">
-                  {bannerImg && (
+                  {form?.bannerUrl && (
                     <img
-                      src={bannerImg}
+                      src={form?.bannerUrl}
                       alt=""
                       className="w-full h-full object-cover"
                     />
@@ -250,9 +294,9 @@ export default function StoreManagementSection({
 
                 {/* Floating Absolute Logo Container */}
                 <div className="absolute top-10 left-4 w-12 h-12 bg-white rounded-full border shadow-xs p-0.5 overflow-hidden flex items-center justify-center">
-                  {logoImg ? (
+                  {form?.logoUrl ? (
                     <img
-                      src={logoImg}
+                      src={form?.logoUrl}
                       alt=""
                       className="w-full h-full object-cover rounded-full"
                     />
@@ -264,14 +308,14 @@ export default function StoreManagementSection({
                 {/* Text Metadata Block */}
                 <div className="pt-7 p-4 space-y-1 text-xs">
                   <h4 className="font-black text-gray-900 flex items-center gap-1">
-                    {storeMeta.name || "Unnamed Store"}
+                    {form?.storeName || "Unnamed Store"}
                     <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
                   </h4>
                   <p className="text-[11px] text-gray-400 font-bold tracking-wide uppercase">
-                    {storeMeta.category || "Unassigned Category"}
+                    {form?.visibility || "Unassigned Category"}
                   </p>
                   <p className="text-[11px] text-gray-500 leading-relaxed pt-1 line-clamp-2">
-                    {storeMeta.description ||
+                    {form?.description ||
                       "No descriptions customized yet..."}
                   </p>
 
@@ -289,10 +333,18 @@ export default function StoreManagementSection({
             <div className="p-4 border-t border-gray-50 bg-white">
               <button
                 type="button"
-                onClick={() => setSaveStatus("Saved ✓")}
+                disabled={
+                    !isDirty ||
+                    isSaving
+                }
+                onClick={async () => await save()}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2.5 px-4 rounded-xl transition-all shadow-xs text-center shadow-blue-600/10"
               >
-                Publish Live Changes
+                {
+                  isSaving
+                      ? "Saving..."
+                      : "Publish Changes"
+                }
               </button>
             </div>
           </div>
@@ -301,3 +353,5 @@ export default function StoreManagementSection({
     </div>
   );
 }
+
+

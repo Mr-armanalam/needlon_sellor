@@ -167,3 +167,60 @@ updateSellerProfile()
         │
         ▼
 SellerProfileDto
+
+
+modules/
+└── seller-store/
+    │
+    ├── api/
+    │   ├── get-store.ts
+    │   ├── update-store.ts
+    │   ├── upload-store-logo.ts
+    │   └── upload-store-banner.ts
+    │
+    ├── constants/
+    │   ├── image.ts
+    │   ├── slug.ts
+    │   └── index.ts
+    │
+    ├── dto/
+    │   └── seller-store.dto.ts
+    │
+    ├── errors/
+    │   └── store-not-found.ts
+    │
+    ├── hooks/
+    │   ├── use-store.ts
+    │   ├── use-store-form.ts
+    │   ├── use-update-store.ts
+    │   ├── use-upload-store-logo.ts
+    │   └── use-upload-store-banner.ts
+    │
+    ├── keys/
+    │   └── index.ts
+    │
+    ├── mapper/
+    │   └── seller-store.mapper.ts
+    │
+    ├── repository/
+    │   ├── create-store.ts
+    │   ├── find-store.ts
+    │   ├── update-store.ts
+    │   └── index.ts
+    │
+    ├── services/
+    │   ├── ensure-store.ts
+    │   ├── get-store.ts
+    │   ├── update-store.ts
+    │   ├── upload-store-logo.ts
+    │   ├── upload-store-banner.ts
+    │   └── index.ts
+    │
+    ├── types/
+    │   └── seller-store-form.ts
+    │
+    ├── validations/
+    │   ├── seller-store-schema.ts
+    │   └── seller-store-client-schema.ts
+    │
+    └── index.ts
