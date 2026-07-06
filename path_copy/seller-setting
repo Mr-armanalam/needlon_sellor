@@ -224,3 +224,99 @@ modules/
     │   └── seller-store-client-schema.ts
     │
     └── index.ts
+
+
+
+    modules/
+    └── seller-verification/
+        │
+        ├── api/
+        │   ├── get-seller-verification.ts
+        │   ├── upload-document.ts
+        │   ├── delete-document.ts
+        │   └── submit-verification.ts
+        │
+        ├── dto/
+        │   ├── seller-document.dto.ts
+        │   ├── seller-verification.dto.ts
+        │   └── index.ts
+        │
+        ├── hooks/
+        │   ├── use-seller-verification.ts
+        │   ├── use-upload-document.ts
+        │   ├── use-delete-document.ts
+        │   ├── use-submit-verification.ts
+        │   └── use-verification-form.ts
+        │
+        ├── mapper/
+        │   ├── seller-document.mapper.ts
+        │   ├── seller-verification.mapper.ts
+        │   └── index.ts
+        │
+        ├── repository/
+        │   ├── create-document.ts
+        │   ├── update-document.ts
+        │   ├── delete-document.ts
+        │   ├── get-document.ts
+        │   ├── list-documents.ts
+        │   ├── get-verification.ts
+        │   ├── update-verification.ts
+        │   └── index.ts
+        │
+        ├── services/
+        │   ├── upload-document.service.ts
+        │   ├── delete-document.service.ts
+        │   ├── get-seller-verification.service.ts
+        │   ├── submit-verification.service.ts
+        │   └── index.ts
+        │
+        ├── validation/
+        │   ├── upload-document.schema.ts
+        │   └── submit-verification.schema.ts
+        │
+        ├── constants.ts
+        ├── keys.ts
+        └── types.ts
+
+
+        User
+
+        ↓
+
+        Select GST
+
+        ↓
+
+        Client Validation
+
+        ↓
+
+        API
+
+        ↓
+
+        Service
+
+        ↓
+
+        Delete previous active GST
+
+        ↓
+
+        Upload new file
+
+        ↓
+
+        Insert Version
+
+        ↓
+
+        Update seller_documents
+
+        ↓
+
+        Invalidate Query
+
+        ↓
+
+        Refresh UI

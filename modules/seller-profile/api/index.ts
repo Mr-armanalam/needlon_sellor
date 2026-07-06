@@ -7,3 +7,4 @@ export * from "./get-seller-store";
 export * from "./update-seller-store";
 export * from "./upload-store-logo";
 export * from "./upload-store-banner";
+export * from "./seller-verification-api";

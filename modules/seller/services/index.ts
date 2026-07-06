@@ -6,3 +6,8 @@ export * from "./update-seller-profile";
 export * from "./ensure-seller-store";
 export * from "./get-seller-store";
 export * from "./update-seller-store";
+export * from "./get-seller-verification.service";
+export * from "./submit-verification.service";
+export * from "./upload-document.service";
+export * from "./delete-document.service";
+export * from "./get-document-preview.service";

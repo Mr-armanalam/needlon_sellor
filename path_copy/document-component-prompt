@@ -1,0 +1,627 @@
+Excellent. We're now at the **final step** of the Seller Verification module.
+
+Since Needlon is a long-term production marketplace, I would **not** build a simple GST/PAN upload page. This page should give sellers confidence and clearly communicate their verification progress.
+
+---
+
+# Step 8 — Production Grade Seller Verification UI
+
+## Final Folder Structure
+
+```text
+modules/
+└── seller-verification/
+    ├── components/
+    │
+    ├── seller-verification-section.tsx      ← Main page
+    │
+    ├── verification-status-card.tsx
+    ├── verification-progress-card.tsx
+    ├── document-list.tsx
+    ├── document-card.tsx
+    ├── upload-document-dialog.tsx
+    ├── document-preview-dialog.tsx
+    ├── verification-timeline.tsx
+    ├── rejection-alert.tsx
+    ├── verification-benefits.tsx
+    ├── submit-verification-card.tsx
+    ├── verification-skeleton.tsx
+    │
+    └── index.ts
+```
+
+---
+
+# Layout
+
+```
+---------------------------------------------------------
+ Seller Verification
+ Complete your documents for verification
+---------------------------------------------------------
+
++-----------------------------+----------------------+
+|                             |                      |
+| Verification Status         | Progress             |
+|                             |                      |
++-----------------------------+----------------------+
+
++-------------------------------------------------------+
+| Required Documents                                    |
+|                                                       |
+| GST                                                   |
+| PAN                                                   |
+| Aadhaar                                               |
+|                                                       |
++-------------------------------------------------------+
+
++-------------------------------------------------------+
+| Optional Documents                                    |
+|                                                       |
+| IEC                                                   |
+| MSME                                                  |
+| FSSAI                                                 |
+| Trademark                                             |
+| Shop License                                          |
+|                                                       |
++-------------------------------------------------------+
+
++-------------------------------------------------------+
+| Verification Timeline                                 |
++-------------------------------------------------------+
+
++-------------------------------------------------------+
+| Benefits after Verification                           |
++-------------------------------------------------------+
+
+                         Submit Verification
+```
+
+---
+
+# Card 1
+
+## Verification Status
+
+Large card
+
+Shows
+
+```
+Status
+
+● Not Started
+
+● In Progress
+
+● Submitted
+
+● Under Review
+
+● Verified
+
+● Rejected
+```
+
+Also shows
+
+```
+Last Updated
+
+Submitted Date
+
+Verified Date
+```
+
+---
+
+# Card 2
+
+## Progress
+
+```
+Verification Progress
+
+████████░░░░░
+
+60%
+
+3 / 5 Required Documents
+```
+
+---
+
+# Required Documents
+
+Cards
+
+```
+GST
+
+Uploaded
+
+Replace
+
+Preview
+
+Delete
+```
+
+---
+
+```
+PAN
+
+Missing
+
+Upload
+```
+
+---
+
+Every document card has
+
+```
+Icon
+
+Title
+
+Description
+
+Status Badge
+
+Upload
+
+Replace
+
+Delete
+
+Preview
+
+File Name
+
+Upload Date
+```
+
+---
+
+# Optional Documents
+
+Same UI
+
+Different section
+
+```
+Optional
+
+Upload anytime
+```
+
+---
+
+# Upload Dialog
+
+When clicking Upload
+
+```
+----------------------------
+
+Upload GST
+
+Drag File
+
+or
+
+Choose File
+
+Requirements
+
+PDF
+
+JPG
+
+PNG
+
+10 MB
+
+Upload
+
+Cancel
+
+----------------------------
+```
+
+---
+
+Don't upload immediately.
+
+Allow
+
+```
+Choose
+
+↓
+
+Preview
+
+↓
+
+Upload
+```
+
+Much better UX.
+
+---
+
+# Preview Dialog
+
+For uploaded document
+
+```
+Preview
+
+Download
+
+Replace
+
+Close
+```
+
+Uses
+
+```
+Signed URL
+```
+
+---
+
+# Timeline
+
+Beautiful vertical timeline
+
+```
+○ Verification Started
+
+↓
+
+○ Documents Uploaded
+
+↓
+
+○ Submitted
+
+↓
+
+○ Under Review
+
+↓
+
+✓ Verified
+```
+
+If rejected
+
+```
+✕
+
+Rejected
+
+Reason
+
+GST unreadable
+```
+
+---
+
+# Rejection Card
+
+Only appears
+
+```
+status == REJECTED
+```
+
+```
+⚠
+
+Verification Rejected
+
+Reason
+
+GST image blurred
+
+Upload again
+```
+
+---
+
+# Benefits Card
+
+Like Profile page
+
+```
+Benefits after verification
+
+✓ Trusted Seller Badge
+
+✓ Better Search Ranking
+
+✓ Fast Settlements
+
+✓ Higher Order Limits
+
+✓ Premium Campaign Access
+
+✓ Government Compliance
+```
+
+---
+
+# Submit Card
+
+Bottom
+
+```
+Ready?
+
+4/4 Required Documents
+
+Submit for Review
+
+```
+
+Disabled
+
+until
+
+```
+canSubmit == true
+```
+
+---
+
+# Skeleton
+
+Loading
+
+```
+Status Skeleton
+
+Progress Skeleton
+
+Cards Skeleton
+
+Timeline Skeleton
+```
+
+Not a spinner.
+
+---
+
+# Mobile Layout
+
+Desktop
+
+```
+2 Columns
+```
+
+Tablet
+
+```
+2 Columns
+```
+
+Mobile
+
+```
+1 Column
+```
+
+Everything stacks.
+
+---
+
+# UI States
+
+Every card supports
+
+```
+Uploading
+
+Deleting
+
+Replacing
+
+Verified
+
+Rejected
+
+Pending
+
+Missing
+```
+
+---
+
+# Nice Animations
+
+Upload
+
+```
+Fade
+
+Scale
+
+Spinner
+```
+
+Success
+
+```
+Checkmark animation
+```
+
+Delete
+
+```
+Fade out
+```
+
+Progress
+
+```
+Animated progress bar
+```
+
+Timeline
+
+```
+Slide in
+```
+
+---
+
+# Don't Use Accordions
+
+This page has only about 10 document cards.
+
+Everything should remain visible.
+
+Scrolling is better than hiding documents.
+
+---
+
+# Icons
+
+Use consistent icons.
+
+```
+GST
+
+Receipt
+
+PAN
+
+Credit Card
+
+AADHAAR
+
+ID Card
+
+MSME
+
+Building
+
+IEC
+
+Globe
+
+Trademark
+
+Badge
+
+FSSAI
+
+Shield
+
+Cancelled Cheque
+
+Wallet
+
+Verification
+
+ShieldCheck
+
+Rejected
+
+TriangleAlert
+
+Verified
+
+BadgeCheck
+```
+
+---
+
+# Final Architecture
+
+```
+SellerVerificationSection
+
+│
+
+├── VerificationStatusCard
+
+├── VerificationProgressCard
+
+├── DocumentList
+
+│      ├── DocumentCard
+│      ├── DocumentCard
+│      ├── DocumentCard
+
+├── VerificationTimeline
+
+├── VerificationBenefits
+
+├── SubmitVerificationCard
+
+└── UploadDialog
+```
+
+No component should exceed **250–300 lines**. If a component grows beyond that, split it into smaller pieces.
+
+---
+
+# One Improvement I'd Make (Highly Recommended)
+
+Rather than hardcoding document cards like:
+
+```tsx
+<GSTCard />
+<PANCard />
+<AadhaarCard />
+```
+
+drive the entire UI from a configuration file:
+
+```
+modules/
+seller-verification/
+
+constants/
+
+verification-documents.ts
+```
+
+Example structure:
+
+```ts
+[
+  {
+    type: "GST",
+    title: "GST Registration",
+    required: true,
+    acceptedTypes: ["pdf", "jpg", "png"],
+    maxSizeMb: 10,
+    description: "...",
+  },
+  ...
+]
+```
+
+Then render:
+
+```tsx
+DOCUMENTS.map(...)
+```
+
+This gives you several long-term benefits:
+
+* Add a new document type without changing UI code.
+* Reorder documents by editing one configuration.
+* Share the same metadata between validation, services, and UI.
+* Enable future country-specific document requirements by swapping configurations.
+
+This configuration-driven approach is the same architectural style used by large production systems and will scale much better as Needlon grows.
