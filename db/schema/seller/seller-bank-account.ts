@@ -19,15 +19,17 @@ export const accountTypeEnum = pgEnum("account_type", [
   "BUSINESS",
 ]);
 
-export const verificationStatusEnum = pgEnum("bank_verification_status", [
+export const bankVerificationStatusEnum = pgEnum("bank_verification_status", [
   "PENDING",
   "IN_REVIEW",
   "VERIFIED",
   "REJECTED",
   "SUSPENDED",
+    "FAILED"
 ]);
 
-export const verificationMethodEnum = pgEnum("bank_verification_method", [
+
+export const bankVerificationMethodEnum = pgEnum("bank_verification_method", [
   "MANUAL",
   "PENNY_DROP",
   "BANK_API",
@@ -52,10 +54,10 @@ export const sellerBankAccounts = pgTable("seller_bank_accounts", {
 
   accountType: accountTypeEnum("account_type").notNull().default("SAVINGS"),
 
-  verificationStatus: verificationStatusEnum("verification_status")
+  verificationStatus: bankVerificationStatusEnum("verification_status")
     .notNull()
     .default("PENDING"),
-  verificationMethod: verificationMethodEnum("verification_method")
+  verificationMethod: bankVerificationMethodEnum("verification_method")
     .notNull()
     .default("MANUAL"),
 

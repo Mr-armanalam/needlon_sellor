@@ -77,3 +77,9 @@ export const STORE_VISIBILITIES = [
   "INVITE_ONLY",
   "MEMBERS_ONLY",
 ] as const;
+
+export const SELLER_DOCUMENT_BUCKET =
+    "seller-documents";
+
+export const SELLER_DOCUMENT_FOLDER =
+    "seller";
