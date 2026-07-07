@@ -1,3 +1,28 @@
+// "use client";
+//
+// import { SellerBankSection } from "@/modules/seller-profile/components";
+//
+// interface Props {
+//   setSaveStatus: (
+//       status:
+//           | "Saved ✓"
+//           | "Saving..."
+//           | "Changes pending",
+//   ) => void;
+// }
+//
+// export default function BankAndPayoutSection(
+//     {}: Props,
+// ) {
+//   return <SellerBankSection />;
+// }
+//
+//
+
+
+
+
+
 "use client";
 import React, { useState } from "react";
 import {

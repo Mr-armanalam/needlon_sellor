@@ -83,3 +83,18 @@ export const SELLER_DOCUMENT_BUCKET =
 
 export const SELLER_DOCUMENT_FOLDER =
     "seller";
+
+export const MAX_BANK_ACCOUNTS = 3;
+
+export const ACCOUNT_NUMBER_MIN_LENGTH = 9;
+
+export const ACCOUNT_NUMBER_MAX_LENGTH = 18;
+
+export const ACCOUNT_HOLDER_NAME_MAX_LENGTH = 200;
+
+export const BANK_NAME_MAX_LENGTH = 200;
+
+export const BRANCH_NAME_MAX_LENGTH = 200;
+
+export const IFSC_REGEX =
+    /^[A-Z]{4}0[A-Z0-9]{6}$/;

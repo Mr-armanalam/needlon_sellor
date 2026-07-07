@@ -9,3 +9,6 @@ export * from "./document-status";
 export * from "./seller-verification-status";
 export * from "./require-document";
 export * from "./document-config";
+export * from "./account-type";
+export * from "./bank-verification-status";
+export * from "./bank-verification-method";
