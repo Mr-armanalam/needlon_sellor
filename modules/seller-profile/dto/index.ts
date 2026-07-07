@@ -6,3 +6,5 @@ export * from "./seller-verification.dto";
 export * from "./seller-store.dto";
 export * from "./seller-profile.dto";
 export * from "./seller-verification-record.dto";
+export * from "./seller-bank-account.dto";
+export * from "./seller-bank.dto";

@@ -11,3 +11,8 @@ export * from "./submit-verification.service";
 export * from "./upload-document.service";
 export * from "./delete-document.service";
 export * from "./get-document-preview.service";
+export * from "./get-seller-bank.service";
+export * from "./create-bank-account.service";
+export * from "./update-bank-account.service";
+export * from "./delete-bank-account.service";
+export * from "./set-primary-bank-account.service";
