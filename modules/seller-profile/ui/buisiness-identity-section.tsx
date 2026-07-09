@@ -7,6 +7,7 @@ import {useBusinessIdentityForm} from "@/modules/seller-profile/hooks/use-buisin
 import {BusinessType} from "@/modules/seller-profile/types/seller-profile-form";
 import {BUSINESS_TYPES} from "@/modules/seller-profile/constants";
 import {Spinner} from "@/components/ui/spinner";
+import {SellerVerificationSection} from "@/modules/seller-profile/components";
 
 export default function BusinessIdentitySection({
                                                   setSaveStatus,
@@ -314,7 +315,9 @@ export default function BusinessIdentitySection({
                 </p>
               </div>
 
-              {/* GST BLOCK */}
+              {/*<SellerVerificationSection />*/}
+
+               {/*GST BLOCK*/}
               <div className="border border-gray-100 bg-gray-50/40 rounded-xl p-3 flex items-center justify-between gap-2">
                 <div>
                 <span className="text-xs font-bold text-gray-800 block">
@@ -329,7 +332,7 @@ export default function BusinessIdentitySection({
                 </button>
               </div>
 
-              {/* PAN BLOCK */}
+               {/*PAN BLOCK*/}
               <div className="border border-gray-100 bg-gray-50/40 rounded-xl p-3 flex items-center justify-between gap-2">
                 <div>
                 <span className="text-xs font-bold text-gray-800 block">

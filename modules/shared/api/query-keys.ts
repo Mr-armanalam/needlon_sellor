@@ -48,5 +48,11 @@ export const queryKeys = {
                 documentId,
             ] as const,
         },
+        foundation: () =>
+            [
+                ...queryKeys.seller.root,
+                "foundation",
+            ] as const,
+
     },
 };

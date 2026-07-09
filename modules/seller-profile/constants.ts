@@ -98,3 +98,53 @@ export const BRANCH_NAME_MAX_LENGTH = 200;
 
 export const IFSC_REGEX =
     /^[A-Z]{4}0[A-Z0-9]{6}$/;
+
+
+
+export const FOUNDATION_SECTIONS = [
+  "profile",
+  "store",
+  "addresses",
+  "bank",
+  "verification",
+] as const;
+
+export type FoundationSectionId =
+    (typeof FOUNDATION_SECTIONS)[number];
+
+export const FOUNDATION_SECTION_WEIGHTS: Readonly<
+    Record<FoundationSectionId, number>
+> = {
+  profile: 20,
+
+  store: 20,
+
+  addresses: 20,
+
+  bank: 20,
+
+  verification: 20,
+} as const;
+
+export const FOUNDATION_SECTION_ORDER: ReadonlyArray<FoundationSectionId> =
+    [
+      "profile",
+      "store",
+      "addresses",
+      "bank",
+      "verification",
+    ] as const;
+
+export const FOUNDATION_TOTAL_WEIGHT =
+    Object.values(
+        FOUNDATION_SECTION_WEIGHTS,
+    ).reduce(
+        (
+            total,
+            weight,
+        ) => total + weight,
+        0,
+    );
+
+export const FOUNDATION_COMPLETION_THRESHOLD =
+    FOUNDATION_TOTAL_WEIGHT;

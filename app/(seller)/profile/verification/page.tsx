@@ -4,6 +4,6 @@ import {
 
 export default function SellerVerificationPage() {
     return (
-        <SellerVerificationSection />
+            <SellerVerificationSection />
     );
 }

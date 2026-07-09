@@ -1,5 +1,4 @@
 import { getCurrentSellerOrThrow } from "@/modules/seller/services/get-current-seller-or-throw";
-import {findSellerDocument} from "@/modules/seller-profile/repositery";
 import {replaceStorageFile} from "@/modules/shared/storage/replace-storage-file";
 import {createSellerDocument} from "@/modules/seller-profile/repositery/create-seller-document";
 import {updateSellerDocument} from "@/modules/seller-profile/repositery/update-seller-document";
@@ -11,6 +10,7 @@ import { SELLER_DOCUMENT_BUCKET, SELLER_DOCUMENT_FOLDER, } from "@/modules/selle
 import {
     DocumentType,
 } from "@/modules/seller-profile/types";
+import {findSellerDocumentByType} from "@/modules/seller-profile/repositery/find-seller-document-by-type";
 
 
 interface UploadDocumentServiceProps {
@@ -34,7 +34,7 @@ export async function uploadDocumentService({
         await getCurrentSellerOrThrow();
 
     const existingDocument =
-        await findSellerDocument(
+        await findSellerDocumentByType(
             seller.id,
             documentType,
         );
