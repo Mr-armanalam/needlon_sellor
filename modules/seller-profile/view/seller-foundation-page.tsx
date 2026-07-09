@@ -6,6 +6,8 @@ import StoreManagementSection from '../ui/store-management';
 import AddressManagementSection from '../ui/address-management';
 import BankAndPayoutSection from '../ui/bank-and-payout';
 import SellerSettingsSection from '../ui/seller-setting';
+import {useSellerFoundation} from "@/modules/seller-profile/hooks/use-seller-foundation";
+import {FoundationSectionCard} from "@/modules/seller-profile/components/foundation-secion-card";
 
 
 export type WorkspaceTab = 'overview' | 'identity' | 'store' | 'locations' | 'payouts' | 'preferences';
@@ -18,8 +20,22 @@ export default function SellerFoundationPage() {
   const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
   const [drawerContent, setDrawerContent] = useState<ReactNode | null>(null);
 
-  const setupPercent = 72;
-  const missingStepsCount = 3;
+  const {
+    data:foundation,
+    isLoading,
+  } = useSellerFoundation();
+
+  // console.log(data);
+
+  const setupPercent = foundation?.percentage ?? 0;
+  const missingStepsCount =
+      foundation
+          ? foundation.totalSections -
+          foundation.completedSections
+          : 0;
+
+  const nextStep =
+      foundation?.nextStep;
 
   const handleTabSwitch = (id: WorkspaceTab) => {
     startTransition(() => {
@@ -97,9 +113,35 @@ export default function SellerFoundationPage() {
               </div>
             </div>
             <div className="bg-white border border-gray-100 rounded-xl p-3 text-[11px] space-y-1">
-              <span className="font-bold text-gray-800 block">Next Recommended Step:</span>
-              <p className="text-gray-500 font-medium">Upload your custom store banner graphic.</p>
-              <span className="text-blue-600 font-bold block pt-1">Estimated: 30 sec</span>
+
+
+              <span className="font-bold text-gray-800 block">
+               {nextStep
+                 ? "Next Recommended Step"
+                 : "Setup Complete"}
+               </span>
+
+              {nextStep ? (
+                  <>
+                    <p className="text-gray-500 font-medium">
+                      {nextStep.description}
+                    </p>
+
+                    <span className="text-blue-600 font-bold block pt-1">
+                      Estimated: {nextStep.estimatedMinutes} min
+                    </span>
+                  </>
+              ) : (
+                  <>
+                    <p className="text-green-600 font-medium">
+                      Seller foundation completed.
+                    </p>
+
+                    <span className="text-green-700 font-bold block pt-1">
+                       Ready to sell 🎉
+                    </span>
+                  </>
+              )}
             </div>
           </div>
         </aside>
@@ -133,31 +175,61 @@ export default function SellerFoundationPage() {
                     <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                       <div className="space-y-1">
                         <h2 className="text-lg font-black text-gray-900">Welcome back, Arman 👋</h2>
-                        <p className="text-xs text-gray-500 font-medium">You only need {missingStepsCount} more steps to activate verification metrics and start selling.</p>
-                      </div>
-                      <button 
-                        onClick={() => handleTabSwitch('identity')}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow-xs shadow-blue-600/10 flex items-center gap-1.5 transition-all"
+                        <p className="text-xs text-gray-500 font-medium">
+                          {missingStepsCount === 0
+                              ? "Your seller account is fully configured and ready to start selling."
+                              : `You only need ${missingStepsCount} more ${
+                                  missingStepsCount === 1
+                                      ? "step"
+                                      : "steps"
+                              } to complete your seller foundation.`}
+                        </p>                      </div>
+                      <button
+                          onClick={() => {
+                            if (!nextStep) {
+                              return;
+                            }
+
+                            const tab =
+                                new URLSearchParams(
+                                    nextStep.route.split("?")[1],
+                                ).get("tab");
+
+                            if (tab) {
+                              handleTabSwitch(
+                                  tab as WorkspaceTab,
+                              );
+                            }
+                          }}
+                          className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow-xs shadow-blue-600/10 flex items-center gap-1.5 transition-all"
                       >
                         Continue Setup <ArrowRight className="w-4 h-4" />
                       </button>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-xs space-y-3 cursor-pointer hover:border-blue-200 transition-all" onClick={() => handleTabSwitch('identity')}>
-                        <h3 className="text-xs font-bold text-gray-900">Business Identity</h3>
-                        <div className="text-[11px] space-y-1.5 font-semibold">
-                          <p className="text-green-600">✔ Profile Added</p>
-                          <p className="text-amber-600">⚠ GST Documents Missing</p>
-                        </div>
-                      </div>
-                      <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-xs space-y-3 cursor-pointer hover:border-blue-200 transition-all" onClick={() => handleTabSwitch('store')}>
-                        <h3 className="text-xs font-bold text-gray-900">Storefront Overview</h3>
-                        <div className="text-[11px] space-y-1.5 font-semibold">
-                          <p className="text-green-600">✔ Store Name & Logo Configured</p>
-                          <p className="text-amber-600">⚠ Banner Graphics Missing</p>
-                        </div>
-                      </div>
+
+                      {foundation?.sections.map(
+                          (section) => (
+                              <FoundationSectionCard
+                                  key={section.id}
+                                  section={section}
+                                  onOpen={(route) => {
+                                    const tab =
+                                        new URLSearchParams(
+                                            route.split("?")[1],
+                                        ).get("tab");
+
+                                    if (tab) {
+                                      handleTabSwitch(
+                                          tab as WorkspaceTab,
+                                      );
+                                    }
+                                  }}
+                              />
+                          ),
+                      )}
+
                     </div>
                   </div>
                 )}

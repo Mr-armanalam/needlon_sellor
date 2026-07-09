@@ -18,7 +18,7 @@ export function useSubmitVerification() {
         onSuccess: () => {
             queryClient.invalidateQueries({
                 queryKey:
-                    queryKeys.seller.verification(),
+                    queryKeys.seller.verification.root(),
             });
         },
     });
