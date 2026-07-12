@@ -17,17 +17,17 @@ app/
     └── seller/
         └── verification/
             │
-            ├── route.ts
+            ├── page.tsx
             │
             ├── submit/
-            │      route.ts
+            │      page.tsx
             │
             ├── documents/
-            │      route.ts
+            │      page.tsx
             │
             └── documents/
                    [id]/
-                       route.ts
+                       page.tsx
 
 we have to create:
 modules/
