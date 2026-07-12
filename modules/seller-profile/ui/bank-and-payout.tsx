@@ -1,27 +1,3 @@
-// "use client";
-//
-// import { SellerBankSection } from "@/modules/seller-profile/components";
-//
-// interface Props {
-//   setSaveStatus: (
-//       status:
-//           | "Saved ✓"
-//           | "Saving..."
-//           | "Changes pending",
-//   ) => void;
-// }
-//
-// export default function BankAndPayoutSection(
-//     {}: Props,
-// ) {
-//   return <SellerBankSection />;
-// }
-//
-//
-
-
-
-
 
 "use client";
 import React, { useState } from "react";
@@ -31,9 +7,24 @@ import {
   CheckCircle2,
   Building,
   Layers,
-  CheckCircle,
+  CheckCircle, Star, Pencil, Trash2,
 } from "lucide-react";
 import { SaveStatus } from "../view/seller-foundation-page";
+import {
+  useCreateBankAccount,
+  useDeleteBankAccount,
+  useSellerBank, useSetPrimaryBankAccount,
+  useUpdateBankAccount
+} from "@/modules/seller-profile/hooks";
+import {SellerBankAccountDto} from "@/modules/seller-profile/dto";
+import {
+  BankAccountSkeleton,
+  DeleteBankDialog,
+  EmptyBankState
+} from "@/modules/seller-profile/components";
+import {Button} from "@/components/ui/button";
+import {Separator} from "@/components/ui/separator";
+import {BankAccountSheet} from "@/modules/seller-profile/ui/bank-account-sheet";
 
 export default function BankAndPayoutSection({
   triggerDrawer,
@@ -42,17 +33,6 @@ export default function BankAndPayoutSection({
   triggerDrawer: (contentNode: React.ReactNode) => void;
   setSaveStatus: React.Dispatch<React.SetStateAction<SaveStatus>>;
 }) {
-  // Database split arrays matching structural schema configurations
-  const [bankAccounts] = useState([
-    {
-      id: "bnk_1",
-      bankName: "HDFC Bank Ltd",
-      accNo: "XXXXXXXX4321",
-      type: "Savings",
-      isPrimary: true,
-      status: "Verified",
-    },
-  ]);
 
   const [payoutMethods, setPayoutMethods] = useState([
     {
@@ -63,6 +43,47 @@ export default function BankAndPayoutSection({
       status: "Verified",
     },
   ]);
+
+  const {
+    data,
+    isLoading,
+  } = useSellerBank();
+
+  const create =
+      useCreateBankAccount();
+
+  const update =
+      useUpdateBankAccount();
+
+  const remove =
+      useDeleteBankAccount();
+
+  const primary =
+      useSetPrimaryBankAccount();
+
+  const [
+    editing,
+    setEditing,
+  ] =
+      useState<SellerBankAccountDto>();
+
+  const [
+    open,
+    setOpen,
+  ] = useState(false);
+
+  const [
+    deleting,
+    setDeleting,
+  ] =
+      useState<string>();
+
+  if (isLoading) {
+    return (
+        <BankAccountSkeleton />
+    );
+  }
+
 
   const handleRegisterUPI = (payload: { handler: string}) => {
     setPayoutMethods((prev) => [
@@ -82,6 +103,7 @@ export default function BankAndPayoutSection({
   const renderPayoutDrawerForm = () => {
     let inputVal = "";
     return (
+
       <div className="space-y-6 h-full flex flex-col justify-between text-xs font-semibold">
         <div className="space-y-5">
           <div className="border-b border-gray-50 pb-3">
@@ -121,6 +143,7 @@ export default function BankAndPayoutSection({
   };
 
   return (
+      <>
     <div className="space-y-6 max-w-5xl animate-in fade-in duration-200">
       {/* SECTION TITLE HEADER */}
       <div className="border-b border-gray-100 pb-3">
@@ -141,36 +164,91 @@ export default function BankAndPayoutSection({
               <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1">
                 <Building className="w-3.5 h-3.5" /> Bank Accounts
               </h3>
+              <Button
+                  variant={'link'}
+                  className={'text-gray-400'}
+                  onClick={() => {
+                    setEditing(
+                        undefined,
+                    );
+
+                    setOpen(
+                        true,
+                    );
+                  }}
+              >
+                Add Account
+              </Button>
             </div>
 
             <div className="grid grid-cols-1 gap-4">
-              {bankAccounts.map((bank) => (
+              {data && data?.accounts?.length > 0 ? data?.accounts.map((account) => (
                 <div
-                  key={bank.id}
-                  className="bg-white border border-gray-200 p-4 rounded-2xl shadow-xs space-y-4 relative overflow-hidden"
+                  key={account.id}
+                  className="bg-white group border border-gray-200 p-4 rounded-2xl shadow-xs space-y-4 relative overflow-hidden"
                 >
                   <div className="flex justify-between items-start gap-2">
                     <div className="space-y-0.5 text-xs">
                       <div className="flex items-center gap-2">
                         <h4 className="font-black text-gray-900">
-                          {bank.bankName}
+                          {account.bankName}
                         </h4>
                         <span className="text-[9px] font-extrabold px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md border border-blue-100 uppercase">
-                          Primary
+                            {account.isPrimary ? "Primary" : "Secondary"}
                         </span>
                       </div>
                       <p className="text-gray-500 font-mono tracking-wide pt-1">
-                        {bank.accNo}
+                        ••••••••
+                        {account.accountNumberLast4}
                       </p>
                       <span className="text-[11px] text-gray-400 block pt-0.5">
-                        {bank.type} Account
+                        {account.accountType} ACCOUNT
                       </span>
                     </div>
 
+                    <div className={'flex gap-x-4'}>
+
+                      <div className={'group-hover:block hidden'}>
+
+
+                    <div className="text-[10px] h-auto bg-gray-50 px-4 py-1.5 rounded-full flex items-center gap-3">
+                      {!account.isPrimary && (
+                          <>
+                            <Star
+                                onClick={() =>
+                                    primary.mutate(
+                                        account.id,
+                                    )}
+                                className="size-3 hover:text-blue-700 cursor-pointer" />{" "}
+                            <Separator orientation={"vertical"} />
+                          </>
+                      )}
+                      <Pencil
+                          onClick={() => {
+                            setEditing(
+                                account,
+                            );
+
+                            setOpen(
+                                true,
+                            );
+                          }}
+                          className="size-3 hover:text-blue-700 cursor-pointer" />{" "}
+                      <Separator orientation={"vertical"} />
+                      <Trash2
+                          onClick={() =>
+                              setDeleting(
+                                  account.id,
+                              )}
+                          className="size-3 hover:text-blue-700 cursor-pointer" />{" "}
+                    </div>
+                      </div>
+
                     <span className="text-[10px] font-bold text-green-700 bg-green-50 border border-green-100 px-2 py-0.5 rounded-full flex items-center gap-0.5">
                       <CheckCircle2 className="w-3 h-3 text-green-600" />{" "}
-                      {bank.status}
+                      {account.verificationStatus}
                     </span>
+                    </div>
                   </div>
 
                   {/* IMMUTABLE INLINE WARNING MESSAGE BLOCK */}
@@ -180,7 +258,15 @@ export default function BankAndPayoutSection({
                     automatically to maintain audit trail compliance.
                   </div>
                 </div>
-              ))}
+              )):(
+                  <EmptyBankState
+                      onAdd={() =>
+                          setOpen(
+                              true,
+                          )
+                      }
+                  />
+              )}
             </div>
           </div>
 
@@ -299,5 +385,64 @@ export default function BankAndPayoutSection({
         </div>
       </div>
     </div>
+
+        {open && <BankAccountSheet
+               isOpen={open}
+               onClose = { setOpen }
+               account={editing}
+               loading={create.isPending || update.isPending }
+               onSubmit={ async (values,) => {
+                 if ( editing ) {
+                   await update.mutateAsync(
+                       {
+                         accountId:
+                         editing.id,
+                         ...values,
+                       },
+                   );
+                 } else {
+                   await create.mutateAsync(
+                       values,
+                   );
+                 }
+
+                 setOpen(false);
+               }
+        }
+        />
+        }
+
+          <DeleteBankDialog
+              open={
+                !!deleting
+              }
+              onOpenChange={(
+                  open,
+              ) => {
+                if (
+                    !open
+                ) {
+                  setDeleting(
+                      undefined,
+                  );
+                }
+              }}
+              onConfirm={async () => {
+                if (
+                    !deleting
+                ) {
+                  return;
+                }
+
+                await remove.mutateAsync(
+                    deleting,
+                );
+
+                setDeleting(
+                    undefined,
+                );
+              }}
+          />
+        </>
   );
 }
