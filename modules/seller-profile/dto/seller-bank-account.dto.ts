@@ -20,6 +20,7 @@ export interface SellerBankAccountDto {
     branchName: string | null;
 
     accountType: AccountType;
+    upiId : string | null;
 
     verificationStatus: BankVerificationStatus;
 

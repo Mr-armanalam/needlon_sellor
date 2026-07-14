@@ -320,3 +320,72 @@ modules/
         ↓
 
         Refresh UI
+
+
+
+
+        flow:
+
+                        UI Component
+                             │
+                             ▼
+                React Query Custom Hook
+                             │
+                             ▼
+                  Frontend API Client
+                             │
+        ──────────────────────────────────────
+                       HTTP Request
+        ──────────────────────────────────────
+                             │
+                             ▼
+                    Next.js Route Handler
+                             │
+             (Auth + Validation + Response)
+                             │
+                             ▼
+                    Domain Service Layer
+                     (Business Rules)
+                             │
+                             ▼
+                     Repository Layer
+                     (Database Access)
+                             │
+                             ▼
+                    PostgreSQL (Drizzle)
+
+
+                    | Layer            | Responsibility             | Can Access DB               | Can Access HTTP | Can Contain Business Logic |
+                    | ---------------- | -------------------------- | --------------------------- | --------------- | -------------------------- |
+                    | UI               | Rendering                  | ❌                           | ❌               | ❌                          |
+                    | React Query Hook | Server state               | ❌                           | ❌               | ❌                          |
+                    | API Layer        | Network communication      | ❌                           | ✅               | ❌                          |
+                    | Route            | Auth, Validation, Response | ❌                           | ✅               | ❌                          |
+                    | Server           | Business rules             | ❌ (through repository only) | ❌               | ✅                          |
+                    | Repository       | Data access                | ✅                           | ❌               | ❌                          |
+
+
+
+        ->dto- Unlike the database, the DTO should represent what the UI needs.
+        -> export dto type
+        -> mapper - Convert between DTOs and database entities
+        -> react query key -> constants
+        -> validation
+        -> services
+        -> repository
+        -> route
+        -> api
+        -> hooks
+
+        execution flow:
+
+        ⬜ DTO          ✅
+        ⬜ Mapper
+        ⬜ Repository   🔄
+        ⬜ Service
+        ⬜ GET API
+        ⬜ Frontend API
+        ⬜ React Query
+        ⬜ UI
+        ⬜ PATCH API
+

@@ -1,0 +1,432 @@
+Needlon Implementation Roadmap (v1.0)
+Phase 0 — Project Foundation ✅ (Completed)
+Infrastructure
+✅ Next.js setup
+✅ TypeScript
+✅ TailwindCSS
+✅ Drizzle ORM
+✅ PostgreSQL
+✅ Project structure
+✅ Environment management
+Authentication
+✅ Seller authentication
+✅ Session management
+✅ Access Token
+✅ Refresh Token
+✅ Email verification
+✅ Password reset
+✅ Middleware
+✅ Route protection
+
+Status: ✅ Completed
+
+Phase 1 — Seller Foundation
+
+This phase enables a seller to register and configure their business.
+
+Modules:
+
+1. Seller Profile
+Seller information
+Profile picture
+Business details
+GST (optional)
+PAN (optional)
+2. Store Management
+Store name
+Store slug
+Store logo
+Store banner
+Description
+Store policies
+3. Address Management
+Pickup address
+Warehouse address
+Return address
+Billing address
+4. Bank & Payout
+Bank account
+UPI
+Verification
+5. Seller Settings
+Language
+Currency
+Notification settings
+Timezone
+Required Seed
+
+Only
+
+seller
+seller_profile
+addresses
+
+Status: 🔜 Next Phase
+
+Phase 2 — Product Catalog
+
+Seller can now start selling.
+
+Modules
+
+Categories
+Brands
+Product Types
+Product Creation
+Product Media
+Product Variants
+Product Attributes
+Product Specifications
+Product Tags
+Collections
+SEO
+Product Status
+
+Required Seed
+
+Categories
+Brands
+Attributes
+Phase 3 — Inventory
+
+Modules
+
+Inventory
+Warehouse
+Stock
+Stock Movement
+Low Stock Alert
+SKU
+Barcode
+
+Required Seed
+
+Products
+
+Phase 4 — Shipping
+
+Modules
+
+Shipping Profile
+
+Shipping Rules
+
+Pickup
+
+Packaging
+
+Shipment
+
+Tracking
+
+Delivery
+
+Required Seed
+
+Shipping Partners
+
+Shipping Methods
+
+Phase 5 — Pricing & Promotions
+
+Modules
+
+Coupons
+
+Coupon Codes
+
+Coupon Redemption
+
+Gift Cards
+
+Store Credits
+
+Loyalty
+
+Referral
+
+Discount Rules
+
+Campaigns
+
+Required Seed
+
+Coupon Campaign
+
+Phase 6 — Cart & Checkout
+
+Modules
+
+Cart
+
+Wishlist
+
+Checkout
+
+Address Selection
+
+Shipping Selection
+
+Tax
+
+Price Calculation
+
+Order Summary
+
+Required Seed
+
+Buyer
+
+Products
+
+Phase 7 — Orders
+
+Modules
+
+Orders
+
+Order Items
+
+Order Timeline
+
+Order Events
+
+Invoices
+
+Packing
+
+Fulfillment
+
+Cancellation
+
+Required Seed
+
+Orders
+
+Phase 8 — Payments
+
+Modules
+
+Payment Intent
+
+Subscription
+
+Invoices
+
+Payment History
+
+Refund
+
+Settlement
+
+Required Seed
+
+Subscription Plans
+
+Phase 9 — Returns & Exchanges
+
+Modules
+
+Return
+
+Exchange
+
+Refund
+
+Return Timeline
+
+Approval Workflow
+
+Required Seed
+
+Delivered Orders
+
+Phase 10 — Reviews & Community
+
+Modules
+
+Reviews
+
+Ratings
+
+Seller Rating
+
+Product Questions
+
+Comments
+
+Likes
+
+Following
+
+Phase 11 — Notifications
+
+Modules
+
+Email
+
+SMS
+
+Push
+
+In-App
+
+Notification Center
+
+Preferences
+
+Phase 12 — Analytics
+
+Modules
+
+Dashboard
+
+Revenue
+
+Orders
+
+Products
+
+Visitors
+
+Conversion
+
+Reports
+
+Phase 13 — Seller Subscription
+
+Modules
+
+Plans
+
+Billing
+
+Invoices
+
+Renewal
+
+Upgrade
+
+Downgrade
+
+Usage
+
+Phase 14 — Customer Support
+
+Modules
+
+Help Center
+
+Tickets
+
+Feedback
+
+FAQ
+
+Contact Us
+
+Seller Support
+
+Phase 15 — Admin Panel
+
+Modules
+
+Seller Approval
+
+Category Management
+
+Product Moderation
+
+Coupons
+
+Reports
+
+User Management
+
+Subscription Management
+
+Phase 16 — AI Features
+
+Modules
+
+AI Product Description
+
+AI Image Tags
+
+AI SEO
+
+AI Recommendations
+
+Smart Search
+
+Phase 17 — Social Commerce
+
+Modules
+
+Follow Seller
+
+Creator Profile
+
+Collections
+
+Feeds
+
+Share Products
+
+Community
+
+Phase 18 — Search Engine
+
+Modules
+
+Global Search
+
+Filters
+
+Sorting
+
+Suggestions
+
+Trending
+
+Search Analytics
+
+Phase 19 — Security & Compliance
+
+Modules
+
+Audit Logs
+
+RBAC
+
+Device Management
+
+Login History
+
+Privacy
+
+Consent
+
+GDPR
+
+Phase 20 — Performance & Scalability
+
+Modules
+
+Caching
+
+Queue
+
+Cron
+
+Background Jobs
+
+CDN
+
+Image Optimization
+
+Monitoring
+
+Rate Limiting
+
+Horizontal Scaling

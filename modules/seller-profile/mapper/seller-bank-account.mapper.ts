@@ -29,6 +29,8 @@ export function toSellerBankAccountDto(
         accountType:
         account.accountType,
 
+        upiId : account.upiId,
+
         verificationStatus:
         account.verificationStatus,
 

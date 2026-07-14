@@ -22,6 +22,11 @@ export const queryKeys = {
             "bank",
         ] as const,
 
+        upi:()=> [
+            ...queryKeys.seller.root,
+            'upi',
+        ],
+
         settings: () => [
             ...queryKeys.seller.root,
             "settings",
