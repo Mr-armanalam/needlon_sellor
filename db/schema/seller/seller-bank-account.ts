@@ -102,6 +102,9 @@ export const sellerBankAccounts = pgTable("seller_bank_accounts", {
               sql`${table.isPrimary} = true`,
           ),
 
-      upi_idCheck: check('chk_upi_format', sql`${table.upiId} ~ '^[a-zA-Z0-9.\\-_]{2,256}@[a-zA-Z]{2,64}$'`),
+      upi_idCheck: check(
+          'seller_bank_accounts_upi_id_check',
+          sql`${table.upiId} IS NULL OR ${table.upiId} ~* '^[a-zA-Z0-9.\\-_]+@[a-zA-Z0-9.\\-_]+$'`
+      ),
     }),
 );

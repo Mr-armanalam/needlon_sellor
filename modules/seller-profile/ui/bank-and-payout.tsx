@@ -1,5 +1,5 @@
-
 "use client";
+
 import React, { useState } from "react";
 import {
   ShieldCheck,
@@ -7,7 +7,7 @@ import {
   CheckCircle2,
   Building,
   Layers,
-  CheckCircle, Star, Pencil, Trash2,
+  CheckCircle, Star, Pencil, Trash2, EllipsisVertical,
 } from "lucide-react";
 import { SaveStatus } from "../view/seller-foundation-page";
 import {
@@ -25,6 +25,16 @@ import {
 import {Button} from "@/components/ui/button";
 import {Separator} from "@/components/ui/separator";
 import {BankAccountSheet} from "@/modules/seller-profile/ui/bank-account-sheet";
+import {useDeleteBankUpi} from "@/modules/seller-profile/hooks/use-delete-bank-upi";
+import {PayoutDrawerForm} from "./bank-upi-sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {useSetUPI_ID} from "@/modules/seller-profile/hooks/use-set-bank-upi";
 
 export default function BankAndPayoutSection({
   triggerDrawer,
@@ -34,20 +44,12 @@ export default function BankAndPayoutSection({
   setSaveStatus: React.Dispatch<React.SetStateAction<SaveStatus>>;
 }) {
 
-  const [payoutMethods, setPayoutMethods] = useState([
-    {
-      id: "pay_1",
-      type: "UPI Route",
-      handler: "arman@upi",
-      isDefault: true,
-      status: "Verified",
-    },
-  ]);
 
   const {
     data,
     isLoading,
   } = useSellerBank();
+  const unset_upi = useDeleteBankUpi();
 
   const create =
       useCreateBankAccount();
@@ -83,64 +85,16 @@ export default function BankAndPayoutSection({
         <BankAccountSkeleton />
     );
   }
-
-
-  const handleRegisterUPI = (payload: { handler: string}) => {
-    setPayoutMethods((prev) => [
-      ...prev,
-      {
-        id: `pay_${Date.now()}`,
+  const upi_list = (data?.accounts ?? [])
+      .filter((item) => item.upiId) // keep only accounts with UPI
+      .map((item) => ({
+        id: item.id,
         type: "UPI Route",
-        handler: payload.handler,
-        isDefault: false,
-        status: "Pending",
-      },
-    ]);
-    setSaveStatus("Saved ✓");
-  };
+        handler: item.upiId!, // non-null after filter
+        isDefault: item.isPrimary,
+        status: item.verificationStatus,
+      }));
 
-  // DRAWER LAYOUT FOR REGISTERING A NEW PAYOUT CHANNEL
-  const renderPayoutDrawerForm = () => {
-    let inputVal = "";
-    return (
-
-      <div className="space-y-6 h-full flex flex-col justify-between text-xs font-semibold">
-        <div className="space-y-5">
-          <div className="border-b border-gray-50 pb-3">
-            <h3 className="text-sm font-bold text-gray-900">
-              Add UPI Payout Route
-            </h3>
-            <p className="text-xs text-gray-400 mt-0.5 font-normal">
-              Link a Virtual Payment Address for fast digital checkout
-              settlements.
-            </p>
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">
-              UPI ID / VPA Handle
-            </label>
-            <input
-              type="text"
-              placeholder="e.g., username@bank"
-              onChange={(e) => {
-                inputVal = e.target.value;
-              }}
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            />
-          </div>
-        </div>
-        <div className="pt-4 border-t border-gray-100 bg-white">
-          <button
-            type="button"
-            onClick={() => handleRegisterUPI({ handler: inputVal })}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-xs text-center"
-          >
-            Verify & Link UPI
-          </button>
-        </div>
-      </div>
-    );
-  };
 
   return (
       <>
@@ -278,7 +232,7 @@ export default function BankAndPayoutSection({
               </h3>
               <button
                 type="button"
-                onClick={() => triggerDrawer(renderPayoutDrawerForm())}
+                onClick={() => triggerDrawer(<PayoutDrawerForm accounts={data?.accounts} setSaveStatus={setSaveStatus} />)}
                 className="text-blue-600 hover:text-blue-700 text-xs font-bold flex items-center gap-0.5"
               >
                 <Plus className="w-3.5 h-3.5" /> Link UPI Handle
@@ -286,25 +240,44 @@ export default function BankAndPayoutSection({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {payoutMethods.map((pay) => (
+              {upi_list && upi_list?.length > 0 && upi_list?.map((pay) => (
                 <div
                   key={pay.id}
                   className="bg-white border border-gray-200 p-4 rounded-2xl shadow-xs flex flex-col justify-between space-y-4 hover:border-blue-200 transition-all"
                 >
                   <div className="space-y-2 text-xs">
                     <div className="flex justify-between items-center gap-2">
-                      <span className="text-[10px] font-bold bg-slate-50 border px-2 py-0.5 rounded-md text-gray-600 tracking-wide uppercase">
-                        {pay.type}
-                      </span>
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          pay.status === "Verified"
-                            ? "bg-green-50 text-green-700 border border-green-100"
-                            : "bg-amber-50 text-amber-700 border border-amber-100"
-                        }`}
-                      >
-                        {pay.status}
-                      </span>
+                      <div className={'flex items-center gap-2'}>
+                        <span
+                          className="text-[10px] font-bold bg-slate-50 border px-2 py-0.5 rounded-md text-gray-600 tracking-wide uppercase">
+                                            {pay.type}
+                                          </span>
+                        <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                pay.status === "VERIFIED"
+                                    ? "bg-green-50 text-green-700 border border-green-100"
+                                    : "bg-amber-50 text-amber-700 border border-amber-100"
+                            }`}
+                        >
+                          {pay.status}
+                        </span>
+                      </div>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger className="hover:bg-gray-100 rounded-xs" >
+                          <EllipsisVertical size={16} />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuGroup>
+                            <DropdownMenuItem
+                                onClick={() => triggerDrawer(<PayoutDrawerForm account={editing} accounts={data?.accounts} setSaveStatus={setSaveStatus} />)}
+                            >Edit</DropdownMenuItem>
+                            <Separator />
+                            <DropdownMenuItem onClick={async ()=> await unset_upi.mutateAsync(pay.id)}>Delete</DropdownMenuItem>
+                          </DropdownMenuGroup>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+
                     </div>
                     <div>
                       <h4 className="font-mono font-bold text-gray-900 truncate">
@@ -326,12 +299,12 @@ export default function BankAndPayoutSection({
                     <div className="h-px bg-gray-200 flex-1 mx-2" />
                     <div
                       className={
-                        pay.status === "Verified"
+                        pay.status === "VERIFIED"
                           ? "text-blue-600 flex items-center gap-1"
                           : "text-gray-400"
                       }
                     >
-                      {pay.status === "Verified" && (
+                      {pay.status === "VERIFIED" && (
                         <CheckCircle className="w-3 h-3 text-blue-600" />
                       )}{" "}
                       Verified

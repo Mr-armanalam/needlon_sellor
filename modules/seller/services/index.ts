@@ -16,3 +16,6 @@ export * from "./create-bank-account.service";
 export * from "./update-bank-account.service";
 export * from "./delete-bank-account.service";
 export * from "./set-primary-bank-account.service";
+export * from "./set_upi_id.service";
+export * from "./delete-upi-id.service";
+
