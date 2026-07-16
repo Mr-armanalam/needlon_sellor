@@ -2,10 +2,10 @@
 import {
     createBankAccount,
     listBankAccounts,
-} from "../../seller-profile/repositery";
+} from "../repositery";
 import {AccountType} from "@/modules/seller-profile/types/account-type";
 import {toSellerBankAccountDto} from "@/modules/seller-profile/mapper/seller-bank-account.mapper";
-import {getCurrentSellerOrThrow} from "@/modules/seller/services/get-current-seller-or-throw";
+import {getCurrentSellerOrThrow} from "@/modules/seller-profile/services/get-current-seller-or-throw";
 import {MAX_BANK_ACCOUNTS} from "@/modules/seller-profile/constants";
 import {validateBankAccount} from "@/modules/seller-profile/lib/validate-bank-account";
 import {encryptBankAccount} from "@/modules/seller-profile/lib/encrypt-bank-account";

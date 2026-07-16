@@ -2,12 +2,12 @@
 import {
     findBankAccount,
     setPrimaryBankAccount,
-} from "../../seller-profile/repositery";
+} from "../repositery";
 
 import {
     toSellerBankAccountDto,
-} from "../../seller-profile/mapper/seller-bank-account.mapper";
-import {getCurrentSellerOrThrow} from "@/modules/seller/services/get-current-seller-or-throw";
+} from "../mapper/seller-bank-account.mapper";
+import {getCurrentSellerOrThrow} from "@/modules/seller-profile/services/get-current-seller-or-throw";
 
 export async function setPrimaryBankAccountService(
     accountId: string,

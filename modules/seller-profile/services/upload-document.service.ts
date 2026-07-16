@@ -1,4 +1,4 @@
-import { getCurrentSellerOrThrow } from "@/modules/seller/services/get-current-seller-or-throw";
+import { getCurrentSellerOrThrow } from "@/modules/seller-profile/services/get-current-seller-or-throw";
 import {replaceStorageFile} from "@/modules/shared/storage/replace-storage-file";
 import {createSellerDocument} from "@/modules/seller-profile/repositery/create-seller-document";
 import {updateSellerDocument} from "@/modules/seller-profile/repositery/update-seller-document";

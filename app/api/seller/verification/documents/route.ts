@@ -3,7 +3,7 @@ import { successResponse } from "@/modules/shared/api/success-response";
 
 import {
     uploadDocumentService,
-} from "@/modules/seller/services";
+} from "@/modules/seller-profile/services";
 
 import { DocumentType } from "@/modules/seller-profile/types/document-type";
 

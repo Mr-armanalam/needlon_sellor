@@ -26,7 +26,7 @@ import {Button} from "@/components/ui/button";
 import {Separator} from "@/components/ui/separator";
 import {BankAccountSheet} from "@/modules/seller-profile/ui/bank-account-sheet";
 import {useDeleteBankUpi} from "@/modules/seller-profile/hooks/use-delete-bank-upi";
-import {PayoutDrawerForm} from "./bank-upi-sheet";
+import {PayoutDrawerForm} from "../ui/bank-upi-sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,

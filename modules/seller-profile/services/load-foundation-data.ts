@@ -3,16 +3,16 @@ import {
     getSellerAddressesService,
     getSellerProfile,
     getSellerStore
-} from "@/modules/seller/services";
+} from "@/modules/seller-profile/services/index";
 
 
 import {
     getSellerBankService,
-} from "@/modules/seller/services/get-seller-bank.service";
+} from "@/modules/seller-profile/services/get-seller-bank.service";
 
 import {
     getSellerVerificationService,
-} from "@/modules/seller/services/get-seller-verification.service";
+} from "@/modules/seller-profile/services/get-seller-verification.service";
 
 export interface FoundationData {
     profile: Awaited<

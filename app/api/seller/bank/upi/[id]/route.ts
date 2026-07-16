@@ -1,6 +1,6 @@
 import { routeHandler } from "@/modules/shared/api/route-handler";
 import { successResponse } from "@/modules/shared/api/success-response";
-import { deleteUpiIdService } from "@/modules/seller/services";
+import { deleteUpiIdService } from "@/modules/seller-profile/services";
 
 interface RouteParams {
     params: Promise<{

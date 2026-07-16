@@ -1,11 +1,11 @@
 
 import {
+    deleteBankAccount,
     findBankAccount, listBankAccounts,
-} from "../../seller-profile/repositery";
-import {getCurrentSellerOrThrow} from "@/modules/seller/services/get-current-seller-or-throw";
-import {deleteUPI_ID} from "@/modules/seller-profile/repositery/delete-upi-id";
+} from "../repositery";
+import {getCurrentSellerOrThrow} from "@/modules/seller-profile/services/get-current-seller-or-throw";
 
-export async function deleteUpiIdService(
+export async function deleteBankAccountService(
     accountId: string,
 ) {
 
@@ -20,12 +20,17 @@ export async function deleteUpiIdService(
             accountId,
         });
 
-    if (!account || !account?.upiId) {
+    if (!account) {
         throw new Error(
-            "UPI id not found.",
+            "Bank account not found.",
         );
     }
 
+    if (account.isPrimary) {
+        throw new Error(
+            "Primary account cannot be deleted.",
+        );
+    }
 
     const accounts =
         await listBankAccounts({
@@ -45,11 +50,11 @@ export async function deleteUpiIdService(
         account.id
     ) {
         throw new Error(
-            "Cannot add UPI ID,this feature is only for the verified account.",
+            "Cannot delete the only verified payout account.",
         );
     }
 
-    await deleteUPI_ID({
+    await deleteBankAccount({
         sellerId,
         accountId,
     });

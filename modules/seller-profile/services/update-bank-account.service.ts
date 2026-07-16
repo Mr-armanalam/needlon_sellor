@@ -2,13 +2,13 @@
 import {
     findBankAccount, listBankAccounts,
     updateBankAccount,
-} from "../../seller-profile/repositery";
+} from "../repositery";
 
 import {
     AccountType,
-} from "../../seller-profile/types/account-type";
+} from "../types/account-type";
 import {toSellerBankAccountDto} from "@/modules/seller-profile/mapper/seller-bank-account.mapper";
-import {getCurrentSellerOrThrow} from "@/modules/seller/services/get-current-seller-or-throw";
+import {getCurrentSellerOrThrow} from "@/modules/seller-profile/services/get-current-seller-or-throw";
 import {validateBankAccount} from "@/modules/seller-profile/lib/validate-bank-account";
 
 interface UpdateBankAccountInput {

@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
 
-import { getCurrentSellerOrThrow } from "@/modules/seller/services";
+import { getCurrentSellerOrThrow } from "@/modules/seller-profile/services";
 import {routeHandler} from "@/modules/shared/api/route-handler";
-import {setDefaultSellerAddressService} from "@/modules/seller/services/set-default-seller-address.service";
+import {setDefaultSellerAddressService} from "@/modules/seller-profile/services/set-default-seller-address.service";
 import {successResponse} from "@/modules/shared/api/success-response";
 
 

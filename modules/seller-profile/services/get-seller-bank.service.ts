@@ -1,13 +1,13 @@
 
 import {
     SellerBankDto,
-} from "../../seller-profile/dto";
+} from "../dto";
 
 import {
     listBankAccounts,
-} from "../../seller-profile/repositery";
+} from "../repositery";
 import {toSellerBankDto} from "@/modules/seller-profile/mapper/seller-bank.mapper";
-import {getCurrentSellerOrThrow} from "@/modules/seller/services/get-current-seller-or-throw";
+import {getCurrentSellerOrThrow} from "@/modules/seller-profile/services/get-current-seller-or-throw";
 
 export async function getSellerBankService(): Promise<SellerBankDto> {
     const seller =

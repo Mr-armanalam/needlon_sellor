@@ -4,7 +4,7 @@ import { successResponse } from "@/modules/shared/api/success-response";
 import {
     deleteDocumentService,
     getDocumentPreviewService,
-} from "@/modules/seller/services";
+} from "@/modules/seller-profile/services";
 
 interface RouteParams {
     params: Promise<{

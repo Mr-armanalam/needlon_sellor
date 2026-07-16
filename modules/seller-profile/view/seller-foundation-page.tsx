@@ -1,13 +1,8 @@
 'use client'
 import React, { useState, useTransition, ReactNode } from 'react';
-import { Building2, Store, MapPin, CreditCard, Settings, ArrowRight } from 'lucide-react';
-import BusinessIdentitySection from '../ui/buisiness-identity-section';
-import StoreManagementSection from '../ui/store-management';
-import AddressManagementSection from '../ui/address-management';
-import BankAndPayoutSection from '../ui/bank-and-payout';
-import SellerSettingsSection from '../ui/seller-setting';
 import {useSellerFoundation} from "@/modules/seller-profile/hooks/use-seller-foundation";
-import {FoundationSectionCard} from "@/modules/seller-profile/components/foundation-secion-card";
+import ProfileSidebar from "@/modules/seller-profile/view/profile-sidebar";
+import WorkspaceFrameContentPanel from "@/modules/seller-profile/view/workspace-frame-content-panel";
 
 
 export type WorkspaceTab = 'overview' | 'identity' | 'store' | 'locations' | 'payouts' | 'preferences';
@@ -25,9 +20,9 @@ export default function SellerFoundationPage() {
     isLoading,
   } = useSellerFoundation();
 
-  // console.log(data);
 
   const setupPercent = foundation?.percentage ?? 0;
+
   const missingStepsCount =
       foundation
           ? foundation.totalSections -
@@ -56,7 +51,7 @@ export default function SellerFoundationPage() {
   return (
     <div className="flex flex-1 h-[calc(100vh-64px)] w-full overflow-hidden font-sans antialiased bg-slate-50/50 p-4 relative min-h-0">
       
-      {/* 1. SLIDE-OVER DRAWER OVERLAY */}
+      {/* SLIDE-OVER DRAWER */}
       {drawerOpen && (
         <div className="fixed inset-0 z-50 flex justify-end animate-in fade-in duration-200">
           <div className="absolute inset-0 bg-gray-900/20 backdrop-blur-xs" onClick={() => setDrawerOpen(false)} />
@@ -68,182 +63,25 @@ export default function SellerFoundationPage() {
         </div>
       )}
 
-      {/* Main Structural Boundary */}
       <div className="flex flex-1 w-full bg-white rounded-3xl shadow-xs overflow-hidden border border-gray-200/80 min-h-0">
-        
-        {/* DESKTOP SIDEBAR RAIL */}
-        <aside className="w-64 border-r border-gray-200 bg-white h-full flex flex-col justify-between flex-shrink-0 hidden md:flex min-h-0">
-          <div className="p-4 border-b border-gray-50 flex-shrink-0">
-            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Setup Workspace</h2>
-          </div>
-          
-          <nav className="flex-1 overflow-y-auto p-3 space-y-1 min-h-0">
-            {[
-              { id: 'overview' as const, label: 'Overview', icon: <Building2 className="w-4 h-4" /> },
-              { id: 'identity' as const, label: 'Business Identity', icon: <Building2 className="w-4 h-4" /> },
-              { id: 'store' as const, label: 'Storefront', icon: <Store className="w-4 h-4" /> },
-              { id: 'locations' as const, label: 'Business Locations', icon: <MapPin className="w-4 h-4" /> },
-              { id: 'payouts' as const, label: 'Payouts & Banking', icon: <CreditCard className="w-4 h-4" /> },
-              { id: 'preferences' as const, label: 'Preferences', icon: <Settings className="w-4 h-4" /> }
-            ].map((item) => (
-              <button
-                key={item.id}
-                onClick={() => handleTabSwitch(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all text-left ${
-                  activeTab === item.id 
-                    ? 'bg-blue-600 text-white shadow-xs shadow-blue-600/10' 
-                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
-                }`}
-              >
-                {item.icon}
-                {item.label}
-              </button>
-            ))}
-          </nav>
-
-          {/* STICKY SETUP PROGRESS CARD */}
-          <div className="p-4 border-t border-gray-50 bg-slate-50/50 flex-shrink-0 space-y-3">
-            <div className="space-y-1">
-              <div className="flex justify-between text-[11px] font-bold text-gray-700">
-                <span>Total Progress</span>
-                <span>{setupPercent}%</span>
-              </div>
-              <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                <div className="h-full bg-blue-600 rounded-full transition-all duration-500" style={{ width: `${setupPercent}%` }} />
-              </div>
-            </div>
-            <div className="bg-white border border-gray-100 rounded-xl p-3 text-[11px] space-y-1">
-
-
-              <span className="font-bold text-gray-800 block">
-               {nextStep
-                 ? "Next Recommended Step"
-                 : "Setup Complete"}
-               </span>
-
-              {nextStep ? (
-                  <>
-                    <p className="text-gray-500 font-medium">
-                      {nextStep.description}
-                    </p>
-
-                    <span className="text-blue-600 font-bold block pt-1">
-                      Estimated: {nextStep.estimatedMinutes} min
-                    </span>
-                  </>
-              ) : (
-                  <>
-                    <p className="text-green-600 font-medium">
-                      Seller foundation completed.
-                    </p>
-
-                    <span className="text-green-700 font-bold block pt-1">
-                       Ready to sell 🎉
-                    </span>
-                  </>
-              )}
-            </div>
-          </div>
-        </aside>
-
-        {/* WORKSPACE FRAME CONTENT PANEL */}
-        <div className="flex-1 flex flex-col h-full min-w-0 bg-slate-50/40">
-          <header className="h-16 px-6 border-b border-gray-200/80 bg-white flex items-center justify-between flex-shrink-0">
-            <div className="flex items-center gap-2 text-xs font-semibold text-gray-500">
-              <span>Workspace</span>
-              <span>/</span>
-              <span className="text-gray-900 capitalize">{activeTab}</span>
-            </div>
-            
-            <div className="flex items-center gap-4 text-xs font-bold">
-              <span className={`text-[11px] px-2.5 py-1 rounded-lg border ${
-                saveStatus === 'Saved ✓' ? 'bg-green-50 text-green-700 border-green-100' : 'bg-amber-50 text-amber-700 border-amber-100'
-              }`}>{saveStatus}</span>
-            </div>
-          </header>
-
-          <main className="flex-1 overflow-y-auto p-6 min-h-0 relative">
-            {isPending ? (
-              <div className="space-y-4 animate-pulse">
-                <div className="h-20 bg-gray-200 rounded-2xl w-full" />
-                <div className="h-40 bg-gray-200 rounded-2xl w-full" />
-              </div>
-            ) : (
-              <>
-                {activeTab === 'overview' && (
-                  <div className="space-y-6 max-w-4xl animate-in fade-in duration-200">
-                    <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                      <div className="space-y-1">
-                        <h2 className="text-lg font-black text-gray-900">Welcome back, Arman 👋</h2>
-                        <p className="text-xs text-gray-500 font-medium">
-                          {missingStepsCount === 0
-                              ? "Your seller account is fully configured and ready to start selling."
-                              : `You only need ${missingStepsCount} more ${
-                                  missingStepsCount === 1
-                                      ? "step"
-                                      : "steps"
-                              } to complete your seller foundation.`}
-                        </p>                      </div>
-                      <button
-                          onClick={() => {
-                            if (!nextStep) {
-                              return;
-                            }
-
-                            const tab =
-                                new URLSearchParams(
-                                    nextStep.route.split("?")[1],
-                                ).get("tab");
-
-                            if (tab) {
-                              handleTabSwitch(
-                                  tab as WorkspaceTab,
-                              );
-                            }
-                          }}
-                          className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow-xs shadow-blue-600/10 flex items-center gap-1.5 transition-all"
-                      >
-                        Continue Setup <ArrowRight className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                      {foundation?.sections.map(
-                          (section) => (
-                              <FoundationSectionCard
-                                  key={section.id}
-                                  section={section}
-                                  onOpen={(route) => {
-                                    const tab =
-                                        new URLSearchParams(
-                                            route.split("?")[1],
-                                        ).get("tab");
-
-                                    if (tab) {
-                                      handleTabSwitch(
-                                          tab as WorkspaceTab,
-                                      );
-                                    }
-                                  }}
-                              />
-                          ),
-                      )}
-
-                    </div>
-                  </div>
-                )}
-
-                {activeTab === 'identity' && <BusinessIdentitySection setSaveStatus={setSaveStatus} />}
-                {activeTab === 'store' && <StoreManagementSection setSaveStatus={setSaveStatus} />}
-                {activeTab === 'locations' && <AddressManagementSection triggerDrawer={triggerDrawer} closeDrawer={closeDrawer} setSaveStatus={setSaveStatus} />}
-                {activeTab === 'payouts' && <BankAndPayoutSection triggerDrawer={triggerDrawer} setSaveStatus={setSaveStatus} />}
-                {activeTab === 'preferences' && <SellerSettingsSection setSaveStatus={setSaveStatus} />}
-              </>
-            )}
-          </main>
-        </div>
-
+        <ProfileSidebar
+            handleTabSwitch={handleTabSwitch}
+            activeTab={activeTab}
+            setupPercent={setupPercent}
+            nextStep={nextStep}
+        />
+        <WorkspaceFrameContentPanel
+            activeTab={activeTab}
+            isPending={isPending}
+            saveStatus={saveStatus}
+            missingStepsCount={missingStepsCount}
+            nextStep={nextStep}
+            triggerDrawer={triggerDrawer}
+            closeDrawer={closeDrawer}
+            foundation={foundation}
+            handleTabSwitch={handleTabSwitch}
+            setSaveStatus={setSaveStatus}
+        />
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { getCurrentSellerOrThrow } from "@/modules/seller/services/get-current-seller-or-throw";
+import { getCurrentSellerOrThrow } from "@/modules/seller-profile/services/get-current-seller-or-throw";
 import {findSellerDocument} from "@/modules/seller-profile/repositery";
 import {createSignedUrl} from "@/modules/shared/storage/create-signed-url";
 import {SELLER_DOCUMENT_BUCKET} from "@/modules/seller-profile/constants";

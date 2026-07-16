@@ -5,7 +5,7 @@ import { PROFILE_IMAGE_BUCKET } from "@/modules/seller-profile/constants";
 
 
 import { supabaseServer } from "@/lib/supabase/server";
-import {getCurrentSellerOrThrow} from "@/modules/seller/services/get-current-seller-or-throw";
+import {getCurrentSellerOrThrow} from "@/modules/seller-profile/services/get-current-seller-or-throw";
 import {updateSellerProfile} from "@/modules/seller-profile/repositery";
 
 export async function uploadSellerProfileImage(

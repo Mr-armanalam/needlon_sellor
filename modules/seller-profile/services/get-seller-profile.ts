@@ -1,4 +1,4 @@
-import { getCurrentSellerOrThrow } from "@/modules/seller/services";
+import { getCurrentSellerOrThrow } from "@/modules/seller-profile/services/index";
 
 import { ensureSellerProfile } from "./ensure-seller-profile";
 

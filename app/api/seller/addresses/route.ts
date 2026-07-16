@@ -1,9 +1,9 @@
 import { NextRequest } from "next/server";
-import {getCurrentSellerOrThrow, getSellerAddressesService} from "@/modules/seller/services";
+import {getCurrentSellerOrThrow, getSellerAddressesService} from "@/modules/seller-profile/services";
 import {routeHandler} from "@/modules/shared/api/route-handler";
 import {successResponse} from "@/modules/shared/api/success-response";
 import {createSellerAddressSchema} from "@/modules/seller-profile/validations/create-seller-address-schema";
-import {createSellerAddressService} from "@/modules/seller/services/create-seller-address.services";
+import {createSellerAddressService} from "@/modules/seller-profile/services/create-seller-address.services";
 import {parseBody} from "@/modules/shared/api/parse-body";
 
 
