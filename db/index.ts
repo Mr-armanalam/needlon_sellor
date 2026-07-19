@@ -17,6 +17,7 @@ import {sellerStore} from "@/db/schema/seller/seller-store";
 import {sellerDocuments} from "@/db/schema/seller/seller-document";
 import {sellerBankAccounts} from "@/db/schema/seller/seller-bank-account";
 import {sellerVerification} from "@/db/schema/seller/seller-verification";
+import {categories} from "@/db/schema/catalog/category/table";
 
 export const schema = {
   cartItems: cartItems.cartItems,
@@ -38,6 +39,7 @@ export const schema = {
   sellerDocuments: sellerDocuments,
   sellerBankAccounts: sellerBankAccounts,
   sellerVerification: sellerVerification,
+  categories: categories
 };
 
 const client = postgres(process.env.DATABASE_URL!);
