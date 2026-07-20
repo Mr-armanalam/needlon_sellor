@@ -1,4 +1,4 @@
-# Needlon Project Constitution
+**# Needlon Project Constitution
 
 > Version: 1.0
 > Status: LOCKED (after approval)
@@ -336,4 +336,4 @@ After approval:
 Status:
 LOCKED
 
-Any future modification requires a constitutional amendment.
+Any future modification requires a constitutional amendment.**

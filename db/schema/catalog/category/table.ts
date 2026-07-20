@@ -25,7 +25,7 @@ export const categories = pgTable(
             length: 150,
         }).notNull(),
 
-        displayName: varchar("displayName", {
+        displayName: varchar("display_name", {
             length: 150,
         }),
 

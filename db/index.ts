@@ -18,6 +18,12 @@ import {sellerDocuments} from "@/db/schema/seller/seller-document";
 import {sellerBankAccounts} from "@/db/schema/seller/seller-bank-account";
 import {sellerVerification} from "@/db/schema/seller/seller-verification";
 import {categories} from "@/db/schema/catalog/category/table";
+import {categoryRelations} from "@/db/schema/catalog/category/relation";
+import {products} from "@/db/schema/products/products";
+import {productVariants} from "@/db/schema/products/product_variants";
+import {productMedia} from "@/db/schema/products/product_media";
+import {inventory} from "@/db/schema/products/inventry";
+import {productsRelations, productVariantsRelations, productMediaRelations} from "@/db/schema/products/relations";
 
 export const schema = {
   cartItems: cartItems.cartItems,
@@ -39,7 +45,15 @@ export const schema = {
   sellerDocuments: sellerDocuments,
   sellerBankAccounts: sellerBankAccounts,
   sellerVerification: sellerVerification,
-  categories: categories
+  categories: categories,
+  categoryRelations: categoryRelations,
+  products: products,
+  productsRelations: productsRelations,
+  productVariants: productVariants,
+  productVariantsRelations: productVariantsRelations,
+  productMedia: productMedia,
+  productMediaRelations: productMediaRelations,
+  inventory: inventory,
 };
 
 const client = postgres(process.env.DATABASE_URL!);
