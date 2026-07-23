@@ -5,7 +5,7 @@ dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 
 async function runProductsModuleTests() {
   const { db } = await import("@/db");
-  const { categories } = await import("@/db/schema/catalog/category/table");
+  const { categories } = await import("@/db/schema/catalog/categories/table");
   const { products } = await import("@/db/schema/products/products");
   const { productVariants } = await import("@/db/schema/products/product_variants");
   const { eq } = await import("drizzle-orm");
@@ -24,8 +24,8 @@ async function runProductsModuleTests() {
   const DEFAULT_SELLER_ID = "00000000-0000-0000-0000-000000000001";
   const timestamp = Date.now();
 
-  // 1. Resolve or seed a test category
-  console.log("\n1. Resolving test category...");
+  // 1. Resolve or seed a test categories
+  console.log("\n1. Resolving test categories...");
   let [testCategory] = await db
     .select({ id: categories.id })
     .from(categories)

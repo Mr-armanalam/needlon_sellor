@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { categories } from "@/db/schema/catalog/category/table";
+import { categories } from "@/db/schema/catalog/categories/table";
 import { inventory } from "@/db/schema/products/inventry";
 import { productMedia } from "@/db/schema/products/product_media";
 import { generateUniqueSlug } from "@/modules/shared/slug/generate-unique-slug";
@@ -38,7 +38,7 @@ export async function createWizardProductService({ sellerId, data }: CreateWizar
   }
 
   if (!categoryId) {
-    throw new Error("Failed to assign a valid category for the product.");
+    throw new Error("Failed to assign a valid categories for the product.");
   }
 
   // 2. Enforce SKU uniqueness

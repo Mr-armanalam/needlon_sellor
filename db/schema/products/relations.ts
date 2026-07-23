@@ -2,7 +2,7 @@ import { relations } from "drizzle-orm";
 import { products } from "./products";
 import { productVariants } from "./product_variants";
 import { productMedia } from "./product_media";
-import { categories } from "../catalog/category/table";
+import { categories } from "@/db/schema/catalog/categories/table";
 
 export const productsRelations = relations(products, ({ one, many }) => ({
   category: one(categories, {

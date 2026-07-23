@@ -6,8 +6,8 @@ import {
   index,
 } from "drizzle-orm/pg-core";
 import { productVariants } from "./product_variants";
-import { categoryAttributes } from "../category/categories_attribute";
-import { categoryAttributeOptions } from "../category/categories-attribute-options";
+import { categoryAttributes } from "../categories/categories_attribute";
+import { categoryAttributeOptions } from "../categories/categories-attribute-options";
 
 export const variantAttributes = pgTable(
   "variant_attributes",
@@ -19,7 +19,7 @@ export const variantAttributes = pgTable(
       .references(() => productVariants.id, { onDelete: "cascade" })
       .notNull(),
 
-    // Link to specific category attribute template (e.g., "Size")
+    // Link to specific categories attribute template (e.g., "Size")
     attributeId: uuid("attribute_id")
       .references(() => categoryAttributes.id, { onDelete: "restrict" })
       .notNull(),

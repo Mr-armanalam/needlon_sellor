@@ -434,7 +434,7 @@ We'll create these first:
 modules/
 └── seller-bank/
     ├── types/
-    │     ├── account-type.ts
+    │     ├── account-types.ts
     │     ├── bank-verification-status.ts
     │     ├── bank-verification-method.ts
     │     └── index.ts

@@ -2076,20 +2076,20 @@ schema/
         category/
 
             category.ts
-            category-relation.ts
+            category-relations.ts
             category-indexes.ts
             index.ts
 
         brand/
 
             brand.ts
-            brand-relation.ts
+            brand-relations.ts
             index.ts
 
         product-type/
 
-            product-type.ts
-            product-type-relation.ts
+            product-types.ts
+            product-type-relations.ts
             index.ts
 
         collection/

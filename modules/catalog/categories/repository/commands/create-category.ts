@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { categories } from "@/db/schema/catalog/category/table";
+import { categories } from "@/db/schema/catalog/categories/table";
 
 type CreateCategoryData =
     typeof categories.$inferInsert;

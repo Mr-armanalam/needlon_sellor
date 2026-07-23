@@ -1,7 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 
 import { db } from "@/db";
-import { categories } from "@/db/schema/catalog/category";
+import { categories } from "@/db/schema/catalog/categories";
 
 interface MoveCategoryParams {
     categoryId: string;
@@ -13,12 +13,12 @@ interface MoveCategoryParams {
 }
 
 /**
- * Reparents a category and cascades the path/level change to every
+ * Reparents a categories and cascades the path/level change to every
  * descendant, in a single transaction.
  *
  * Cycle prevention, "does the new parent exist", etc. are business
- * rules and belong in move-category.service.ts — this command just
- * performs the write, same convention as create-category.ts.
+ * rules and belong in move-categories.service.ts — this command just
+ * performs the write, same convention as create-categories.ts.
  */
 export async function moveCategory({
                                        categoryId,
@@ -46,7 +46,7 @@ export async function moveCategory({
         const newSubtreePrefix = `${newPath}${categoryId}/`;
         const levelDelta = newLevel - oldLevel;
 
-        // Cascade to descendants only (the moved category itself was
+        // Cascade to descendants only (the moved categories itself was
         // already updated above, and its new path no longer matches
         // oldSubtreePrefix, so this WHERE can't double-update it).
         await tx.execute(sql`

@@ -1,0 +1,858 @@
+Final Roadmap (Products Module)
+Phase 0 — Discovery & Audit (No Code)
+
+Goal: Understand the existing implementation and avoid duplication.
+
+Step 0.1 — Documentation Review
+Review the five project documents
+Extract product-related rules
+Verify engineering standards
+Verify UI design rules
+Verify glossary
+Verify approved decisions
+Step 0.2 — Existing Code Audit
+
+Review existing:
+
+Product schemas
+Category schemas
+Variant schemas
+Inventory schemas
+Upload/media implementation
+Existing APIs
+Existing UI
+Existing hooks
+Existing shared components
+Existing utilities
+Step 0.3 — Gap Analysis
+
+Document:
+
+Existing
+Missing
+Reusable
+Refactor required
+
+Deliverable: Product Module Audit Report
+
+Phase 1 — Architecture Freeze (No Code)
+
+Nothing changes after approval.
+
+1. Folder Structure Freeze
+
+Every feature under Products will follow the same module structure.
+
+modules/
+└── products/
+    ├── listing/
+    ├── create-product/
+    ├── edit-product/
+    ├── media/
+    ├── variants/
+    ├── inventory/
+    ├── pricing/
+    ├── seo/
+    ├── delivery/
+    └── shared/
+
+Inside every module:
+
+module/
+│
+├── api/
+├── dto/
+├── hooks/
+├── mapper/
+├── repository/
+├── services/
+├── validation/
+│
+├── constants.ts
+├── keys.ts
+└── types.ts
+
+This structure will remain consistent throughout the Product module.
+
+2. Execution Flow Freeze
+UI Component
+      │
+React Query Hook
+      │
+Frontend API
+      │
+HTTP
+      │
+Route Handler
+(Auth + Validation)
+      │
+Service
+(Business Logic)
+      │
+Repository
+(Database)
+      │
+Drizzle
+      │
+PostgreSQL
+
+No shortcuts.
+
+Repositories never call HTTP.
+
+Services never know about Route Handlers.
+
+Route Handlers never contain business logic.
+
+3. Responsibilities Freeze
+UI → Rendering only
+Hook → Server state only
+API → Network communication only
+Route → Auth, validation, response
+Service → Business rules
+Repository → Data access only
+4. DTO Strategy Freeze
+
+DTOs represent UI requirements, not database tables.
+
+They:
+
+hide database implementation
+combine fields where needed
+expose only what the frontend needs
+are exported through index.ts
+5. Mapper Strategy Freeze
+
+Mappers are the only place that converts between:
+
+Database Entity → DTO
+DTO → Repository Input
+
+No conversion logic in Services or UI.
+
+6. React Query Strategy Freeze
+
+Every server interaction gets:
+
+Query Key
+API Client
+Hook
+
+Pattern:
+
+keys.ts
+↓
+
+api/
+
+↓
+
+hooks/
+
+No component calls fetch() directly.
+
+7. Validation Strategy Freeze
+
+Validation occurs twice:
+
+Frontend:
+
+React Hook Form
+Zod
+
+Backend:
+
+Route Handler
+Same schema (or shared schema where appropriate)
+8. Error Strategy Freeze
+
+One unified response format.
+
+Validation errors
+
+↓
+
+Business errors
+
+↓
+
+Database errors
+
+↓
+
+Unexpected errors
+
+Everything returns through common response helpers.
+
+9. State Strategy Freeze
+
+Server State
+
+→ React Query
+
+Local Form State
+
+→ React Hook Form
+
+UI State
+
+→ React state
+
+No duplicated state.
+
+10. File Upload Strategy Freeze
+
+Media uploads will be isolated into their own module.
+
+Responsibilities:
+
+upload
+reorder
+delete
+cover image
+validation
+optimization
+11. Business Rules Freeze
+
+We'll define before coding:
+
+Draft lifecycle
+Publish lifecycle
+Archive
+Delete
+SKU generation
+Slug generation
+Image rules
+Stock rules
+Variant rules
+Permissions
+Phase 2 — Database Freeze
+
+Review and finalize:
+
+Tables
+Relations
+Constraints
+Indexes
+Enums
+Transactions
+
+After approval:
+No schema redesign unless explicitly approved.
+
+Phase 3 — API Contract Freeze
+
+Every endpoint finalized before implementation.
+
+Each endpoint will define:
+
+Method
+URL
+Request DTO
+Response DTO
+Validation schema
+Auth
+Repository calls
+Service flow
+Error cases
+Phase 4 — Backend Implementation
+
+Implementation order:
+
+Repository
+Service
+Route
+API tests
+
+Every step reviewed before moving on.
+
+Phase 5 — Frontend Integration
+
+Implementation order:
+
+API Client
+DTO
+Mapper
+React Query Hook
+UI Integration
+Loading
+Errors
+Optimistic Updates
+Phase 6 — Testing & Validation
+Repository tests
+Service tests
+Route tests
+Integration tests
+UI validation
+Manual QA against screenshots
+Phase 7 — Documentation Update
+
+Update project documentation if implementation introduces permanent architectural or business decisions.
+
+Product Module Milestones
+
+We'll implement the screenshots as these milestones:
+
+Products Shelf
+Product list
+Search
+Filters
+Sorting
+Tabs
+Pagination
+Product card
+Bulk upload entry
+Create Product Wizard
+Photos
+Basic Info
+Pricing
+Variants
+Inventory
+Delivery
+SEO
+Review & Publish
+Edit Product
+Load existing data
+Autosave draft
+Update
+Publish
+Product Lifecycle
+Draft
+Active
+Out of Stock
+Archived
+Delete/Restore (according to business rules)
+
+
+
+
+
+
+
+
+
+
+
+
+Phase 1 — Architecture Freeze
+
+This is the most important phase of the project. Before writing a single line of implementation code, we'll finalize every architectural decision for the Product module.
+
+Deliverables
+Step 1.1 — Module Boundaries
+
+Define the complete Product domain:
+
+Catalog
+├── Categories
+├── Products
+├── Brands
+├── Collections
+├── Tags
+├── Attributes
+├── Attribute Options
+├── Variants
+├── Inventory
+├── Media
+├── Pricing
+├── Shipping
+├── SEO
+└── Product Listing
+
+We'll also define ownership and interactions between these modules.
+
+Step 1.2 — Folder Structure (Freeze)
+
+Finalize the complete directory structure.
+
+modules/
+└── catalog/
+    ├── shared/
+    │   ├── constants/
+    │   ├── lib/
+    │   ├── validation/
+    │   ├── dto/
+    │   ├── mapper/
+    │   ├── types/
+    │   └── query/
+    │
+    ├── categories/
+    ├── products/
+    ├── brands/
+    ├── collections/
+    ├── attributes/
+    ├── inventory/
+    ├── media/
+    └── pricing/
+
+Each feature module will follow the same internal structure:
+
+feature/
+├── api/
+├── dto/
+├── hooks/
+├── mapper/
+├── repository/
+│   ├── commands/
+│   ├── queries/
+│   └── index.ts
+├── services/
+├── validation/
+├── constants.ts
+├── keys.ts
+├── types.ts
+└── index.ts
+
+
+
+
+
+
+This structure will remain fixed throughout implementation.
+
+Step 1.3 — Execution Flow (Freeze)
+UI Component
+      │
+React Query Hook
+      │
+Frontend API Client
+      │
+HTTP
+      │
+Next.js Route Handler
+(Auth + Validation + Response)
+      │
+Domain Service
+(Business Logic)
+      │
+Repository
+(Database Access)
+      │
+Drizzle ORM
+      │
+PostgreSQL
+
+No layer may bypass another.
+
+Step 1.4 — Layer Responsibilities
+
+Freeze the responsibilities for:
+
+UI
+React Query Hooks
+API Client
+Route Handlers
+Services
+Repositories
+Shared Libraries
+Step 1.5 — Shared Module Strategy
+
+Define what belongs in modules/catalog/shared versus feature-specific modules.
+
+Examples:
+
+Shared validation
+Shared query models
+Shared pagination
+Shared upload utilities
+Shared constants
+Step 1.6 — DTO & Mapper Strategy
+
+Finalize:
+
+DTOs represent UI requirements
+Database entities never reach the UI
+Mappers are the only conversion point between DTOs and entities
+Step 1.7 — API Contract Strategy
+
+Standardize:
+
+Request format
+Response format
+Pagination
+Filtering
+Sorting
+Error responses
+Step 1.8 — State Management Strategy
+
+Freeze responsibilities for:
+
+React Query (server state)
+React Hook Form (form state)
+Local component state
+Optimistic updates
+Cache invalidation
+Step 1.9 — Upload & Media Strategy
+
+Finalize:
+
+Supabase bucket layout
+Folder naming
+Image processing pipeline
+Validation
+Reordering
+Cover image rules
+Step 1.10 — Business Rules
+
+Freeze core rules for:
+
+Draft
+Publish
+Archive
+Delete
+Restore
+SKU generation
+Slug generation
+Category hierarchy
+Product lifecycle
+Inventory updates
+Step 1.11 — Naming Conventions
+
+Freeze naming for:
+
+Files
+Folders
+DTOs
+Services
+Repositories
+Hooks
+API clients
+Route handlers
+Constants
+Query keys
+Step 1.12 — Error Handling Strategy
+
+Define a unified approach for:
+
+Validation errors
+Business errors
+Database errors
+Storage errors
+Unexpected errors
+
+
+
+
+
+
+
+
+
+Phase 2 Roadmap
+Phase 2.1 — Catalog Foundation ⭐ (Start Here)
+Goal
+
+Build the entire catalog foundation that every product depends on.
+
+Deliverables
+db/
+└── schema/
+    └── catalog/
+        ├── categories/
+        │   ├── table.ts
+        │   ├── relations.ts
+        │   ├── indexes.ts
+        │   ├── types.ts
+        │   └── index.ts
+        │
+        ├── attributes/
+        │   ├── table.ts
+        │   ├── relations.ts
+        │   ├── index.ts
+        │
+        ├── attribute-options/
+        │   ├── table.ts
+        │   ├── relations.ts
+        │   ├── index.ts
+        │
+        ├── enums.ts
+        └── index.ts
+Includes
+Category
+Category hierarchy
+Attribute definitions
+Attribute options
+Relations
+Indexes
+Enums
+Soft delete
+Audit fields
+Self-reference
+Typed JSON
+Production constraints
+
+No Products yet.
+
+Phase 2.2 — Product Core
+Products
+Product status
+Product lifecycle
+Slug
+Store ownership
+Seller ownership
+Phase 2.3 — Product Media
+Images
+Videos (future-ready)
+Ordering
+Cover image
+Alt text
+Phase 2.4 — Variants
+Size
+Color
+Material
+Dynamic attributes
+Phase 2.5 — Inventory
+SKU
+Quantity
+Reserved stock
+Available stock
+Stock status
+Phase 2.6 — Pricing
+Selling price
+MRP
+Currency
+Discount
+Tax flags
+Phase 2.7 — Shipping
+Weight
+Dimensions
+Package type
+Phase 2.8 — SEO
+Meta title
+Meta description
+Open Graph
+Phase 2.9 — Database Review
+
+Final integrity review:
+
+Constraints
+FK
+Indexes
+Performance
+Naming
+Drizzle exports
+Migration validation
+Phase 2 Workflow (Locked)
+
+For every phase:
+
+Design
+Folder structure
+Table(s)
+Enums
+Relations
+Indexes
+Constraints
+Review
+Approval
+Next phase
+
+No skipping.
+
+We Will Not Write Code Immediately
+
+Even within Phase 2.1, we will proceed incrementally:
+
+Step 2.1.1 — Catalog Folder Structure
+
+Freeze:
+
+db/schema/catalog/
+├── categories/
+├── attributes/
+├── attribute-options/
+├── enums.ts
+└── index.ts
+Step 2.1.2 — Enums
+
+Finalize all catalog enums.
+
+Step 2.1.3 — Categories Table
+
+Production-grade implementation.
+
+Step 2.1.4 — Category Relations
+Step 2.1.5 — Attributes Table
+Step 2.1.6 — Attribute Options
+Step 2.1.7 — Exports & Review
+
+
+
+
+
+
+
+
+✅ Phase 2.1 — Catalog Database Schema Completed
+
+The entire catalog foundation is now frozen.
+
+Catalog
+│
+├── ✅ Enums
+│
+├── ✅ Categories
+│
+├── ✅ Category Attributes
+│
+└── ✅ Category Attribute Options
+
+This architecture will not change.
+
+🚀 Phase 2.2 — Product Database Schema
+
+This is the largest database module in the entire Needlon project.
+
+Everything else revolves around Products.
+
+Product Module Responsibilities
+
+The Product module must support:
+
+Seller Products
+Physical Products
+Digital Products (future)
+Product Variants
+Dynamic Category Attributes
+Inventory
+Pricing
+Images
+Videos
+SEO
+Search
+Recommendation
+AI Product Creation
+Moderation
+Draft Publishing
+Product Approval
+Analytics
+Wishlist
+Cart
+Orders
+
+without redesign later.
+
+Product Module Architecture
+
+Like Catalog, Product will be modular.
+
+db/schema/products/
+
+├── enums.ts
+│
+├── products/
+│   ├── constants.ts
+│   ├── metadata.ts
+│   ├── table.ts
+│   ├── relations.ts
+│   ├── types.ts
+│   └── index.ts
+│
+├── product-images/
+│
+├── product-videos/
+│
+├── product-variants/
+│
+├── product-variant-options/
+│
+├── product-attribute-values/
+│
+├── product-seo/
+│
+├── inventory/
+│
+├── pricing/
+│
+├── shipping/
+│
+├── product-tags/
+│
+├── product-tag-mappings/
+│
+├── product-documents/
+│
+├── product-ai/
+│
+└── index.ts
+
+This keeps every concern isolated and maintainable.
+
+Product Database Roadmap
+Phase 2.2.1 — Product Foundation
+
+Build the core product entity.
+
+products/
+Phase 2.2.2
+
+Product Images
+
+product-images/
+Phase 2.2.3
+
+Product Videos
+
+product-videos/
+Phase 2.2.4
+
+Product Variants
+
+product-variants/
+Phase 2.2.5
+
+Variant Options
+
+product-variant-options/
+Phase 2.2.6
+
+Dynamic Attribute Values
+
+product-attribute-values/
+Phase 2.2.7
+
+Inventory
+
+inventory/
+Phase 2.2.8
+
+Pricing
+
+pricing/
+Phase 2.2.9
+
+Shipping
+
+shipping/
+Phase 2.2.10
+
+SEO
+
+product-seo/
+Phase 2.2.11
+
+Tags
+
+product-tags/
+product-tag-mappings/
+Phase 2.2.12
+
+AI
+
+product-ai/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

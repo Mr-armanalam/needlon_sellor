@@ -5,7 +5,7 @@ import {
 } from "drizzle-orm";
 
 import { db } from "@/db";
-import { categories } from "@/db/schema/catalog/category/table";
+import { categories } from "@/db/schema/catalog/categories/table";
 
 export async function listCategoryBySlug(
     slug: string,

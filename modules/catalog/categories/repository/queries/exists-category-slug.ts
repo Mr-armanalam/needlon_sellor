@@ -6,7 +6,7 @@ import {
 } from "drizzle-orm";
 
 import { db } from "@/db";
-import { categories } from "@/db/schema/catalog/category";
+import { categories } from "@/db/schema/catalog/categories";
 
 interface ExistsCategorySlugParams {
     slug: string;

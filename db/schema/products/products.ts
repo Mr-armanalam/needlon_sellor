@@ -10,7 +10,7 @@ import {
   index,
 } from "drizzle-orm/pg-core";
 import { brands } from "../seller/brand";
-import { categories } from "../category/categories";
+import { categories } from "../categories/categories";
 
 // Defining Enums based on lifecycle and visibility rules
 export const productTypeEnum = pgEnum("product_type", [
