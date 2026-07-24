@@ -300,3 +300,23 @@ export const robotsDirectiveEnum = pgEnum(
         "NOINDEX_NOFOLLOW",
     ],
 );
+
+
+/**
+ * ============================================================
+ * Product AI Enums
+ * ============================================================
+ */
+
+/**
+ * AI moderation lifecycle.
+ */
+export const aiModerationStatusEnum = pgEnum(
+    "ai_moderation_status",
+    [
+        "PENDING",
+        "APPROVED",
+        "REJECTED",
+        "FLAGGED",
+    ],
+);

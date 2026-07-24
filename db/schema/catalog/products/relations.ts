@@ -12,6 +12,8 @@ import {productVariantsTable} from "@/db/schema/catalog/products/product-variant
 import {productVariantOptionsTable} from "@/db/schema/catalog/products/product-variant-options/table";
 import {productAttributeValuesTable} from "@/db/schema/catalog/products/product-attribute-values/table";
 import {productSeoTable} from "@/db/schema/catalog/products/product-seo/table";
+import {productTagMappingsTable} from "@/db/schema/catalog/products/product-tag-mappings";
+import {productAiTable} from "@/db/schema/catalog/products/product-ai";
 
 /**
  * ============================================================
@@ -69,6 +71,7 @@ export const productsRelations = relations(
         attributeValues: many(productAttributeValuesTable),
         seo: one(productSeoTable),
         tagMappings: many(productTagMappingsTable),
+        ai: one(productAiTable),
 
         /**
          * ----------------------------------------------------------
