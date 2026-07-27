@@ -10,7 +10,10 @@ const draftProductService = new DraftProductService(new DrizzleProductRepository
 export async function POST(request: NextRequest) {
     return routeHandler(async () => {
         const seller = await getCurrentSeller();
-        const sellerId = seller?.id || "00000000-0000-0000-0000-000000000001";
+        if (!seller || !seller.id) {
+          throw new Error("Unauthorized: Only authenticated sellers can create draft products.");
+        }
+        const sellerId = seller.id;
 
         const draft = await draftProductService.createDraft({
             sellerId,

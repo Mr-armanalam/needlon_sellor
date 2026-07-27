@@ -22,7 +22,12 @@ export async function POST(request: NextRequest) {
     const { categoriesTable } = await import("@/db/schema/catalog/categories/table");
     const { eq } = await import("drizzle-orm");
 
-    const storeId = "00000000-0000-0000-0000-000000000001";
+    const { getCurrentSeller } = await import("@/modules/auth/lib/get-current-seller");
+    const seller = await getCurrentSeller();
+    if (!seller || !seller.id) {
+      throw new Error("Unauthorized: Only authenticated sellers can perform bulk upload.");
+    }
+    const storeId = seller.id;
     const uploaded = [];
 
     // Run bulk uploads in a single transaction for efficiency and atomicity
@@ -30,34 +35,33 @@ export async function POST(request: NextRequest) {
       for (const item of items) {
         const name = item.name || "Bulk Product";
         const catName = item.category || "General";
-        const price = String(item.retailPrice || "0.00");
-        const qty = Number(item.boutiqueStockCount || 0);
-        const weight = String(item.packageWeight || "0.35");
+        
+        const rawPrice = item.retailPrice || item.price;
+        const cleanPrice = parseFloat(String(rawPrice || '').replace(/[^0-9.]/g, ''));
+        const price = !isNaN(cleanPrice) && cleanPrice >= 0 ? String(cleanPrice) : "0.00";
+
+        const qty = Number(item.boutiqueStockCount || item.stock || item.quantity || 0);
+
+        const rawWeight = item.packageWeight || item.weight;
+        const cleanWeightNum = parseFloat(String(rawWeight || '').replace(/[^0-9.]/g, ''));
+        const weight = !isNaN(cleanWeightNum) && cleanWeightNum > 0 ? String(cleanWeightNum) : "0.35";
+
         const baseSku = item.uniqueSku || `SKU-BULK-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`;
 
-        // Resolve Category
-        let categoryId = null;
-        const [existingCategory] = await tx
-          .select({ id: categoriesTable.id })
-          .from(categoriesTable)
-          .where(eq(categoriesTable.name, catName))
-          .limit(1);
+        let categoryId: string | null = null;
+        const { sql } = await import("drizzle-orm");
+        const existingCatRes: any = await tx.execute(
+          sql`SELECT id FROM categories WHERE name = ${catName} LIMIT 1`
+        );
 
-        if (existingCategory) {
-          categoryId = existingCategory.id;
+        if (existingCatRes?.[0]?.id) {
+          categoryId = existingCatRes[0].id;
         } else {
           const catSlug = await generateUniqueSlug(catName, async () => false);
-          const [newCat] = await tx
-            .insert(categoriesTable)
-            .values({
-              name: catName,
-              slug: catSlug,
-              code: `CAT-${catSlug.toUpperCase()}`,
-              path: `/${catSlug}`,
-              level: 0,
-            })
-            .returning();
-          categoryId = newCat.id;
+          const newCatRes: any = await tx.execute(
+            sql`INSERT INTO categories (name, slug) VALUES (${catName}, ${catSlug}) RETURNING id`
+          );
+          categoryId = newCatRes?.[0]?.id;
         }
 
         // Generate slug

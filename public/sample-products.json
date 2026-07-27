@@ -1,0 +1,47 @@
+[
+  {
+    "name": "Handloom Chikankari Anarkali",
+    "category": "Ethnic Wear",
+    "subcategory": "Anarkalis",
+    "retailPrice": "2950",
+    "boutiqueStockCount": "20",
+    "brandLabel": "House of Needlon",
+    "sizesMatrix": "S, M, L, XL",
+    "colorsTrack": "Ivory White",
+    "fabricMaterial": "Chanderi Cotton",
+    "uniqueSku": "NDLN-ETH-ANK-101",
+    "packageWeight": "0.45",
+    "searchKeywords": "handloom, chikankari, anarkali, festive",
+    "descriptionStory": "Handcrafted Lucknowi chikankari embroidery on pure chanderi fabric."
+  },
+  {
+    "name": "Casual Floral Western Dress",
+    "category": "Western Wear",
+    "subcategory": "Dresses",
+    "retailPrice": "1850",
+    "boutiqueStockCount": "15",
+    "brandLabel": "House of Needlon",
+    "sizesMatrix": "S, M, L",
+    "colorsTrack": "Pastel Pink",
+    "fabricMaterial": "Georgette",
+    "uniqueSku": "NDLN-WST-DRS-202",
+    "packageWeight": "0.30",
+    "searchKeywords": "western, floral dress, summer",
+    "descriptionStory": "Lightweight summer floral georgette dress with lining."
+  },
+  {
+    "name": "Banarasi Silk Zari Dupatta",
+    "category": "Dupattas",
+    "subcategory": "Silk Dupattas",
+    "retailPrice": "1200",
+    "boutiqueStockCount": "30",
+    "brandLabel": "House of Needlon",
+    "sizesMatrix": "Free Size",
+    "colorsTrack": "Royal Blue",
+    "fabricMaterial": "Banarasi Silk",
+    "uniqueSku": "NDLN-DUP-SLK-303",
+    "packageWeight": "0.25",
+    "searchKeywords": "dupatta, banarasi, silk, festive",
+    "descriptionStory": "Rich zari woven Banarasi silk dupatta for festive ensembles."
+  }
+]

@@ -5,12 +5,14 @@ import { Plus, ChevronDown, Search, ArrowUpDown, Layers, Loader2 } from 'lucide-
 import { useProducts } from '../hooks';
 import { ProductCard } from './product-card';
 import { AddProductWizard } from './add-product-wizard';
+import { BulkUploadModal } from './bulk-upload-modal';
 import { createDraftProductClient } from '../api/product-client';
 
 export function ProductsShelf() {
   const [viewMode, setViewMode] = useState<'shelf' | 'wizard'>('shelf');
   const [draftProductId, setDraftProductId] = useState<string | null>(null);
   const [isCreatingDraft, setIsCreatingDraft] = useState(false);
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [category, setCategory] = useState('Category');
@@ -70,7 +72,7 @@ export function ProductsShelf() {
   };
 
   const handleBulkUploadClick = () => {
-    fileInputRef.current?.click();
+    setIsBulkModalOpen(true);
   };
 
   const handleBulkUploadFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -109,7 +111,7 @@ export function ProductsShelf() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#FAFAFA] font-sans select-none tracking-tight">
+    <div className="w-full h-screen overflow-y-auto bg-[#FAFAFA] font-sans select-none tracking-tight">
       {viewMode === 'shelf' ? (
         <div className="p-6 md:p-8 max-w-[1600px] mx-auto w-full flex flex-col gap-6 animate-fade-in">
           
@@ -277,6 +279,12 @@ export function ProductsShelf() {
           onSuccess={handleWizardSuccess}
         />
       )}
+
+      <BulkUploadModal
+        isOpen={isBulkModalOpen}
+        onClose={() => setIsBulkModalOpen(false)}
+        onSuccess={refetch}
+      />
     </div>
   );
 }

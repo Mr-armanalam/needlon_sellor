@@ -26,6 +26,12 @@ export async function GET(
     const { categoriesTable } = await import("@/db/schema/catalog/categories/table");
     const { eq } = await import("drizzle-orm");
 
+    const { getCurrentSeller } = await import("@/modules/auth/lib/get-current-seller");
+    const seller = await getCurrentSeller();
+    if (!seller || !seller.id) {
+      return successResponse({ error: "Unauthorized: You must be logged in as a seller." }, 401);
+    }
+
     // Fetch master product
     const [product] = await db
       .select()
@@ -35,6 +41,10 @@ export async function GET(
 
     if (!product) {
       return successResponse({ error: "Product not found" }, 404);
+    }
+
+    if (product.storeId !== seller.id && seller.role !== "admin") {
+      return successResponse({ error: "Forbidden: Access denied to this product." }, 403);
     }
 
     const [category] = await db
@@ -124,6 +134,19 @@ export async function DELETE(
 ) {
   return routeHandler(async () => {
     const { productId } = await params;
+
+    const { getCurrentSeller } = await import("@/modules/auth/lib/get-current-seller");
+    const seller = await getCurrentSeller();
+    if (!seller || !seller.id) {
+      throw new Error("Unauthorized: Only authenticated sellers can delete products.");
+    }
+
+    const { getProduct } = await import("@/modules/products/repository/queries/get-product");
+    const existing = await getProduct(productId);
+    if (existing && existing.storeId !== seller.id && seller.role !== "admin") {
+      throw new Error("Forbidden: You do not have permission to delete this product.");
+    }
+
     const deleted = await deleteProductService(productId);
     return successResponse(deleted);
   });

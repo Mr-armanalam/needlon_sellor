@@ -28,6 +28,12 @@ export async function POST(
     const { productVariantOptionsTable } = await import("@/db/schema/catalog/products/product-variant-options/table");
     const { eq } = await import("drizzle-orm");
 
+    const { getCurrentSeller } = await import("@/modules/auth/lib/get-current-seller");
+    const seller = await getCurrentSeller();
+    if (!seller || !seller.id) {
+      throw new Error("Unauthorized: Only authenticated sellers can duplicate products.");
+    }
+
     // Fetch original product
     const [originalProduct] = await db
       .select()
@@ -37,6 +43,10 @@ export async function POST(
 
     if (!originalProduct) {
       throw new Error(`Product with ID "${productId}" not found.`);
+    }
+
+    if (originalProduct.storeId !== seller.id && seller.role !== "admin") {
+      throw new Error("Forbidden: You do not have permission to duplicate this product.");
     }
 
     const newName = `${originalProduct.name} - Copy`;

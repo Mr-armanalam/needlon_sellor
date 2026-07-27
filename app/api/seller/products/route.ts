@@ -13,11 +13,23 @@ import { and, eq, ilike, isNull, isNotNull, or, gte, lte, sql } from "drizzle-or
 export async function GET(req: NextRequest) {
   try {
     const seller = await getCurrentSeller();
-    const sellerId = seller?.id || "00000000-0000-0000-0000-000000000001";
+    if (!seller || !seller.id) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "UNAUTHORIZED",
+            message: "Unauthorized: Only authenticated sellers can view or list products.",
+          },
+        },
+        { status: 401 }
+      );
+    }
+    const sellerId = seller.id;
 
     const { searchParams } = new URL(req.url);
     const rawStatus = searchParams.get("status") || "ALL";
-    const statusTab = rawStatus.toUpperCase().trim();
+    const statusTab = rawStatus.toUpperCase().replaceAll(" ", "_").trim();
     const search = searchParams.get("search");
     const category = searchParams.get("category");
     const size = searchParams.get("size");
@@ -38,9 +50,10 @@ export async function GET(req: NextRequest) {
 
       if (statusTab === "ACTIVE") {
         conditions.push(eq(productsTable.status, "PUBLISHED"));
+        conditions.push(gte(inventoryTable.quantity, 1));
       } else if (statusTab === "DRAFT") {
         conditions.push(eq(productsTable.status, "DRAFT"));
-      } else if (statusTab === "OUT_OF_STOCK" || statusTab === "OUT_OF_STOCK") {
+      } else if (statusTab === "OUT_OF_STOCK" || statusTab.includes("OUT")) {
         conditions.push(eq(productsTable.status, "PUBLISHED"));
         conditions.push(or(eq(inventoryTable.quantity, 0), isNull(inventoryTable.quantity)));
       }

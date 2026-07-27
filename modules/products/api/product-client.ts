@@ -9,7 +9,7 @@ export async function fetchProductsClient(
 ) {
   const params = new URLSearchParams();
   if (activeTab && activeTab !== "All") {
-    params.append("status", activeTab.toUpperCase().replace(" ", "_"));
+    params.append("status", activeTab.toUpperCase().replaceAll(" ", "_"));
   }
   if (searchQuery) {
     params.append("search", searchQuery);

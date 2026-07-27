@@ -2,15 +2,13 @@ import { db } from "@/db";
 import { sql } from "drizzle-orm";
 
 async function main() {
-  const result = await db.execute(
-    sql`SELECT 
-      COALESCE(NULLIF(regexp_replace('₹1,200', '[^0-9.]', '', 'g'), '')::numeric, 0) as test1,
-      COALESCE(NULLIF(regexp_replace('', '[^0-9.]', '', 'g'), '')::numeric, 0) as test2,
-      COALESCE(NULLIF(regexp_replace('   ', '[^0-9.]', '', 'g'), '')::numeric, 0) as test3,
-      COALESCE(NULLIF(regexp_replace(NULL, '[^0-9.]', '', 'g'), '')::numeric, 0) as test4
-    `
-  );
-  console.log("SQL test results:", result);
+  const result = await db.execute(sql`
+    UPDATE products 
+    SET seller_id = 'e98e4537-b11e-4f04-9c68-06dcfcfdd691' 
+    WHERE seller_id = '00000000-0000-0000-0000-000000000000' 
+       OR seller_id = '00000000-0000-0000-0000-000000000001'
+  `);
+  console.log("Reassigned legacy dummy products to registered seller:", result);
 }
 
 main().catch(console.error).finally(() => process.exit(0));

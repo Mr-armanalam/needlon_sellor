@@ -3,6 +3,7 @@ import * as dotenv from "dotenv";
 import path from "path";
 
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
+process.env.TEST_SELLER_ID = "e98e4537-b11e-4f04-9c68-06dcfcfdd691";
 
 async function runProductsModuleTests() {
   const { db } = await import("../../db");
@@ -458,6 +459,56 @@ async function runProductsModuleTests() {
       throw new Error("Mapper failed to preserve valid base64 Data URL!");
     }
     console.log("✅ Data URL preservation verified for persistent DB images.");
+
+    // 18. Test Bulk Upload API & Validation
+    console.log("\n18. Testing Bulk Upload Endpoint & Row Validation...");
+    const { POST: bulkUploadHandler } = await import("../../app/api/seller/products/bulk-upload/route");
+
+    // Test invalid non-array payload
+    const invalidReq = new Request("http://localhost:3000/api/seller/products/bulk-upload", {
+      method: "POST",
+      body: JSON.stringify({ products: "not-an-array" }),
+    });
+
+    const invalidRes = await bulkUploadHandler(invalidReq as any);
+    if (invalidRes.status !== 400 && invalidRes.status !== 500) {
+      throw new Error("Bulk upload endpoint failed to reject non-array payload!");
+    }
+    console.log("✅ Bulk Upload payload validation verified (Rejected non-array payload).");
+
+    // Test valid bulk upload array
+    const timestampBulk = Date.now();
+    const validBulkReq = new Request("http://localhost:3000/api/seller/products/bulk-upload", {
+      method: "POST",
+      body: JSON.stringify({
+        products: [
+          {
+            name: `Bulk Test Kurti ${timestampBulk}`,
+            category: "Ethnic Wear",
+            retailPrice: "1950",
+            boutiqueStockCount: "25",
+            brandLabel: "House of Needlon",
+            uniqueSku: `SKU-BULK-TST1-${timestampBulk}`,
+          },
+          {
+            name: `Bulk Test Dress ${timestampBulk}`,
+            category: "Western Wear",
+            retailPrice: "2200",
+            boutiqueStockCount: "10",
+            brandLabel: "Needlon Studio",
+            uniqueSku: `SKU-BULK-TST2-${timestampBulk}`,
+          },
+        ],
+      }),
+    });
+
+    const validRes = await bulkUploadHandler(validBulkReq as any);
+    const validJson = await validRes.json();
+
+    if (!validJson.data?.items || validJson.data.items.length !== 2) {
+      throw new Error("Bulk upload endpoint failed to insert items!");
+    }
+    console.log(`✅ Bulk Upload DB transaction succeeded (Inserted ${validJson.data.items.length} products).`);
 
     console.log("\n🎉 ALL CANONICAL PRODUCTS MODULE TESTS PASSED! ✅");
   } finally {
