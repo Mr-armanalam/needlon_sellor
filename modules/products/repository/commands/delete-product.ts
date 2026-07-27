@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { products } from "@/db/schema/products/products";
+import { productsTable as products } from "@/db/schema/catalog/products/table";
 
 export async function deleteProduct(id: string) {
   const [deleted] = await db

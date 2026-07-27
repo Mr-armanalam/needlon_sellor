@@ -1,7 +1,7 @@
 import { db } from "@/db";
-import { categories } from "@/db/schema/catalog/categories/table";
-import { inventory } from "@/db/schema/products/inventry";
-import { productMedia } from "@/db/schema/products/product_media";
+import { categoriesTable as categories } from "@/db/schema/catalog/categories/table";
+import { inventoryTable } from "@/db/schema/catalog/products/inventory/table";
+import { productImagesTable } from "@/db/schema/catalog/products/product-images/table";
 import { generateUniqueSlug } from "@/modules/shared/slug/generate-unique-slug";
 import { createProduct } from "../repository/commands/create-product";
 import { createProductVariant } from "../repository/commands/create-product-variant";
@@ -52,7 +52,7 @@ export async function createWizardProductService({ sellerId, data }: CreateWizar
 
   // 4. Insert master product record
   const product = await createProduct({
-    sellerId,
+    storeId: sellerId,
     categoryId,
     name: data.name.trim(),
     slug,
@@ -78,7 +78,7 @@ export async function createWizardProductService({ sellerId, data }: CreateWizar
 
   // 6. Insert inventory record
   const [invRecord] = await db
-    .insert(inventory)
+    .insert(inventoryTable)
     .values({
       variantId: variant.id,
       quantity: data.boutiqueStockCount,
@@ -92,16 +92,13 @@ export async function createWizardProductService({ sellerId, data }: CreateWizar
     for (let i = 0; i < data.mediaUrls.length; i++) {
       const url = data.mediaUrls[i];
       const [media] = await db
-        .insert(productMedia)
+        .insert(productImagesTable)
         .values({
           productId: product.id,
-          variantId: variant.id,
-          storageKey: `media-${Date.now()}-${i}`,
-          cdnUrl: url,
-          mediaType: url.endsWith(".mp4") ? "VIDEO" : "IMAGE",
+          imageUrl: url,
+          storageKey: `image-${i}.jpg`,
           displayOrder: i,
           isPrimary: i === 0,
-          status: "ACTIVE",
         })
         .returning();
       mediaRecords.push(media);

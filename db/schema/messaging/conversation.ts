@@ -7,7 +7,7 @@ import {
   index,
 } from "drizzle-orm/pg-core";
 import { product_orders } from "../orders/orders";
-import { products } from "../products/products";
+import { productsTable as products } from "../catalog/products/table";
 import { isNotNull } from "drizzle-orm";
 
 // Defining Conversation Type Enum for structured contextual routing

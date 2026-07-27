@@ -1,0 +1,11 @@
+export const INVENTORY = {
+    LOW_STOCK_THRESHOLD: 5,
+
+    DEFAULT_QUANTITY: 0,
+
+    MAX_QUANTITY: 999999,
+
+    DEFAULT_TRACKING: true,
+
+    ALLOW_BACKORDER: false,
+} as const;

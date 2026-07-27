@@ -1,206 +1,7575 @@
-db/schema/catalog/categories/table.ts
-import {
-    pgTable,
-    uuid,
-    varchar,
-    text,
-    integer,
-    boolean,
-    jsonb,
-    timestamp,
-    index,
-    uniqueIndex,
-} from "drizzle-orm/pg-core";
+Step 3.4.1 — Save Draft API Contract
 
-import { usersTable } from "@/db/schema/users";
-import { catalogStatusEnum } from "../enums";
 
-export const categories = pgTable(
-    "categories",
+
+Status: 🚧 API Contract (Frozen after approval)
+
+
+
+Implementation: ❌ Not started
+
+
+
+This contract defines how an authenticated seller explicitly saves a product as a Draft.
+
+
+
+Unlike the generic Update API, this endpoint manages the workflow state of the product and confirms that the current work is stored as a draft.
+
+
+
+1. Endpoint
+
+POST /api/v1/seller/products/{productId}/save-draft
+
+2. Purpose
+
+
+
+Save the current product as a draft.
+
+
+
+This endpoint:
+
+
+
+Keeps the product private
+
+Prevents public visibility
+
+Allows incomplete products to be stored
+
+Updates draft metadata
+
+Records audit history
+
+
+
+This endpoint never publishes a product.
+
+
+
+3. Authentication
+
+
+
+Required.
+
+
+
+Bearer Access Token
+
+4. Authorization
+
+
+
+The authenticated seller must:
+
+
+
+Be active
+
+Own the product
+
+Have an active seller profile
+
+Have an active store
+
+5. Headers
+
+
+
+Required
+
+
+
+Authorization: Bearer <access_token>
+
+
+
+Content-Type: application/json
+
+
+
+Optional
+
+
+
+If-Match: "<etag>"
+
+6. Path Parameters
+
+interface SaveDraftPathParams {
+
+    productId: UUID;
+
+}
+
+7. Request Body
+
+
+
+No request body.
+
+
+
+The endpoint acts on the current persisted state of the product.
+
+
+
+POST /products/{productId}/save-draft
+
+8. Allowed State Transitions
+
+DRAFT
+
+    │
+
+    └────► DRAFT (Save)
+
+
+
+UNPUBLISHED
+
+    │
+
+    └────► DRAFT
+
+
+
+ARCHIVED
+
+    │
+
+    └────► DRAFT
+
+
+
+Not allowed:
+
+
+
+PUBLISHED
+
+SOFT_DELETED
+
+9. Business Rules
+
+Product
+
+
+
+Must exist.
+
+
+
+Must belong to authenticated seller.
+
+
+
+Must not be soft deleted.
+
+
+
+Draft Validation
+
+
+
+Unlike Publish,
+
+
+
+Drafts may contain:
+
+
+
+Missing images
+
+Missing pricing
+
+Missing inventory
+
+Missing SEO
+
+Missing AI
+
+Missing shipping
+
+
+
+Incomplete products are allowed.
+
+
+
+Existing Draft
+
+
+
+Saving an already Draft product:
+
+
+
+Updates draft timestamp
+
+Updates audit fields
+
+
+
+No error returned.
+
+
+
+Published Product
+
+
+
+Published products cannot be converted directly into Draft.
+
+
+
+Seller must first:
+
+
+
+Published
+
+
+
+↓
+
+
+
+Unpublish
+
+
+
+↓
+
+
+
+Save Draft
+
+10. Repository Interactions
+
+
+
+Expected repositories:
+
+
+
+ProductRepository
+
+11. Service Flow
+
+Authenticate Seller
+
+        │
+
+        ▼
+
+Authorize Seller
+
+        │
+
+        ▼
+
+Validate Product
+
+        │
+
+        ▼
+
+Verify Ownership
+
+        │
+
+        ▼
+
+Verify Current State
+
+        │
+
+        ▼
+
+Update Status → DRAFT
+
+        │
+
+        ▼
+
+Update Draft Timestamp
+
+        │
+
+        ▼
+
+Write Audit Log
+
+        │
+
+        ▼
+
+Publish Domain Event
+
+        │
+
+        ▼
+
+Return Response
+
+12. Domain Events
+
+
+
+Emitted after success:
+
+
+
+ProductDraftSavedEvent
+
+
+
+Consumers may:
+
+
+
+Update activity feed
+
+Trigger autosave analytics
+
+Clear publish warnings
+
+Notify collaborative editing services (future)
+
+13. Success Response
+
+HTTP 200
+
+{
+
+  "success": true,
+
+  "message": "Draft saved successfully.",
+
+  "data": {
+
+    "id": "uuid",
+
+    "status": "DRAFT",
+
+    "draftSavedAt": "2026-07-23T14:20:00Z",
+
+    "updatedAt": "2026-07-23T14:20:00Z"
+
+  }
+
+}
+
+14. Response DTO
+
+interface SaveDraftResponseDto {
+
+    success: true;
+
+
+
+    message: string;
+
+
+
+    data: {
+
+        id: UUID;
+
+        status: ProductStatus;
+
+        draftSavedAt: string;
+
+        updatedAt: string;
+
+    };
+
+}
+
+15. HTTP Status Codes
+
+Status	Meaning
+
+200	Draft saved
+
+400	Invalid request
+
+401	Unauthorized
+
+403	Forbidden
+
+404	Product not found
+
+409	Invalid workflow transition
+
+429	Rate limited
+
+500	Internal server error
+
+16. Error Codes
+
+UNAUTHORIZED
+
+
+
+FORBIDDEN
+
+
+
+PRODUCT_NOT_FOUND
+
+
+
+PRODUCT_DELETED
+
+
+
+INVALID_WORKFLOW_STATE
+
+
+
+SAVE_DRAFT_NOT_ALLOWED
+
+
+
+RATE_LIMIT_EXCEEDED
+
+
+
+INTERNAL_SERVER_ERROR
+
+17. Audit
+
+
+
+Automatically updated:
+
+
+
+updatedAt
+
+
+
+updatedBy
+
+
+
+draftSavedAt
+
+18. Side Effects
+
+
+
+After saving a draft:
+
+
+
+Save Draft
+
+      │
+
+      ▼
+
+Update Product Status
+
+      │
+
+      ▼
+
+Write Audit Log
+
+      │
+
+      ▼
+
+Invalidate Seller Cache
+
+      │
+
+      ▼
+
+Emit ProductDraftSavedEvent
+
+
+
+No public cache invalidation is required because draft products are not publicly accessible.
+
+
+
+
+
+
+
+
+
+Step 3.5.1.2 — Delete Product Image API Contract
+
+
+
+Status: 🚧 API Contract (Frozen after approval)
+
+
+
+Implementation: ❌ Not started
+
+
+
+This contract defines how an authenticated seller permanently removes an image from a product.
+
+
+
+The operation deletes the Product Image resource, updates image ordering, maintains the primary image invariant, and removes the associated media from storage.
+
+
+
+1. Endpoint
+
+DELETE /api/v1/seller/products/{productId}/images/{imageId}
+
+2. Purpose
+
+
+
+Delete a product image.
+
+
+
+After successful deletion:
+
+
+
+Image record removed
+
+Storage object deleted
+
+CDN cache invalidated
+
+Display order normalized
+
+Primary image reassigned if necessary
+
+3. Authentication
+
+
+
+Required.
+
+
+
+Bearer Access Token
+
+4. Authorization
+
+
+
+Seller must:
+
+
+
+Be authenticated
+
+Own the product
+
+Have an active seller account
+
+Have an active store
+
+5. Headers
+
+
+
+Required
+
+
+
+Authorization: Bearer <access_token>
+
+
+
+Optional
+
+
+
+If-Match: "<etag>"
+
+6. Path Parameters
+
+interface DeleteProductImagePathParams {
+
+    productId: UUID;
+
+    imageId: UUID;
+
+}
+
+7. Request Body
+
+
+
+None.
+
+
+
+8. Business Rules
+
+Product
+
+
+
+Must exist.
+
+
+
+Must belong to authenticated seller.
+
+
+
+Must not be soft deleted.
+
+
+
+Image
+
+
+
+Image must:
+
+
+
+exist
+
+belong to the specified product
+
+not already be deleted
+
+
+
+Otherwise:
+
+
+
+404 Not Found
+
+Minimum Image Rule
+
+
+
+A published product must always contain at least one image.
+
+
+
+Therefore:
+
+
+
+Deleting the last remaining image from a published product is not allowed.
+
+
+
+Return:
+
+
+
+409 IMAGE_REQUIRED_FOR_PUBLISHED_PRODUCT
+
+
+
+For:
+
+
+
+Draft
+
+Unpublished
+
+Archived
+
+
+
+the last image may be deleted.
+
+
+
+9. Primary Image Rule
+
+
+
+If deleted image is not primary:
+
+
+
+Delete
+
+     │
+
+     ▼
+
+Normalize Display Order
+
+
+
+If deleted image is primary:
+
+
+
+Delete
+
+     │
+
+     ▼
+
+Find Lowest Display Order
+
+     │
+
+     ▼
+
+Assign Primary
+
+
+
+Exactly one image must remain primary whenever images still exist.
+
+
+
+10. Display Order Normalization
+
+
+
+Before
+
+
+
+1 ⭐
+
+
+
+2
+
+
+
+3
+
+
+
+4
+
+
+
+Delete image 2
+
+
+
+After
+
+
+
+1 ⭐
+
+
+
+2
+
+
+
+3
+
+
+
+No gaps are permitted.
+
+
+
+11. Storage Processing
+
+
+
+After database commit:
+
+
+
+Delete Database Record
+
+        │
+
+        ▼
+
+Delete Original Image
+
+        │
+
+        ▼
+
+Delete Thumbnails
+
+        │
+
+        ▼
+
+Delete Responsive Variants
+
+        │
+
+        ▼
+
+Purge CDN Cache
+
+
+
+Storage cleanup executes asynchronously.
+
+
+
+12. Repository Interactions
+
+
+
+Expected repositories:
+
+
+
+ProductRepository
+
+
+
+ProductImageRepository
+
+
+
+StorageRepository
+
+13. Service Flow
+
+Authenticate Seller
+
+        │
+
+        ▼
+
+Authorize Seller
+
+        │
+
+        ▼
+
+Load Product
+
+        │
+
+        ▼
+
+Verify Ownership
+
+        │
+
+        ▼
+
+Load Image
+
+        │
+
+        ▼
+
+Validate Delete Rules
+
+        │
+
+        ▼
+
+Delete Image Record
+
+        │
+
+        ▼
+
+Normalize Display Order
+
+        │
+
+        ▼
+
+Assign Primary (If Needed)
+
+        │
+
+        ▼
+
+Write Audit Log
+
+        │
+
+        ▼
+
+Emit ProductImageDeletedEvent
+
+        │
+
+        ▼
+
+Schedule Storage Cleanup
+
+        │
+
+        ▼
+
+Return Success
+
+14. Domain Events
+
+
+
+Successful deletion emits:
+
+
+
+ProductImageDeletedEvent
+
+
+
+Consumers:
+
+
+
+Storage Cleanup Worker
+
+CDN Purge Worker
+
+Thumbnail Cleanup
+
+Analytics
+
+Activity Feed
+
+15. Success Response
+
+HTTP 200
+
+{
+
+  "success": true,
+
+  "message": "Product image deleted successfully.",
+
+  "data": {
+
+    "deletedImageId": "uuid",
+
+    "remainingImages": 4,
+
+    "primaryImageId": "uuid"
+
+  }
+
+}
+
+16. Response DTO
+
+interface DeleteProductImageResponseDto {
+
+    success: true;
+
+
+
+    message: string;
+
+
+
+    data: {
+
+        deletedImageId: UUID;
+
+
+
+        remainingImages: number;
+
+
+
+        primaryImageId: UUID | null;
+
+    };
+
+}
+
+17. HTTP Status Codes
+
+Status	Meaning
+
+200	Image deleted
+
+401	Unauthorized
+
+403	Forbidden
+
+404	Product/Image not found
+
+409	Business rule violation
+
+429	Rate limited
+
+500	Internal server error
+
+18. Error Codes
+
+UNAUTHORIZED
+
+
+
+FORBIDDEN
+
+
+
+PRODUCT_NOT_FOUND
+
+
+
+IMAGE_NOT_FOUND
+
+
+
+IMAGE_DOES_NOT_BELONG_TO_PRODUCT
+
+
+
+IMAGE_REQUIRED_FOR_PUBLISHED_PRODUCT
+
+
+
+DELETE_NOT_ALLOWED
+
+
+
+RATE_LIMIT_EXCEEDED
+
+
+
+STORAGE_DELETE_FAILED
+
+
+
+INTERNAL_SERVER_ERROR
+
+19. Audit
+
+
+
+Automatically updated:
+
+
+
+updatedAt
+
+
+
+updatedBy
+
+
+
+imageDeletedAt (audit log)
+
+
+
+imageDeletedBy (audit log)
+
+
+
+The image row itself is permanently removed. Deletion history is retained in the audit log.
+
+
+
+20. Side Effects
+
+Delete Image
+
+      │
+
+      ▼
+
+Delete Database Record
+
+      │
+
+      ▼
+
+Normalize Display Order
+
+      │
+
+      ▼
+
+Assign New Primary
+
+      │
+
+      ▼
+
+Invalidate Seller Cache
+
+      │
+
+      ▼
+
+Emit ProductImageDeletedEvent
+
+      │
+
+      ▼
+
+Async Storage Cleanup
+
+      │
+
+      ▼
+
+Async CDN Purge
+
+21. Security Rules
+
+
+
+The client cannot modify:
+
+
+
+displayOrder
+
+
+
+isPrimary
+
+
+
+storageKey
+
+
+
+cdnUrl
+
+
+
+thumbnailUrl
+
+
+
+createdBy
+
+
+
+updatedBy
+
+
+
+All modifications are performed by the backend.
+
+
+
+22. Performance Requirements
+
+
+
+Target:
+
+
+
+P95 < 150 ms
+
+
+
+Storage deletion and CDN purge must execute asynchronously after the database transaction commits.
+
+
+
+23. API Contract Summary
+
+Method:
+
+DELETE
+
+
+
+URL:
+
+/api/v1/seller/products/{productId}/images/{imageId}
+
+
+
+Authentication:
+
+Required
+
+
+
+Authorization:
+
+Seller Owner
+
+
+
+Request Body:
+
+None
+
+
+
+Response:
+
+DeleteProductImageResponseDto
+
+
+
+Returns:
+
+200 OK
+
+
+
+Implementation:
+
+Not started
+
+24. Delete Workflow
+
+Seller
+
+   │
+
+   ▼
+
+Select Image
+
+   │
+
+   ▼
+
+Delete Request
+
+   │
+
+   ▼
+
+Validate Ownership
+
+   │
+
+   ▼
+
+Delete Image Record
+
+   │
+
+   ▼
+
+Normalize Order
+
+   │
+
+   ▼
+
+Assign Primary (If Required)
+
+   │
+
+   ▼
+
+Return Success
+
+25. Future Enhancements
+
+
+
+The following can be added without changing this contract:
+
+
+
+Soft-delete grace period before physical media removal
+
+Background storage lifecycle policies
+
+Undo delete (before cleanup worker executes)
+
+Batch image deletion
+
+Image recycle bin for sellers
+
+✅ Step 3.5.1.2 Completed (Contract Draft)
+
+Phase 3 — API Contract Freeze
+
+
+
+✅ 3.1 Product API Standards
+
+✅ 3.2 Product CRUD
+
+✅ 3.3 Product Listing
+
+✅ 3.4 Product Workflow
+
+
+
+🚧 3.5 Supporting APIs
+
+
+
+    🚧 3.5.1 Product Image Management
+
+
+
+        ✅ 3.5.1.1 Upload Images API Contract
+
+        ✅ 3.5.1.2 Delete Image API Contract
+
+        ⏳ 3.5.1.3 Reorder Images API Contract
+
+        ⏳ 3.5.1.4 Set Primary Image API Contract
+
+Engineering Decisions
+
+
+
+The following decisions are frozen:
+
+
+
+Product image deletion is a hard delete for the database record, with storage cleanup performed asynchronously.
+
+Display order is always normalized after deletion; gaps in ordering are not permitted.
+
+If the deleted image is the primary image, the remaining image with the lowest display order automatically becomes the new primary image.
+
+A published product cannot lose its last remaining image. Draft, unpublished, and archived products may temporarily have zero images.
+
+Documentation Updates
+
+
+
+After approval, update:
+
+
+
+Current Progress: Mark Step 3.5.1.2 – Delete Image API Contract as completed.
+
+Decisions:
+
+Last-image deletion is prohibited only for published products.
+
+Primary image reassignment and display-order normalization are backend responsibilities.
+
+Changelog: Record the addition of the Delete Product Image API contract.
+
+
+
+Step 3.5.3.1 — Create Product Variant API Contract
+
+
+
+Status: 🚧 API Contract (Frozen after approval)
+
+
+
+Implementation: ❌ Not started
+
+
+
+This contract defines how an authenticated seller creates one or more product variants for an existing product.
+
+
+
+A variant represents a unique purchasable combination of product attributes (for example: Black / XL / Cotton).
+
+
+
+This endpoint creates the variant records only. Media uploads, inventory adjustments, pricing updates, and shipping overrides are handled by their respective APIs.
+
+
+
+1. Endpoint
+
+POST /api/v1/seller/products/{productId}/variants
+
+2. Purpose
+
+
+
+Create one or more variants for a product.
+
+
+
+Supported use cases:
+
+
+
+Single variant creation
+
+Bulk variant generation
+
+Dynamic attribute combinations
+
+Manual SKU assignment (optional)
+
+Automatic SKU generation (optional)
+
+3. Authentication
+
+
+
+Required.
+
+
+
+Bearer Access Token
+
+4. Authorization
+
+
+
+Seller must:
+
+
+
+Be authenticated
+
+Own the product
+
+Have an active seller account
+
+Have an active seller profile
+
+Have an active store
+
+5. Headers
+
+
+
+Required
+
+
+
+Authorization: Bearer <access_token>
+
+
+
+Content-Type: application/json
+
+
+
+Optional
+
+
+
+Idempotency-Key: <uuid>
+
+
+
+If-Match: "<etag>"
+
+6. Path Parameters
+
+interface CreateProductVariantPathParams {
+
+    productId: UUID;
+
+}
+
+7. Request DTO
+
+interface CreateProductVariantRequestDto {
+
+    variants: {
+
+        sku?: string;
+
+
+
+        barcode?: string | null;
+
+
+
+        attributes: {
+
+            attributeId: UUID;
+
+            optionId: UUID;
+
+        }[];
+
+
+
+        isDefault?: boolean;
+
+    }[];
+
+}
+
+Example Request
+
+{
+
+  "variants": [
+
     {
-        id: uuid("id")
-            .defaultRandom()
-            .primaryKey(),
 
-        name: varchar("name", {
-            length: 150,
-        }).notNull(),
+      "sku": "TSHIRT-BLK-XL",
 
-        displayName: varchar("display_name", {
-            length: 150,
-        }),
+      "attributes": [
 
-        slug: varchar("slug", {
-            length: 180,
-        }).notNull(),
+        {
 
-        description: text("description"),
+          "attributeId": "color-id",
 
-        parentId: uuid("parent_id"),
+          "optionId": "black-option"
 
-        coverImagePath: text(
-            "cover_image_path",
-        ),
+        },
 
-        coverImageUrl: text(
-            "cover_image_url",
-        ),
+        {
 
-        status: catalogStatusEnum(
-            "status",
-        )
-            .notNull()
-            .default("ACTIVE"),
+          "attributeId": "size-id",
 
-        sortOrder: integer(
-            "sort_order",
-        )
-            .notNull()
-            .default(0),
+          "optionId": "xl-option"
 
-        level: integer("level")
-            .notNull()
-            .default(0),
+        }
 
-        path: text("path")
-            .notNull(),
+      ],
 
-        isFeatured: boolean(
-            "is_featured",
-        )
-            .notNull()
-            .default(false),
+      "isDefault": true
 
-        isLeaf: boolean(),
-
-        code: varchar("code", {
-            length: 50,
-        }).notNull(),
-
-        isVisible: boolean(
-            "is_visible",
-        )
-            .notNull()
-            .default(true),
-
-        metadata: jsonb("metadata"),
-
-        createdBy: uuid(
-            "created_by",
-        ).references(
-            () => usersTable.id,
-            {
-                onDelete: "set null",
-            },
-        ),
-
-        updatedBy: uuid(
-            "updated_by",
-        ).references(
-            () => usersTable.id,
-            {
-                onDelete: "set null",
-            },
-        ),
-
-        createdAt: timestamp(
-            "created_at",
-            {
-                withTimezone: true,
-            },
-        )
-            .defaultNow()
-            .notNull(),
-
-        updatedAt: timestamp(
-            "updated_at",
-            {
-                withTimezone: true,
-            },
-        )
-            .defaultNow()
-            .notNull(),
-
-        deletedAt: timestamp(
-            "deleted_at",
-            {
-                withTimezone: true,
-            },
-        ),
     },
-    (table) => ({
-        slugIdx: uniqueIndex(
-            "categories_slug_idx",
-        ).on(table.slug),
 
-        parentIdx: index(
-            "categories_parent_idx",
-        ).on(table.parentId),
+    {
 
-        statusIdx: index(
-            "categories_status_idx",
-        ).on(table.status),
+      "sku": "TSHIRT-BLK-L",
 
-        pathIdx: index(
-            "categories_path_idx",
-        ).on(table.path),
+      "attributes": [
 
-        levelIdx: index(
-            "categories_level_idx",
-        ).on(table.level),
+        {
 
-        sortOrderIdx: index(
-            "categories_sort_order_idx",
-        ).on(table.sortOrder),
+          "attributeId": "color-id",
 
-        deletedIdx: index(
-            "categories_deleted_idx",
-        ).on(table.deletedAt),
-    }),
-);
+          "optionId": "black-option"
+
+        },
+
+        {
+
+          "attributeId": "size-id",
+
+          "optionId": "l-option"
+
+        }
+
+      ]
+
+    }
+
+  ]
+
+}
+
+8. Business Rules
+
+Product
 
 
-db/schema/category
 
-import {
-  pgTable,
-  uuid,
-  varchar,
-  text,
-  smallint,
-  integer,
-  boolean,
-  timestamp,
-  uniqueIndex,
-  AnyPgColumn,
-} from "drizzle-orm/pg-core";
+Must:
 
-export const categories = pgTable(
-  "categories",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
 
-    // Self-reference foreign key for nested hierarchies
-    parentId: uuid("parent_id").references((): AnyPgColumn => categories.id, {
-      onDelete: "cascade",
-    }),
 
-    name: varchar("name", { length: 120 }).notNull(),
-    slug: varchar("slug", { length: 150 }).notNull(),
-    description: text("description"),
-    iconUrl: text("icon_url"),
-    bannerUrl: text("banner_url"),
+exist
 
-    displayOrder: integer("display_order").default(0).notNull(),
-    level: smallint("level").default(1).notNull(),
-    isActive: boolean("is_active").default(true).notNull(),
+belong to authenticated seller
 
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
-  },
-  (table) => [uniqueIndex("categories_slug_idx").on(table.slug)],
-);
+not be soft deleted
+
+Maximum Variants
+
+
+
+A product may contain at most
+
+
+
+100
+
+
+
+variants.
+
+
+
+If exceeded
+
+
+
+409 VARIANT_LIMIT_EXCEEDED
+
+Variant Combination
+
+
+
+Each attribute combination must be unique.
+
+
+
+Example
+
+
+
+Black + XL
+
+
+
+cannot exist twice.
+
+
+
+Attribute Validation
+
+
+
+Every submitted attribute:
+
+
+
+must exist
+
+must belong to the product category
+
+must support variants
+
+option must exist
+
+option must belong to the attribute
+
+Duplicate Combination
+
+
+
+Rejected.
+
+
+
+Example
+
+
+
+Black
+
+
+
+XL
+
+
+
+already exists.
+
+
+
+Return
+
+
+
+409 DUPLICATE_VARIANT_COMBINATION
+
+SKU Rules
+
+
+
+If supplied
+
+
+
+globally unique
+
+uppercase normalization
+
+trimmed
+
+
+
+If omitted
+
+
+
+Backend generates one.
+
+
+
+Default Variant
+
+
+
+Only one variant may have
+
+
+
+isDefault = true
+
+
+
+If omitted
+
+
+
+first variant becomes default when no default exists
+
+otherwise remains false
+
+9. Repository Interactions
+
+
+
+Expected repositories
+
+
+
+ProductRepository
+
+
+
+ProductVariantRepository
+
+
+
+VariantOptionRepository
+
+
+
+CategoryAttributeRepository
+
+10. Service Flow
+
+Authenticate Seller
+
+        │
+
+        ▼
+
+Authorize Seller
+
+        │
+
+        ▼
+
+Load Product
+
+        │
+
+        ▼
+
+Verify Ownership
+
+        │
+
+        ▼
+
+Validate Attribute Definitions
+
+        │
+
+        ▼
+
+Validate Variant Combinations
+
+        │
+
+        ▼
+
+Generate SKU (If Needed)
+
+        │
+
+        ▼
+
+Create Variants
+
+        │
+
+        ▼
+
+Create Variant Attribute Values
+
+        │
+
+        ▼
+
+Assign Default Variant
+
+        │
+
+        ▼
+
+Commit Transaction
+
+        │
+
+        ▼
+
+Write Audit Log
+
+        │
+
+        ▼
+
+Emit ProductVariantCreatedEvent
+
+        │
+
+        ▼
+
+Return Success
+
+11. Transaction Rules
+
+
+
+Entire request executes in one transaction.
+
+
+
+Validate
+
+      │
+
+      ▼
+
+Insert Variants
+
+      │
+
+      ▼
+
+Insert Attribute Values
+
+      │
+
+      ▼
+
+Commit
+
+
+
+Failure
+
+
+
+Rollback
+
+
+
+No partial variant creation is allowed.
+
+
+
+12. Domain Events
+
+
+
+Successful creation emits
+
+
+
+ProductVariantCreatedEvent
+
+
+
+Consumers
+
+
+
+Inventory Service
+
+Pricing Service
+
+Search Index
+
+Cache Manager
+
+Analytics
+
+Activity Feed
+
+13. Success Response
+
+HTTP 201 Created
+
+{
+
+  "success": true,
+
+  "message": "Product variants created successfully.",
+
+  "data": {
+
+    "created": 2,
+
+    "variantIds": [
+
+      "uuid-1",
+
+      "uuid-2"
+
+    ]
+
+  }
+
+}
+
+14. Response DTO
+
+interface CreateProductVariantResponseDto {
+
+    success: true;
+
+
+
+    message: string;
+
+
+
+    data: {
+
+        created: number;
+
+
+
+        variantIds: UUID[];
+
+    };
+
+}
+
+15. HTTP Status Codes
+
+Status	Meaning
+
+201	Variants created
+
+400	Invalid request
+
+401	Unauthorized
+
+403	Forbidden
+
+404	Product not found
+
+409	Duplicate combination / SKU conflict
+
+422	Validation failed
+
+429	Rate limited
+
+500	Internal server error
+
+16. Error Codes
+
+UNAUTHORIZED
+
+
+
+FORBIDDEN
+
+
+
+PRODUCT_NOT_FOUND
+
+
+
+ATTRIBUTE_NOT_FOUND
+
+
+
+ATTRIBUTE_OPTION_NOT_FOUND
+
+
+
+INVALID_VARIANT_ATTRIBUTE
+
+
+
+DUPLICATE_VARIANT_COMBINATION
+
+
+
+VARIANT_LIMIT_EXCEEDED
+
+
+
+SKU_ALREADY_EXISTS
+
+
+
+DEFAULT_VARIANT_CONFLICT
+
+
+
+RATE_LIMIT_EXCEEDED
+
+
+
+INTERNAL_SERVER_ERROR
+
+17. Audit
+
+
+
+Automatically updated
+
+
+
+createdAt
+
+
+
+createdBy
+
+
+
+updatedAt
+
+
+
+updatedBy
+
+
+
+Variant creation history records:
+
+
+
+product ID
+
+variant ID
+
+attribute combination
+
+generated or supplied SKU
+
+seller ID
+
+timestamp
+
+18. Side Effects
+
+Create Variant
+
+      │
+
+      ▼
+
+Validate Combination
+
+      │
+
+      ▼
+
+Generate SKU
+
+      │
+
+      ▼
+
+Insert Variant
+
+      │
+
+      ▼
+
+Insert Attribute Values
+
+      │
+
+      ▼
+
+Invalidate Product Cache
+
+      │
+
+      ▼
+
+Emit ProductVariantCreatedEvent
+
+
+
+Inventory, pricing, and shipping records are not created by this endpoint. Dedicated APIs handle those domains.
+
+
+
+19. Security Rules
+
+
+
+The client cannot modify
+
+
+
+variantId
+
+
+
+productId
+
+
+
+sellerId
+
+
+
+createdAt
+
+
+
+updatedAt
+
+
+
+createdBy
+
+
+
+updatedBy
+
+
+
+The backend exclusively manages these values.
+
+
+
+20. Performance Requirements
+
+
+
+Target
+
+
+
+P95 < 200 ms
+
+
+
+Requirements:
+
+
+
+Single transaction
+
+Batch inserts
+
+No media processing
+
+No external service calls during transaction
+
+21. API Contract Summary
+
+Method:
+
+POST
+
+
+
+URL:
+
+/api/v1/seller/products/{productId}/variants
+
+
+
+Authentication:
+
+Required
+
+
+
+Authorization:
+
+Seller Owner
+
+
+
+Content-Type:
+
+application/json
+
+
+
+Response:
+
+CreateProductVariantResponseDto
+
+
+
+Returns:
+
+201 Created
+
+
+
+Implementation:
+
+Not started
+
+22. Workflow Diagram
+
+Seller
+
+   │
+
+   ▼
+
+Define Variant Combinations
+
+   │
+
+   ▼
+
+Submit Request
+
+   │
+
+   ▼
+
+Validate Attributes
+
+   │
+
+   ▼
+
+Check Duplicate Combinations
+
+   │
+
+   ▼
+
+Generate SKU (Optional)
+
+   │
+
+   ▼
+
+Create Variants
+
+   │
+
+   ▼
+
+Commit Transaction
+
+   │
+
+   ▼
+
+Return Success
+
+23. Future Enhancements
+
+
+
+This contract supports future enhancements without breaking compatibility:
+
+
+
+AI-generated variant combinations
+
+Bulk CSV variant import
+
+Automatic SKU templates
+
+Barcode generation
+
+Variant cloning
+
+Matrix-based variant creation
+
+✅ Step 3.5.3.1 Completed (Contract Draft)
+
+Phase 3 — API Contract Freeze
+
+
+
+✅ 3.5.1 Product Image Management
+
+✅ 3.5.2 Product Video Management
+
+
+
+🚧 3.5.3 Product Variant APIs
+
+
+
+    ✅ 3.5.3.1 Create Variant API Contract
+
+    ⏳ 3.5.3.2 Update Variant API Contract
+
+    ⏳ 3.5.3.3 Delete Variant API Contract
+
+    ⏳ 3.5.3.4 Get Variant API Contract
+
+    ⏳ 3.5.3.5 List Variants API Contract
+
+    ⏳ 3.5.3.6 Update Variant Status API Contract
+
+Frozen Engineering Decisions
+
+Variant creation supports both single and bulk creation in one transactional request.
+
+Variant uniqueness is enforced by the attribute combination, preventing duplicate combinations for the same product.
+
+SKU may be provided by the seller or generated automatically by the backend according to project SKU generation rules.
+
+This endpoint is responsible only for creating variant definitions and attribute mappings; inventory, pricing, shipping, and media remain separate bounded contexts.
+
+Documentation Updates
+
+
+
+After approval, update:
+
+
+
+Current Progress: Mark Step 3.5.3.1 – Create Variant API Contract as completed.
+
+Decisions:
+
+Variant creation is atomic and supports bulk operations.
+
+Variant uniqueness is enforced on attribute combinations.
+
+Changelog: Record the addition of the Create Product Variant API contract.
+
+
+
+Step 3.5.4.3 — Reserve Product Inventory API Contract
+
+
+
+Status: 🚧 API Contract (Frozen after approval)
+
+
+
+Implementation: ❌ Not started
+
+
+
+This contract defines how the backend reserves inventory for a specific product variant.
+
+
+
+Inventory reservation is used to temporarily lock stock for checkout, order placement, payment processing, and order fulfillment workflows without immediately deducting physical inventory.
+
+
+
+A reservation prevents overselling while allowing stock to be released if the order is cancelled or expires.
+
+
+
+Important: This endpoint is intended for internal backend services (Checkout, Order Service, Payment Service). It is not exposed directly to sellers or public clients.
+
+
+
+1. Endpoint
+
+POST /api/v1/internal/inventory/reservations
+
+2. Purpose
+
+
+
+Reserve inventory for a product variant.
+
+
+
+Supported operations:
+
+
+
+Reserve stock during checkout
+
+Reserve stock during order creation
+
+Reserve stock after successful payment authorization
+
+Reserve stock for manual order creation
+
+
+
+Not supported:
+
+
+
+Inventory deduction
+
+Reservation release
+
+Inventory reconciliation
+
+Inventory adjustment
+
+3. Authentication
+
+
+
+Required.
+
+
+
+Internal Service Authentication.
+
+
+
+Supported methods:
+
+
+
+Internal Service Token
+
+
+
+OR
+
+
+
+Mutual TLS (Future)
+
+
+
+OR
+
+
+
+Signed Internal JWT
+
+
+
+Seller authentication is not permitted.
+
+
+
+4. Authorization
+
+
+
+Caller must be one of:
+
+
+
+Checkout Service
+
+
+
+Order Service
+
+
+
+Payment Service
+
+
+
+Admin Service
+
+
+
+Unauthorized services receive:
+
+
+
+403 FORBIDDEN
+
+5. Headers
+
+
+
+Required
+
+
+
+Authorization: Bearer <internal_service_token>
+
+
+
+Content-Type: application/json
+
+
+
+Idempotency-Key: <uuid>
+
+6. Request DTO
+
+interface ReserveInventoryRequestDto {
+
+    orderId: UUID;
+
+
+
+    reservationId?: UUID;
+
+
+
+    items: {
+
+        variantId: UUID;
+
+
+
+        quantity: number;
+
+    }[];
+
+
+
+    expiresAt?: string;
+
+}
+
+Example Request
+
+{
+
+  "orderId": "uuid",
+
+  "items": [
+
+    {
+
+      "variantId": "uuid",
+
+      "quantity": 2
+
+    },
+
+    {
+
+      "variantId": "uuid2",
+
+      "quantity": 1
+
+    }
+
+  ],
+
+  "expiresAt": "2026-07-23T22:45:00Z"
+
+}
+
+7. Business Rules
+
+Variant
+
+
+
+Every variant must
+
+
+
+exist
+
+be active
+
+not be deleted
+
+
+
+Otherwise
+
+
+
+404 VARIANT_NOT_FOUND
+
+Inventory
+
+
+
+Inventory must exist.
+
+
+
+Otherwise
+
+
+
+404 INVENTORY_NOT_FOUND
+
+Quantity
+
+
+
+Must be
+
+
+
+> 0
+
+
+
+Otherwise
+
+
+
+422 INVALID_QUANTITY
+
+Reservation Formula
+
+
+
+Reservation updates
+
+
+
+reservedQuantity
+
+
+
+=
+
+
+
+reservedQuantity
+
+
+
++
+
+
+
+requestedQuantity
+
+Available Inventory
+
+
+
+Reservation succeeds only when
+
+
+
+availableQuantity >= requestedQuantity
+
+
+
+unless
+
+
+
+allowBackorder = true
+
+Reservation Expiration
+
+
+
+Reservation automatically expires.
+
+
+
+Default
+
+
+
+15 minutes
+
+
+
+Future versions may use configurable expiration.
+
+
+
+Idempotency
+
+
+
+Repeated requests using the same
+
+
+
+Idempotency-Key
+
+
+
+must never reserve stock twice.
+
+
+
+8. Repository Interactions
+
+InventoryRepository
+
+
+
+InventoryReservationRepository
+
+
+
+InventoryMovementRepository
+
+9. Service Flow
+
+Authenticate Internal Service
+
+          │
+
+          ▼
+
+Validate Idempotency
+
+          │
+
+          ▼
+
+Validate Request
+
+          │
+
+          ▼
+
+Load Variant Inventory
+
+          │
+
+          ▼
+
+Check Available Stock
+
+          │
+
+          ▼
+
+Reserve Stock
+
+          │
+
+          ▼
+
+Create Reservation Record
+
+          │
+
+          ▼
+
+Create Inventory Movement
+
+          │
+
+          ▼
+
+Commit Transaction
+
+          │
+
+          ▼
+
+Emit InventoryReservedEvent
+
+          │
+
+          ▼
+
+Return Success
+
+10. Transaction Rules
+
+
+
+All reservations execute inside one transaction.
+
+
+
+Validate
+
+
+
+↓
+
+
+
+Reserve Stock
+
+
+
+↓
+
+
+
+Insert Reservation
+
+
+
+↓
+
+
+
+Insert Inventory Movement
+
+
+
+↓
+
+
+
+Commit
+
+
+
+Failure
+
+
+
+Rollback
+
+11. Domain Events
+
+
+
+Successful reservation emits
+
+
+
+InventoryReservedEvent
+
+
+
+Conditional events
+
+
+
+InventoryLowStockEvent
+
+
+
+InventoryOutOfStockEvent
+
+
+
+Consumers
+
+
+
+Order Service
+
+Checkout Service
+
+Notification Service
+
+Search Index
+
+Analytics
+
+Cache Manager
+
+12. Success Response
+
+HTTP 201 Created
+
+{
+
+  "success": true,
+
+  "message": "Inventory reserved successfully.",
+
+  "data": {
+
+    "reservationId": "uuid",
+
+    "orderId": "uuid",
+
+    "expiresAt": "2026-07-23T22:45:00Z",
+
+    "items": [
+
+      {
+
+        "variantId": "uuid",
+
+        "reservedQuantity": 2
+
+      }
+
+    ]
+
+  }
+
+}
+
+13. Response DTO
+
+interface ReserveInventoryResponseDto {
+
+    success: true;
+
+
+
+    message: string;
+
+
+
+    data: {
+
+        reservationId: UUID;
+
+
+
+        orderId: UUID;
+
+
+
+        expiresAt: string;
+
+
+
+        items: {
+
+            variantId: UUID;
+
+
+
+            reservedQuantity: number;
+
+        }[];
+
+    };
+
+}
+
+14. HTTP Status Codes
+
+Status	Meaning
+
+201	Reservation created
+
+400	Invalid request
+
+401	Unauthorized
+
+403	Forbidden
+
+404	Variant or inventory not found
+
+409	Insufficient inventory
+
+422	Validation failed
+
+429	Rate limited
+
+500	Internal server error
+
+15. Error Codes
+
+UNAUTHORIZED
+
+
+
+FORBIDDEN
+
+
+
+VARIANT_NOT_FOUND
+
+
+
+INVENTORY_NOT_FOUND
+
+
+
+INVALID_QUANTITY
+
+
+
+INSUFFICIENT_INVENTORY
+
+
+
+RESERVATION_ALREADY_EXISTS
+
+
+
+IDEMPOTENCY_KEY_CONFLICT
+
+
+
+RATE_LIMIT_EXCEEDED
+
+
+
+INTERNAL_SERVER_ERROR
+
+16. Audit
+
+
+
+Automatically records
+
+
+
+reservationId
+
+
+
+orderId
+
+
+
+variantId
+
+
+
+requestedQuantity
+
+
+
+reservedQuantity
+
+
+
+expiresAt
+
+
+
+createdAt
+
+
+
+createdByService
+
+17. Side Effects
+
+Reserve Inventory
+
+        │
+
+        ▼
+
+Increase Reserved Quantity
+
+        │
+
+        ▼
+
+Decrease Available Quantity
+
+        │
+
+        ▼
+
+Create Reservation
+
+        │
+
+        ▼
+
+Create Inventory Movement
+
+        │
+
+        ▼
+
+Invalidate Cache
+
+        │
+
+        ▼
+
+Emit InventoryReservedEvent
+
+18. Security Rules
+
+
+
+Clients cannot modify
+
+
+
+inventoryId
+
+
+
+sellerId
+
+
+
+reservationId
+
+
+
+movementId
+
+
+
+availableQuantity
+
+
+
+reservedQuantity
+
+
+
+createdAt
+
+
+
+createdBy
+
+
+
+These values are maintained exclusively by the backend.
+
+
+
+19. Performance Requirements
+
+
+
+Target
+
+
+
+P95 < 100 ms
+
+
+
+Requirements
+
+
+
+Single ACID transaction
+
+Row-level locking
+
+Idempotency enforcement
+
+No external API calls
+
+Event publishing after commit
+
+20. API Contract Summary
+
+Method:
+
+POST
+
+
+
+URL:
+
+/api/v1/internal/inventory/reservations
+
+
+
+Authentication:
+
+Internal Service
+
+
+
+Authorization:
+
+Service-to-Service
+
+
+
+Content-Type:
+
+application/json
+
+
+
+Response:
+
+ReserveInventoryResponseDto
+
+
+
+Returns:
+
+201 Created
+
+
+
+Implementation:
+
+Not started
+
+21. Workflow Diagram
+
+Checkout / Order Service
+
+          │
+
+          ▼
+
+Reserve Inventory
+
+          │
+
+          ▼
+
+Validate Request
+
+          │
+
+          ▼
+
+Check Available Stock
+
+          │
+
+          ▼
+
+Reserve Quantity
+
+          │
+
+          ▼
+
+Create Reservation
+
+          │
+
+          ▼
+
+Create Inventory Movement
+
+          │
+
+          ▼
+
+Commit Transaction
+
+          │
+
+          ▼
+
+Return Success
+
+22. Future Enhancements
+
+
+
+This contract supports future enhancements without breaking compatibility:
+
+
+
+Distributed reservation service
+
+Warehouse-aware reservations
+
+Partial reservation support
+
+Reservation extension API
+
+Reservation priority levels
+
+Automatic reservation expiration worker
+
+Event-driven reservation recovery
+
+✅ Step 3.5.4.3 Completed (Contract Draft)
+
+Phase 3 — API Contract Freeze
+
+
+
+✅ 3.5.1 Product Image Management
+
+✅ 3.5.2 Product Video Management
+
+✅ 3.5.3 Product Variant APIs
+
+
+
+🚧 3.5.4 Product Inventory APIs
+
+
+
+    ✅ 3.5.4.1 Get Inventory API Contract
+
+    ✅ 3.5.4.2 Update Inventory API Contract
+
+    ✅ 3.5.4.3 Reserve Inventory API Contract
+
+    ⏳ 3.5.4.4 Release Reservation API Contract
+
+    ⏳ 3.5.4.5 Inventory History API Contract
+
+    ⏳ 3.5.4.6 Inventory Reconciliation API Contract
+
+Frozen Engineering Decisions
+
+1. Internal-only endpoint
+
+
+
+Inventory reservation is an internal service-to-service operation. Seller and public clients cannot call this endpoint directly.
+
+
+
+2. Reservation before deduction
+
+
+
+Stock is reserved first and deducted only during fulfillment. This separation prevents overselling while supporting payment failures and order cancellations.
+
+
+
+3. Idempotent reservations
+
+
+
+Every reservation request must include an Idempotency-Key to guarantee that retries never reserve inventory more than once.
+
+
+
+4. Reservation lifecycle
+
+
+
+Each reservation has an expiration time. Expired or cancelled reservations are released through the dedicated Release Reservation API, ensuring reserved stock is eventually returned to available inventory.
+
+
+
+Documentation Updates
+
+
+
+After approval, update:
+
+
+
+Current Progress: Mark Step 3.5.4.3 – Reserve Inventory API Contract as completed.
+
+Decisions:
+
+Inventory reservation is an internal service operation using idempotency.
+
+Reservation and stock deduction are separate lifecycle stages.
+
+Changelog: Record the addition of the Reserve Inventory API contract.
+
+
+
+Step 3.5.5.2 — Update Product Pricing API Contract
+
+
+
+Status: 🚧 API Contract (Frozen after approval)
+
+
+
+Implementation: ❌ Not started
+
+
+
+This contract defines how an authenticated seller updates the pricing for a specific product variant.
+
+
+
+Updating pricing immediately changes the active pricing for the variant (unless a scheduled price is currently configured to activate later). Every successful update creates an immutable price history record.
+
+
+
+1. Endpoint
+
+PATCH /api/v1/seller/products/{productId}/variants/{variantId}/pricing
+
+2. Purpose
+
+
+
+Update the active pricing for a product variant.
+
+
+
+Supported operations:
+
+
+
+Update base price
+
+Update compare-at price
+
+Update sale price
+
+Update cost price
+
+Update tax configuration
+
+Enable/disable sale pricing
+
+
+
+Not supported:
+
+
+
+Scheduled pricing
+
+Historical pricing modification
+
+Coupon pricing
+
+Campaign pricing
+
+Marketplace discounts
+
+3. Authentication
+
+
+
+Required.
+
+
+
+Bearer Access Token
+
+4. Authorization
+
+
+
+Seller must:
+
+
+
+Be authenticated
+
+Own the product
+
+Have an active seller account
+
+Have an active seller profile
+
+Have an active store
+
+5. Headers
+
+
+
+Required
+
+
+
+Authorization: Bearer <access_token>
+
+
+
+Content-Type: application/json
+
+
+
+Optional
+
+
+
+If-Match: "<etag>"
+
+6. Path Parameters
+
+interface UpdatePricingPathParams {
+
+    productId: UUID;
+
+    variantId: UUID;
+
+}
+
+7. Request DTO
+
+interface UpdatePricingRequestDto {
+
+    basePrice: number;
+
+
+
+    compareAtPrice?: number | null;
+
+
+
+    salePrice?: number | null;
+
+
+
+    costPrice?: number | null;
+
+
+
+    currency: string;
+
+
+
+    taxClass?: string | null;
+
+
+
+    taxInclusive: boolean;
+
+
+
+    reason?:
+
+        | "PRICE_UPDATE"
+
+        | "SALE_STARTED"
+
+        | "SALE_ENDED"
+
+        | "COST_UPDATE"
+
+        | "MANUAL_CORRECTION";
+
+
+
+    notes?: string | null;
+
+}
+
+Example Request
+
+{
+
+  "basePrice": 999,
+
+  "compareAtPrice": 1299,
+
+  "salePrice": 899,
+
+  "costPrice": 540,
+
+  "currency": "INR",
+
+  "taxClass": "GST_12",
+
+  "taxInclusive": true,
+
+  "reason": "SALE_STARTED",
+
+  "notes": "Weekend promotional pricing."
+
+}
+
+8. Business Rules
+
+Product
+
+
+
+Must:
+
+
+
+exist
+
+belong to authenticated seller
+
+Variant
+
+
+
+Must:
+
+
+
+exist
+
+belong to product
+
+not be archived
+
+Base Price
+
+
+
+Must be
+
+
+
+> 0
+
+Compare-at Price
+
+
+
+If provided
+
+
+
+compareAtPrice >= basePrice
+
+
+
+Otherwise
+
+
+
+422 INVALID_COMPARE_AT_PRICE
+
+Sale Price
+
+
+
+If provided
+
+
+
+salePrice < basePrice
+
+
+
+Otherwise
+
+
+
+422 INVALID_SALE_PRICE
+
+Cost Price
+
+
+
+If provided
+
+
+
+costPrice >= 0
+
+Currency
+
+
+
+Must be supported.
+
+
+
+Current supported values
+
+
+
+INR
+
+
+
+Future versions may support multiple currencies.
+
+
+
+Pricing History
+
+
+
+Every successful update creates a new immutable history record.
+
+
+
+Existing history can never be modified.
+
+
+
+Effective Price
+
+
+
+Backend automatically recalculates
+
+
+
+effectivePrice
+
+
+
+=
+
+
+
+salePrice
+
+
+
+(if valid)
+
+
+
+else
+
+
+
+basePrice
+
+9. Repository Interactions
+
+ProductRepository
+
+
+
+ProductVariantRepository
+
+
+
+PricingRepository
+
+
+
+PriceHistoryRepository
+
+10. Service Flow
+
+Authenticate Seller
+
+        │
+
+        ▼
+
+Authorize Seller
+
+        │
+
+        ▼
+
+Load Product
+
+        │
+
+        ▼
+
+Verify Ownership
+
+        │
+
+        ▼
+
+Load Variant
+
+        │
+
+        ▼
+
+Load Pricing
+
+        │
+
+        ▼
+
+Validate Request
+
+        │
+
+        ▼
+
+Calculate Effective Price
+
+        │
+
+        ▼
+
+Update Pricing
+
+        │
+
+        ▼
+
+Create Price History
+
+        │
+
+        ▼
+
+Commit Transaction
+
+        │
+
+        ▼
+
+Emit ProductPriceUpdatedEvent
+
+        │
+
+        ▼
+
+Return Success
+
+11. Transaction Rules
+
+
+
+Entire update executes in one ACID transaction.
+
+
+
+Validate Request
+
+        │
+
+        ▼
+
+Update Pricing
+
+        │
+
+        ▼
+
+Insert Price History
+
+        │
+
+        ▼
+
+Commit
+
+
+
+Failure
+
+
+
+Rollback
+
+12. Domain Events
+
+
+
+Successful update emits
+
+
+
+ProductPriceUpdatedEvent
+
+
+
+Conditional events
+
+
+
+ProductSaleStartedEvent
+
+
+
+ProductSaleEndedEvent
+
+
+
+ProductPriceChangedEvent
+
+
+
+Consumers
+
+
+
+Search Index
+
+Analytics
+
+Cache Manager
+
+Recommendation Engine
+
+Activity Feed
+
+Pricing Dashboard
+
+13. Success Response
+
+HTTP 200 OK
+
+{
+
+  "success": true,
+
+  "message": "Product pricing updated successfully.",
+
+  "data": {
+
+    "pricingId": "uuid",
+
+    "variantId": "uuid",
+
+    "effectivePrice": 899,
+
+    "priceHistoryId": "uuid",
+
+    "updatedAt": "2026-07-24T00:10:00Z"
+
+  }
+
+}
+
+14. Response DTO
+
+interface UpdatePricingResponseDto {
+
+    success: true;
+
+
+
+    message: string;
+
+
+
+    data: {
+
+        pricingId: UUID;
+
+
+
+        variantId: UUID;
+
+
+
+        effectivePrice: number;
+
+
+
+        priceHistoryId: UUID;
+
+
+
+        updatedAt: string;
+
+    };
+
+}
+
+15. HTTP Status Codes
+
+Status	Meaning
+
+200	Pricing updated
+
+400	Invalid request
+
+401	Unauthorized
+
+403	Forbidden
+
+404	Product, Variant or Pricing not found
+
+409	Pricing conflict
+
+412	ETag mismatch
+
+422	Validation failed
+
+429	Rate limited
+
+500	Internal server error
+
+16. Error Codes
+
+UNAUTHORIZED
+
+
+
+FORBIDDEN
+
+
+
+PRODUCT_NOT_FOUND
+
+
+
+VARIANT_NOT_FOUND
+
+
+
+PRICING_NOT_FOUND
+
+
+
+INVALID_BASE_PRICE
+
+
+
+INVALID_COMPARE_AT_PRICE
+
+
+
+INVALID_SALE_PRICE
+
+
+
+INVALID_COST_PRICE
+
+
+
+UNSUPPORTED_CURRENCY
+
+
+
+ETAG_MISMATCH
+
+
+
+RATE_LIMIT_EXCEEDED
+
+
+
+INTERNAL_SERVER_ERROR
+
+17. Audit
+
+
+
+Automatically records
+
+
+
+pricingId
+
+
+
+priceHistoryId
+
+
+
+previousValues
+
+
+
+newValues
+
+
+
+reason
+
+
+
+notes
+
+
+
+sellerId
+
+
+
+updatedAt
+
+18. Side Effects
+
+Update Pricing
+
+       │
+
+       ▼
+
+Recalculate Effective Price
+
+       │
+
+       ▼
+
+Update Pricing Record
+
+       │
+
+       ▼
+
+Create Price History
+
+       │
+
+       ▼
+
+Invalidate Cache
+
+       │
+
+       ▼
+
+Emit ProductPriceUpdatedEvent
+
+19. Security Rules
+
+
+
+Clients cannot modify
+
+
+
+pricingId
+
+
+
+productId
+
+
+
+variantId
+
+
+
+sellerId
+
+
+
+effectivePrice
+
+
+
+priceHistoryId
+
+
+
+createdAt
+
+
+
+createdBy
+
+
+
+updatedAt
+
+
+
+updatedBy
+
+
+
+The backend computes all derived pricing fields.
+
+
+
+20. Performance Requirements
+
+
+
+Target
+
+
+
+P95 < 150 ms
+
+
+
+Requirements
+
+
+
+Single ACID transaction
+
+Optimistic concurrency using ETag
+
+Event publishing after commit
+
+No external API calls within the transaction
+
+21. API Contract Summary
+
+Method:
+
+PATCH
+
+
+
+URL:
+
+/api/v1/seller/products/{productId}/variants/{variantId}/pricing
+
+
+
+Authentication:
+
+Required
+
+
+
+Authorization:
+
+Seller Owner
+
+
+
+Content-Type:
+
+application/json
+
+
+
+Response:
+
+UpdatePricingResponseDto
+
+
+
+Returns:
+
+200 OK
+
+
+
+Implementation:
+
+Not started
+
+22. Workflow Diagram
+
+Seller
+
+   │
+
+   ▼
+
+Update Pricing
+
+   │
+
+   ▼
+
+Authenticate
+
+   │
+
+   ▼
+
+Authorize
+
+   │
+
+   ▼
+
+Validate Pricing
+
+   │
+
+   ▼
+
+Calculate Effective Price
+
+   │
+
+   ▼
+
+Update Pricing
+
+   │
+
+   ▼
+
+Create Price History
+
+   │
+
+   ▼
+
+Commit Transaction
+
+   │
+
+   ▼
+
+Return Success
+
+23. Future Enhancements
+
+
+
+This contract supports future enhancements without breaking compatibility:
+
+
+
+Bulk pricing updates
+
+AI-assisted pricing recommendations
+
+Regional pricing
+
+Customer segment pricing
+
+Automatic margin protection
+
+Approval workflow for enterprise sellers
+
+Multi-currency pricing
+
+✅ Step 3.5.5.2 Completed (Contract Draft)
+
+Phase 3 — API Contract Freeze
+
+
+
+🚧 3.5.5 Product Pricing APIs
+
+
+
+    ✅ 3.5.5.1 Get Pricing API Contract
+
+    ✅ 3.5.5.2 Update Pricing API Contract
+
+    ⏳ 3.5.5.3 Schedule Pricing API Contract
+
+    ⏳ 3.5.5.4 Activate Scheduled Pricing API Contract
+
+    ⏳ 3.5.5.5 Pricing History API Contract
+
+    ⏳ 3.5.5.6 Pricing Validation API Contract
+
+Frozen Engineering Decisions
+
+1. Immediate pricing updates
+
+
+
+The Update Pricing API immediately changes the active pricing for a variant. Future-dated pricing changes must use the Schedule Pricing API.
+
+
+
+2. Immutable price history
+
+
+
+Every pricing update creates a new immutable price history record. Previous pricing records cannot be edited or deleted.
+
+
+
+3. Backend-controlled pricing calculations
+
+
+
+The backend validates pricing rules and calculates the effective selling price. Clients provide input values only and never compute derived pricing fields.
+
+
+
+4. Optimistic concurrency
+
+
+
+The API supports If-Match/ETag validation to prevent lost updates when multiple users modify pricing simultaneously.
+
+
+
+Documentation Updates
+
+
+
+After approval, update:
+
+
+
+Current Progress: Mark Step 3.5.5.2 – Update Pricing API Contract as completed.
+
+Decisions:
+
+Immediate pricing updates are separated from scheduled pricing.
+
+Every update creates an immutable price history record.
+
+Effective price is computed exclusively by the backend.
+
+Changelog: Record the addition of the Update Product Pricing API contract.
+
+
+
+Step 3.5.7.2 — Validate Publish Readiness API Contract
+
+
+
+Status: 🚧 API Contract (Frozen after approval)
+
+
+
+Implementation: ❌ Not started
+
+
+
+This contract determines whether a product is eligible to transition from DRAFT/UNPUBLISHED to PUBLISHED.
+
+
+
+Unlike 3.5.7.1 Validate Product, which performs comprehensive product validation, this endpoint evaluates only publish-blocking rules and returns a clear publish readiness report.
+
+
+
+This endpoint never publishes a product. It only determines whether publishing is currently allowed.
+
+
+
+1. Endpoint
+
+POST /api/v1/seller/products/{productId}/validate/publish
+
+2. Purpose
+
+
+
+Determine whether a product is ready for publishing.
+
+
+
+Checks include:
+
+
+
+Product status
+
+Required information
+
+Category assignment
+
+Required category attributes
+
+Pricing
+
+Inventory
+
+Images
+
+Videos
+
+Variants
+
+Shipping configuration
+
+SEO minimum requirements
+
+Store eligibility
+
+Seller eligibility
+
+
+
+Not supported:
+
+
+
+Product updates
+
+Publishing
+
+Draft validation
+
+Inventory modification
+
+3. Authentication
+
+
+
+Required.
+
+
+
+Bearer Access Token
+
+4. Authorization
+
+
+
+Seller must:
+
+
+
+Be authenticated
+
+Own the product
+
+Have an active seller account
+
+
+
+Admin users may validate any product.
+
+
+
+5. Headers
+
+
+
+Required
+
+
+
+Authorization: Bearer <access_token>
+
+
+
+Content-Type: application/json
+
+
+
+Optional
+
+
+
+X-Correlation-Id: uuid
+
+6. Path Parameters
+
+interface ValidatePublishReadinessParamsDto {
+
+    productId: UUID;
+
+}
+
+7. Request DTO
+
+interface ValidatePublishReadinessRequestDto {
+
+    includeWarnings?: boolean;
+
+
+
+    includeRecommendations?: boolean;
+
+
+
+    locale?: string;
+
+}
+
+
+
+Default
+
+
+
+includeWarnings = true
+
+
+
+includeRecommendations = true
+
+
+
+locale = en-IN
+
+8. Publish Validation Checklist
+
+
+
+The validation engine executes the following checks.
+
+
+
+Seller Eligibility
+
+        │
+
+        ▼
+
+Store Status
+
+        │
+
+        ▼
+
+Product Status
+
+        │
+
+        ▼
+
+Product Information
+
+        │
+
+        ▼
+
+Category
+
+        │
+
+        ▼
+
+Required Attributes
+
+        │
+
+        ▼
+
+Variants
+
+        │
+
+        ▼
+
+Pricing
+
+        │
+
+        ▼
+
+Inventory
+
+        │
+
+        ▼
+
+Images
+
+        │
+
+        ▼
+
+Videos
+
+        │
+
+        ▼
+
+Shipping
+
+        │
+
+        ▼
+
+SEO Minimum
+
+        │
+
+        ▼
+
+Publish Decision
+
+9. Publish Blocking Rules
+
+
+
+Publishing is blocked when any of the following conditions exist.
+
+
+
+Seller
+
+Seller suspended
+
+Seller verification failed
+
+Store disabled
+
+Product
+
+Missing title
+
+Missing description
+
+Missing category
+
+Duplicate slug
+
+Invalid visibility
+
+Category
+
+Missing required attributes
+
+Invalid attribute values
+
+Variants
+
+Duplicate SKU
+
+Missing default variant
+
+Invalid variant combinations
+
+Pricing
+
+Selling price missing
+
+Selling price less than zero
+
+Invalid compare-at price
+
+Currency missing
+
+Inventory
+
+Inventory record missing
+
+Invalid stock configuration
+
+Media
+
+No images uploaded
+
+No primary image
+
+Unsupported media
+
+Shipping
+
+Weight missing
+
+Dimensions missing
+
+Invalid shipping configuration
+
+SEO
+
+
+
+Minimum requirements only.
+
+
+
+SEO never blocks publishing unless required by marketplace policy.
+
+
+
+10. Business Rules
+
+Publish Ready
+
+
+
+Product is publishable only when
+
+
+
+Blocking Errors = 0
+
+Warnings
+
+
+
+Warnings never prevent publishing.
+
+
+
+Example
+
+
+
+Missing Meta Description
+
+
+
+↓
+
+
+
+Allowed
+
+Recommendations
+
+
+
+Informational only.
+
+
+
+Health Score
+
+
+
+Returned for UI display only.
+
+
+
+It never determines publish eligibility.
+
+
+
+11. Repository Interactions
+
+SellerRepository
+
+
+
+StoreRepository
+
+
+
+ProductRepository
+
+
+
+VariantRepository
+
+
+
+InventoryRepository
+
+
+
+PricingRepository
+
+
+
+MediaRepository
+
+
+
+ShippingRepository
+
+
+
+CategoryRepository
+
+
+
+AttributeRepository
+
+
+
+SeoRepository
+
+
+
+Read-only.
+
+
+
+12. Service Flow
+
+Authenticate Seller
+
+        │
+
+        ▼
+
+Authorize Ownership
+
+        │
+
+        ▼
+
+Load Product Aggregate
+
+        │
+
+        ▼
+
+Run Publish Validator
+
+        │
+
+        ▼
+
+Collect Blocking Errors
+
+        │
+
+        ▼
+
+Collect Warnings
+
+        │
+
+        ▼
+
+Calculate Health Score
+
+        │
+
+        ▼
+
+Determine Publishable
+
+        │
+
+        ▼
+
+Return Response
+
+13. Publish Issue DTO
+
+interface PublishValidationIssue {
+
+    code: string;
+
+
+
+    field: string;
+
+
+
+    severity:
+
+        | "ERROR"
+
+        | "WARNING"
+
+        | "INFO";
+
+
+
+    message: string;
+
+
+
+    recommendation?: string;
+
+
+
+    blocking: boolean;
+
+}
+
+14. Response DTO
+
+interface ValidatePublishReadinessResponseDto {
+
+    success: true;
+
+
+
+    data: {
+
+        publishable: boolean;
+
+
+
+        healthScore: number;
+
+
+
+        blockingErrors: number;
+
+
+
+        warnings: number;
+
+
+
+        infos: number;
+
+
+
+        issues: PublishValidationIssue[];
+
+
+
+        checklist: {
+
+            seller: boolean;
+
+
+
+            product: boolean;
+
+
+
+            category: boolean;
+
+
+
+            attributes: boolean;
+
+
+
+            variants: boolean;
+
+
+
+            pricing: boolean;
+
+
+
+            inventory: boolean;
+
+
+
+            media: boolean;
+
+
+
+            shipping: boolean;
+
+
+
+            seo: boolean;
+
+        };
+
+    };
+
+}
+
+15. Success Response
+
+HTTP 200 OK
+
+{
+
+  "success": true,
+
+  "data": {
+
+    "publishable": false,
+
+    "healthScore": 91,
+
+    "blockingErrors": 1,
+
+    "warnings": 2,
+
+    "infos": 1,
+
+    "issues": [
+
+      {
+
+        "code": "PRIMARY_IMAGE_REQUIRED",
+
+        "field": "media.images",
+
+        "severity": "ERROR",
+
+        "blocking": true,
+
+        "message": "Primary image is required before publishing.",
+
+        "recommendation": "Select one uploaded image as the primary image."
+
+      }
+
+    ],
+
+    "checklist": {
+
+      "seller": true,
+
+      "product": true,
+
+      "category": true,
+
+      "attributes": true,
+
+      "variants": true,
+
+      "pricing": true,
+
+      "inventory": true,
+
+      "media": false,
+
+      "shipping": true,
+
+      "seo": true
+
+    }
+
+  }
+
+}
+
+16. HTTP Status Codes
+
+Status	Meaning
+
+200	Validation completed
+
+400	Invalid request
+
+401	Unauthorized
+
+403	Forbidden
+
+404	Product not found
+
+409	Product cannot be published
+
+429	Rate limited
+
+500	Internal server error
+
+17. Error Codes
+
+UNAUTHORIZED
+
+
+
+FORBIDDEN
+
+
+
+PRODUCT_NOT_FOUND
+
+
+
+PRODUCT_NOT_OWNED
+
+
+
+STORE_NOT_ACTIVE
+
+
+
+SELLER_NOT_ACTIVE
+
+
+
+INVALID_PRODUCT_STATE
+
+
+
+RATE_LIMIT_EXCEEDED
+
+
+
+INTERNAL_SERVER_ERROR
+
+18. Side Effects
+
+
+
+None.
+
+
+
+This endpoint:
+
+
+
+performs no writes
+
+does not publish products
+
+emits no domain events
+
+creates no audit logs
+
+modifies no product state
+
+19. Security Rules
+
+
+
+Never expose
+
+
+
+Internal Publish Rules
+
+
+
+Marketplace Ranking Logic
+
+
+
+Moderation Flags
+
+
+
+Cost Price
+
+
+
+Supplier Information
+
+
+
+Other Seller Data
+
+
+
+Only publish validation results are returned.
+
+
+
+20. Performance Requirements
+
+
+
+Target
+
+
+
+P95 < 150 ms
+
+
+
+Requirements
+
+
+
+Single aggregate load
+
+Parallel validation execution
+
+Read-only
+
+No N+1 queries
+
+Deterministic output
+
+21. API Contract Summary
+
+Method:
+
+POST
+
+
+
+URL:
+
+/api/v1/seller/products/{productId}/validate/publish
+
+
+
+Authentication:
+
+Required
+
+
+
+Authorization:
+
+Seller Owner / Admin
+
+
+
+Content-Type:
+
+application/json
+
+
+
+Response:
+
+ValidatePublishReadinessResponseDto
+
+
+
+Returns:
+
+200 OK
+
+
+
+Implementation:
+
+Not started
+
+22. Workflow Diagram
+
+Seller
+
+   │
+
+   ▼
+
+Validate Publish Readiness
+
+   │
+
+   ▼
+
+Authenticate
+
+   │
+
+   ▼
+
+Authorize
+
+   │
+
+   ▼
+
+Load Product Aggregate
+
+   │
+
+   ▼
+
+Run Publish Validation Rules
+
+   │
+
+   ▼
+
+Build Publish Checklist
+
+   │
+
+   ▼
+
+Determine Publishable
+
+   │
+
+   ▼
+
+Return Report
+
+23. Future Enhancements
+
+
+
+This contract supports future enhancements without breaking compatibility:
+
+
+
+Marketplace policy validation profiles
+
+AI-assisted publish recommendations
+
+Scheduled publish validation
+
+Country-specific publish rules
+
+Category-specific publish policies
+
+Automated issue fixing
+
+Compliance validation
+
+Moderation readiness checks
+
+✅ Step 3.5.7.2 Completed (Contract Draft)
+
+Phase 3 — API Contract Freeze
+
+
+
+🚧 3.5.7 Product Validation APIs
+
+
+
+    ✅ 3.5.7.1 Validate Product API
+
+    ✅ 3.5.7.2 Validate Publish Readiness API
+
+    ⏳ 3.5.7.3 Validate SKU API
+
+    ⏳ 3.5.7.4 Validate Slug API
+
+    ⏳ 3.5.7.5 Validate Variants API
+
+    ⏳ 3.5.7.6 Validate Pricing API
+
+    ⏳ 3.5.7.7 Validate Inventory API
+
+    ⏳ 3.5.7.8 Validate Media API
+
+    ⏳ 3.5.7.9 Validate Category Attributes API
+
+    ⏳ 3.5.7.10 Validate Shipping API
+
+    ⏳ 3.5.7.11 Validate SEO API
+
+    ⏳ 3.5.7.12 Product Health Score API
+
+Frozen Engineering Decisions
+
+1. Dedicated publish validator
+
+
+
+Publish readiness is evaluated by a dedicated validator that focuses exclusively on publish-blocking requirements. It reuses the shared validation engine but applies the PUBLISH rule set only.
+
+
+
+2. Checklist-based response
+
+
+
+The API returns both detailed validation issues and a high-level checklist for each validation domain (seller, pricing, media, shipping, etc.), allowing the frontend to build a guided publishing experience.
+
+
+
+3. Blocking vs non-blocking issues
+
+
+
+Only issues marked with blocking = true prevent publishing. Warnings and informational recommendations are returned for guidance but never affect the publishable decision.
+
+
+
+4. Publish decision independence
+
+
+
+The publishable flag is determined solely by publish-blocking business rules. The product health score is informational and must not influence publish eligibility.
+
+
+
+5. Read-only validation
+
+
+
+This endpoint never changes product status or triggers publication. It exists solely to verify readiness before the actual Publish Product API is invoked.
+
+
+
+Documentation Updates
+
+
+
+After approval, update:
+
+
+
+Current Progress: Mark Step 3.5.7.2 – Validate Publish Readiness API as completed.
+
+Decisions:
+
+Publish readiness uses a dedicated PUBLISH validation rule set.
+
+Checklist and issue reporting are both returned.
+
+Only blocking issues determine publish eligibility.
+
+Changelog: Record the addition of the Validate Publish Readiness API contract.
+
+
+
+Step 3.5.7.8 — Validate Media API Contract
+
+
+
+Status: 🚧 API Contract (Frozen after approval)
+
+
+
+Implementation: ❌ Not started
+
+
+
+This contract validates the complete media configuration of a product, including images and videos, before media changes are saved or a product is published.
+
+
+
+Unlike the Upload Image, Delete Image, Set Primary Image, Upload Video, and Set Primary Video APIs, this endpoint does not upload, delete, or modify any media. It only validates media completeness, integrity, ordering, and publish readiness.
+
+
+
+This endpoint is read-only.
+
+
+
+1. Endpoint
+
+POST /api/v1/seller/products/{productId}/validate/media
+
+2. Purpose
+
+
+
+Validate product media.
+
+
+
+Validation includes:
+
+
+
+Product images
+
+Product videos
+
+Primary image
+
+Primary video
+
+Media ordering
+
+File integrity
+
+MIME types
+
+Image dimensions
+
+Video metadata
+
+Variant media assignments
+
+Orphan media detection
+
+Duplicate media detection
+
+Publish readiness
+
+
+
+Not supported:
+
+
+
+Uploading media
+
+Deleting media
+
+Reordering media
+
+Image optimization
+
+Video transcoding
+
+3. Authentication
+
+
+
+Required.
+
+
+
+Bearer Access Token
+
+4. Authorization
+
+
+
+Seller must:
+
+
+
+be authenticated
+
+own the product
+
+
+
+Admins may validate any product.
+
+
+
+5. Headers
+
+
+
+Required
+
+
+
+Authorization: Bearer <access_token>
+
+
+
+Content-Type: application/json
+
+
+
+Optional
+
+
+
+X-Correlation-Id: uuid
+
+6. Path Parameters
+
+interface ValidateMediaParamsDto {
+
+    productId: UUID;
+
+}
+
+7. Request DTO
+
+interface ValidateMediaRequestDto {
+
+    validationMode?:
+
+        | "SAVE"
+
+        | "PUBLISH"
+
+        | "FULL";
+
+
+
+    includeWarnings?: boolean;
+
+
+
+    includeRecommendations?: boolean;
+
+
+
+    validateMetadata?: boolean;
+
+
+
+    locale?: string;
+
+}
+
+Default Values
+
+validationMode = FULL
+
+
+
+includeWarnings = true
+
+
+
+includeRecommendations = true
+
+
+
+validateMetadata = true
+
+
+
+locale = en-IN
+
+8. Validation Scope
+
+Product Images
+
+        │
+
+        ▼
+
+Primary Image
+
+        │
+
+        ▼
+
+Image Order
+
+        │
+
+        ▼
+
+Product Videos
+
+        │
+
+        ▼
+
+Primary Video
+
+        │
+
+        ▼
+
+Variant Media
+
+        │
+
+        ▼
+
+Metadata
+
+        │
+
+        ▼
+
+Publish Validation
+
+9. Business Rules
+
+Product Images
+
+
+
+Published products must contain
+
+
+
+Minimum Images = 1
+
+
+
+Maximum Images = Marketplace Configurable
+
+Primary Image
+
+
+
+Exactly one image must be marked as
+
+
+
+isPrimary = true
+
+
+
+Invalid
+
+
+
+0 Primary Images
+
+
+
+2 Primary Images
+
+Image Order
+
+
+
+Display order must
+
+
+
+start at 1
+
+be contiguous
+
+contain no duplicates
+
+
+
+Valid
+
+
+
+1
+
+2
+
+3
+
+4
+
+
+
+Invalid
+
+
+
+1
+
+3
+
+5
+
+Image Metadata
+
+
+
+Each image must have
+
+
+
+valid MIME type
+
+valid dimensions
+
+storage path
+
+checksum
+
+processing status = COMPLETED
+
+Product Videos
+
+
+
+Videos are optional.
+
+
+
+If present
+
+
+
+only one primary video
+
+processing must be completed
+
+supported codec required
+
+Variant Media
+
+
+
+Variant media
+
+
+
+must belong to the same product
+
+cannot reference deleted media
+
+cannot reference orphan media
+
+Duplicate Media
+
+
+
+Duplicate media are detected using checksum/hash comparison.
+
+
+
+Duplicate media generate warnings by default.
+
+
+
+Orphan Media
+
+
+
+Media not attached to
+
+
+
+product
+
+variant
+
+
+
+are considered orphaned.
+
+
+
+Publish Mode
+
+
+
+Published products require
+
+
+
+at least one valid image
+
+exactly one primary image
+
+all referenced media processed successfully
+
+no broken references
+
+
+
+Videos remain optional.
+
+
+
+10. Repository Interactions
+
+ProductRepository
+
+
+
+ProductImageRepository
+
+
+
+ProductVideoRepository
+
+
+
+VariantRepository
+
+
+
+StorageRepository
+
+
+
+MediaProcessingRepository
+
+
+
+MarketplaceSettingsRepository
+
+
+
+Read-only.
+
+
+
+11. Service Flow
+
+Authenticate Seller
+
+        │
+
+        ▼
+
+Authorize Product Ownership
+
+        │
+
+        ▼
+
+Load Product Media
+
+        │
+
+        ▼
+
+Validate Images
+
+        │
+
+        ▼
+
+Validate Videos
+
+        │
+
+        ▼
+
+Validate Variant Media
+
+        │
+
+        ▼
+
+Validate Metadata
+
+        │
+
+        ▼
+
+Generate Validation Report
+
+        │
+
+        ▼
+
+Return Response
+
+12. Media Validation Issue DTO
+
+interface MediaValidationIssue {
+
+    code: string;
+
+
+
+    field: string;
+
+
+
+    mediaId?: UUID;
+
+
+
+    variantId?: UUID;
+
+
+
+    severity:
+
+        | "ERROR"
+
+        | "WARNING"
+
+        | "INFO";
+
+
+
+    message: string;
+
+
+
+    recommendation?: string;
+
+}
+
+13. Response DTO
+
+interface ValidateMediaResponseDto {
+
+    success: true;
+
+
+
+    data: {
+
+        valid: boolean;
+
+
+
+        publishable: boolean;
+
+
+
+        mediaHealth: {
+
+            totalImages: number;
+
+
+
+            totalVideos: number;
+
+
+
+            processedImages: number;
+
+
+
+            processedVideos: number;
+
+
+
+            duplicateMedia: number;
+
+
+
+            orphanMedia: number;
+
+
+
+            invalidMedia: number;
+
+        };
+
+
+
+        summary: {
+
+            errors: number;
+
+
+
+            warnings: number;
+
+
+
+            infos: number;
+
+        };
+
+
+
+        issues: MediaValidationIssue[];
+
+    };
+
+}
+
+14. Success Response
+
+HTTP 200 OK
+
+{
+
+  "success": true,
+
+  "data": {
+
+    "valid": false,
+
+    "publishable": false,
+
+    "mediaHealth": {
+
+      "totalImages": 6,
+
+      "totalVideos": 1,
+
+      "processedImages": 6,
+
+      "processedVideos": 1,
+
+      "duplicateMedia": 0,
+
+      "orphanMedia": 0,
+
+      "invalidMedia": 1
+
+    },
+
+    "summary": {
+
+      "errors": 1,
+
+      "warnings": 1,
+
+      "infos": 0
+
+    },
+
+    "issues": [
+
+      {
+
+        "code": "PRIMARY_IMAGE_MISSING",
+
+        "field": "images",
+
+        "severity": "ERROR",
+
+        "message": "Exactly one primary image is required.",
+
+        "recommendation": "Assign one image as the primary image."
+
+      }
+
+    ]
+
+  }
+
+}
+
+15. HTTP Status Codes
+
+Status	Meaning
+
+200	Validation completed
+
+400	Invalid request
+
+401	Unauthorized
+
+403	Forbidden
+
+404	Product not found
+
+422	Invalid media configuration
+
+429	Rate limited
+
+500	Internal server error
+
+16. Error Codes
+
+UNAUTHORIZED
+
+
+
+FORBIDDEN
+
+
+
+PRODUCT_NOT_FOUND
+
+
+
+PRODUCT_NOT_OWNED
+
+
+
+NO_PRODUCT_IMAGES
+
+
+
+PRIMARY_IMAGE_REQUIRED
+
+
+
+MULTIPLE_PRIMARY_IMAGES
+
+
+
+INVALID_IMAGE_ORDER
+
+
+
+INVALID_IMAGE_METADATA
+
+
+
+INVALID_VIDEO_METADATA
+
+
+
+UNSUPPORTED_MEDIA_TYPE
+
+
+
+MEDIA_PROCESSING_INCOMPLETE
+
+
+
+BROKEN_MEDIA_REFERENCE
+
+
+
+ORPHAN_MEDIA
+
+
+
+DUPLICATE_MEDIA
+
+
+
+INVALID_VARIANT_MEDIA
+
+
+
+RATE_LIMIT_EXCEEDED
+
+
+
+INTERNAL_SERVER_ERROR
+
+17. Side Effects
+
+
+
+None.
+
+
+
+This endpoint:
+
+
+
+performs no writes
+
+uploads no media
+
+deletes no media
+
+reorders no media
+
+emits no events
+
+creates no audit logs
+
+18. Security Rules
+
+
+
+Never expose:
+
+
+
+Internal Storage Paths
+
+
+
+CDN Credentials
+
+
+
+Object Storage Buckets
+
+
+
+Media Processing Pipelines
+
+
+
+Virus Scan Results
+
+
+
+Other Seller Media
+
+
+
+Only validation results are returned.
+
+
+
+19. Performance Requirements
+
+
+
+Target
+
+
+
+P95 < 120 ms
+
+
+
+Requirements
+
+
+
+Single aggregate load
+
+Parallel metadata validation
+
+Read-only execution
+
+No N+1 queries
+
+Deterministic output
+
+20. API Contract Summary
+
+Method:
+
+POST
+
+
+
+URL:
+
+/api/v1/seller/products/{productId}/validate/media
+
+
+
+Authentication:
+
+Required
+
+
+
+Authorization:
+
+Seller Owner / Admin
+
+
+
+Content-Type:
+
+application/json
+
+
+
+Response:
+
+ValidateMediaResponseDto
+
+
+
+Returns:
+
+200 OK
+
+
+
+Implementation:
+
+Not started
+
+21. Workflow Diagram
+
+Seller
+
+   │
+
+   ▼
+
+Validate Media
+
+   │
+
+   ▼
+
+Authenticate
+
+   │
+
+   ▼
+
+Load Product Media
+
+   │
+
+   ▼
+
+Validate Images
+
+   │
+
+   ▼
+
+Validate Videos
+
+   │
+
+   ▼
+
+Validate Variant Media
+
+   │
+
+   ▼
+
+Validate Metadata
+
+   │
+
+   ▼
+
+Generate Report
+
+   │
+
+   ▼
+
+Return Result
+
+22. Future Enhancements
+
+
+
+This contract supports future enhancements without breaking compatibility:
+
+
+
+AI image quality assessment
+
+Automatic background validation
+
+NSFW/content moderation validation
+
+Duplicate image detection using perceptual hashing
+
+Accessibility validation (alt text)
+
+Image compression quality checks
+
+Video caption validation
+
+360° product media validation
+
+AR/3D model validation
+
+✅ Step 3.5.7.8 Completed (Contract Draft)
+
+Phase 3 — API Contract Freeze
+
+
+
+🚧 3.5.7 Product Validation APIs
+
+
+
+    ✅ 3.5.7.1 Validate Product API
+
+    ✅ 3.5.7.2 Validate Publish Readiness API
+
+    ✅ 3.5.7.3 Validate SKU API
+
+    ✅ 3.5.7.4 Validate Slug API
+
+    ✅ 3.5.7.5 Validate Variants API
+
+    ✅ 3.5.7.6 Validate Pricing API
+
+    ✅ 3.5.7.7 Validate Inventory API
+
+    ✅ 3.5.7.8 Validate Media API
+
+    ⏳ 3.5.7.9 Validate Category Attributes API
+
+    ⏳ 3.5.7.10 Validate Shipping API
+
+    ⏳ 3.5.7.11 Validate SEO API
+
+    ⏳ 3.5.7.12 Product Health Score API
+
+Frozen Engineering Decisions
+
+1. Aggregate media validation
+
+
+
+Media validation evaluates the complete media aggregate (images, videos, variant media, metadata, ordering, and publish requirements) rather than validating individual files independently.
+
+
+
+2. Shared media validation engine
+
+
+
+All media-related operations—including Upload Image, Upload Video, Set Primary Image, Set Primary Video, Publish Product, Bulk Import, AI Product Generation, and Admin tools—must reuse this validation engine to ensure consistent media quality rules.
+
+
+
+3. Publish-aware validation
+
+
+
+validationMode = PUBLISH enforces all publish-blocking media requirements. At least one processed image and exactly one primary image are mandatory. Videos remain optional unless marketplace policy changes.
+
+
+
+4. Metadata integrity
+
+
+
+Validation confirms only metadata integrity and processing status. It never performs image optimization, transcoding, virus scanning, or storage operations; those are handled by dedicated media services.
+
+
+
+5. Read-only and deterministic
+
+
+
+The Validate Media API is side-effect free. It never uploads, deletes, reorders, or modifies media, and identical media aggregates always produce identical validation results.
+
+
+
+Documentation Updates
+
+
+
+After approval, update:
+
+
+
+Current Progress: Mark Step 3.5.7.8 – Validate Media API as completed.
+
+Decisions:
+
+Media validation operates on the complete media aggregate.
+
+Publish mode requires at least one processed primary image.
+
+Media validation verifies metadata without modifying media.
+
+Changelog: Record the addition of the Validate Media API contract.
+
+
+
+Step 3.5.7.12 — Product Health Score API Contract
+
+
+
+Status: 🚧 API Contract (Frozen after approval)
+
+
+
+Implementation: ❌ Not started
+
+
+
+The Product Health Score API provides a unified quality assessment for a product by aggregating the results of all validation modules. It is designed for seller dashboards, product lists, publishing workflows, analytics, and AI recommendations.
+
+
+
+Unlike the individual validation APIs, this endpoint does not validate a single domain in isolation. Instead, it orchestrates all validation engines and calculates a normalized health score.
+
+
+
+This endpoint is read-only.
+
+
+
+1. Endpoint
+
+GET /api/v1/seller/products/{productId}/health
+
+2. Purpose
+
+
+
+Calculate the overall product quality.
+
+
+
+Health Score includes
+
+
+
+Product Information
+
+Category Attributes
+
+Images
+
+Videos
+
+Variants
+
+Inventory
+
+Pricing
+
+Shipping
+
+SEO
+
+Publish Readiness
+
+Marketplace Quality
+
+Seller Experience Quality
+
+
+
+This API does not
+
+
+
+modify product
+
+publish product
+
+generate AI content
+
+repair validation issues
+
+3. Authentication
+
+
+
+Required.
+
+
+
+Bearer Access Token
+
+4. Authorization
+
+
+
+Seller must
+
+
+
+own product
+
+
+
+Admin
+
+
+
+unrestricted access
+
+5. Headers
+
+
+
+Required
+
+
+
+Authorization: Bearer <access_token>
+
+
+
+Content-Type: application/json
+
+
+
+Optional
+
+
+
+X-Correlation-Id: uuid
+
+6. Path Parameters
+
+interface ProductHealthParamsDto {
+
+    productId: UUID;
+
+}
+
+7. Query Parameters
+
+interface ProductHealthQueryDto {
+
+    includeIssues?: boolean;
+
+
+
+    includeRecommendations?: boolean;
+
+
+
+    includeScoreBreakdown?: boolean;
+
+
+
+    includePublishReadiness?: boolean;
+
+
+
+    locale?: string;
+
+}
+
+Default Values
+
+includeIssues = true
+
+
+
+includeRecommendations = true
+
+
+
+includeScoreBreakdown = true
+
+
+
+includePublishReadiness = true
+
+
+
+locale = en-IN
+
+8. Health Score Architecture
+
+                     Product
+
+                        │
+
+                        ▼
+
+             Product Health Engine
+
+                        │
+
+────────────────────────┼────────────────────────
+
+                        │
+
+      ┌─────────────────┼──────────────────┐
+
+      │                 │                  │
+
+      ▼                 ▼                  ▼
+
+ Product Info      Category         Media
+
+      │                 │                  │
+
+      ▼                 ▼                  ▼
+
+ Inventory         Pricing          Shipping
+
+      │                 │                  │
+
+      ▼                 ▼                  ▼
+
+ Variants             SEO          Publish Rules
+
+      │                 │                  │
+
+      └─────────────────┼──────────────────┘
+
+                        │
+
+                        ▼
+
+              Weighted Score Engine
+
+                        │
+
+                        ▼
+
+             Product Health Score
+
+9. Scoring Model
+
+Module	Weight
+
+Product Information	15%
+
+Category Attributes	15%
+
+Images	10%
+
+Videos	5%
+
+Variants	10%
+
+Inventory	10%
+
+Pricing	10%
+
+Shipping	10%
+
+SEO	10%
+
+Publish Readiness	5%
+
+
+
+Total
+
+
+
+100%
+
+10. Score Levels
+
+Score	Grade	Status
+
+95–100	A+	Excellent
+
+90–94	A	Excellent
+
+80–89	B	Good
+
+70–79	C	Fair
+
+50–69	D	Needs Improvement
+
+0–49	F	Critical
+
+11. Business Rules
+
+Health Score
+
+0 <= score <= 100
+
+
+
+Always integer.
+
+
+
+Publish Readiness
+
+
+
+Health score
+
+
+
+does NOT automatically determine publishability.
+
+
+
+Example
+
+
+
+Score = 98
+
+
+
+↓
+
+
+
+Missing Primary Image
+
+
+
+↓
+
+
+
+Publish Blocked
+
+
+
+Validation errors always take precedence.
+
+
+
+Warnings
+
+
+
+Warnings
+
+
+
+reduce score
+
+
+
+but
+
+
+
+never block publishing.
+
+
+
+Errors
+
+
+
+Blocking validation errors
+
+
+
+reduce score
+
+
+
+and
+
+
+
+block publishing.
+
+
+
+Informational Issues
+
+
+
+Info messages
+
+
+
+never reduce score.
+
+
+
+Module Independence
+
+
+
+Each module contributes independently.
+
+
+
+Failure in one module
+
+
+
+must not prevent calculation of other module scores.
+
+
+
+Missing Modules
+
+
+
+Future modules
+
+
+
+contribute
+
+
+
+Weight = 0
+
+
+
+until enabled.
+
+
+
+12. Repository Interactions
+
+ProductRepository
+
+
+
+VariantRepository
+
+
+
+InventoryRepository
+
+
+
+PricingRepository
+
+
+
+ShippingRepository
+
+
+
+MediaRepository
+
+
+
+SeoRepository
+
+
+
+CategoryRepository
+
+
+
+MarketplaceSettingsRepository
+
+
+
+Read-only.
+
+
+
+13. Service Flow
+
+Authenticate Seller
+
+        │
+
+        ▼
+
+Authorize Product
+
+        │
+
+        ▼
+
+Load Product Aggregate
+
+        │
+
+        ▼
+
+Run Validation Engine
+
+        │
+
+        ▼
+
+Calculate Module Scores
+
+        │
+
+        ▼
+
+Apply Weighting
+
+        │
+
+        ▼
+
+Generate Recommendations
+
+        │
+
+        ▼
+
+Return Product Health
+
+14. Health Issue DTO
+
+interface ProductHealthIssue {
+
+    module:
+
+        | "PRODUCT"
+
+        | "CATEGORY"
+
+        | "MEDIA"
+
+        | "VARIANTS"
+
+        | "INVENTORY"
+
+        | "PRICING"
+
+        | "SHIPPING"
+
+        | "SEO"
+
+        | "PUBLISH";
+
+
+
+    severity:
+
+        | "ERROR"
+
+        | "WARNING"
+
+        | "INFO";
+
+
+
+    code: string;
+
+
+
+    message: string;
+
+
+
+    recommendation?: string;
+
+}
+
+15. Score Breakdown DTO
+
+interface ProductHealthModuleScore {
+
+    module: string;
+
+
+
+    score: number;
+
+
+
+    maxScore: number;
+
+
+
+    weight: number;
+
+
+
+    status:
+
+        | "EXCELLENT"
+
+        | "GOOD"
+
+        | "FAIR"
+
+        | "POOR";
+
+}
+
+16. Response DTO
+
+interface ProductHealthResponseDto {
+
+    success: true;
+
+
+
+    data: {
+
+        score: number;
+
+
+
+        grade:
+
+            | "A+"
+
+            | "A"
+
+            | "B"
+
+            | "C"
+
+            | "D"
+
+            | "F";
+
+
+
+        status:
+
+            | "EXCELLENT"
+
+            | "GOOD"
+
+            | "FAIR"
+
+            | "POOR";
+
+
+
+        publishable: boolean;
+
+
+
+        scoreBreakdown: ProductHealthModuleScore[];
+
+
+
+        summary: {
+
+            errors: number;
+
+
+
+            warnings: number;
+
+
+
+            infos: number;
+
+        };
+
+
+
+        recommendations: string[];
+
+
+
+        issues: ProductHealthIssue[];
+
+    };
+
+}
+
+17. Success Response
+
+HTTP 200 OK
+
+{
+
+  "success": true,
+
+  "data": {
+
+    "score": 91,
+
+    "grade": "A",
+
+    "status": "EXCELLENT",
+
+    "publishable": true,
+
+    "scoreBreakdown": [
+
+      {
+
+        "module": "MEDIA",
+
+        "score": 8,
+
+        "maxScore": 10,
+
+        "weight": 10,
+
+        "status": "GOOD"
+
+      }
+
+    ],
+
+    "summary": {
+
+      "errors": 0,
+
+      "warnings": 2,
+
+      "infos": 4
+
+    },
+
+    "recommendations": [
+
+      "Add alt text to the primary image.",
+
+      "Increase SEO description length."
+
+    ],
+
+    "issues": [
+
+      {
+
+        "module": "SEO",
+
+        "severity": "WARNING",
+
+        "code": "META_DESCRIPTION_SHORT",
+
+        "message": "Meta description is shorter than recommended.",
+
+        "recommendation": "Increase the description to 120–160 characters."
+
+      }
+
+    ]
+
+  }
+
+}
+
+18. HTTP Status Codes
+
+Status	Meaning
+
+200	Health score generated
+
+400	Invalid request
+
+401	Unauthorized
+
+403	Forbidden
+
+404	Product not found
+
+429	Rate limited
+
+500	Internal server error
+
+19. Error Codes
+
+UNAUTHORIZED
+
+
+
+FORBIDDEN
+
+
+
+PRODUCT_NOT_FOUND
+
+
+
+PRODUCT_NOT_OWNED
+
+
+
+RATE_LIMIT_EXCEEDED
+
+
+
+INTERNAL_SERVER_ERROR
+
+
+
+Validation-specific errors are surfaced through the issues collection rather than as endpoint failures.
+
+
+
+20. Side Effects
+
+
+
+None.
+
+
+
+This endpoint
+
+
+
+performs no writes
+
+modifies no product
+
+publishes nothing
+
+updates no score in database
+
+emits no events
+
+creates no audit logs
+
+21. Security Rules
+
+
+
+Never expose
+
+
+
+Internal Scoring Formula
+
+
+
+Marketplace Ranking Algorithm
+
+
+
+Search Ranking Signals
+
+
+
+AI Model Scores
+
+
+
+Other Seller Product Scores
+
+
+
+Internal Quality Thresholds
+
+
+
+Only the normalized score and seller-facing recommendations are returned.
+
+
+
+22. Performance Requirements
+
+
+
+Target
+
+
+
+P95 < 150 ms
+
+
+
+Requirements
+
+
+
+Parallel validation execution
+
+Shared validation engine reuse
+
+Single aggregate load
+
+Cached marketplace configuration
+
+Read-only execution
+
+No N+1 queries
+
+Deterministic output
+
+23. API Contract Summary
+
+Method:
+
+GET
+
+
+
+URL:
+
+/api/v1/seller/products/{productId}/health
+
+
+
+Authentication:
+
+Required
+
+
+
+Authorization:
+
+Seller Owner / Admin
+
+
+
+Content-Type:
+
+application/json
+
+
+
+Response:
+
+ProductHealthResponseDto
+
+
+
+Returns:
+
+200 OK
+
+
+
+Implementation:
+
+Not started
+
+24. Workflow Diagram
+
+Seller
+
+   │
+
+   ▼
+
+Request Product Health
+
+   │
+
+   ▼
+
+Authenticate
+
+   │
+
+   ▼
+
+Load Product Aggregate
+
+   │
+
+   ▼
+
+Run All Validation Engines
+
+   │
+
+   ▼
+
+Calculate Module Scores
+
+   │
+
+   ▼
+
+Apply Weighted Scoring
+
+   │
+
+   ▼
+
+Determine Publish Readiness
+
+   │
+
+   ▼
+
+Generate Recommendations
+
+   │
+
+   ▼
+
+Return Health Report
+
+25. Future Enhancements
+
+
+
+This contract supports future capabilities without breaking compatibility:
+
+
+
+AI-generated improvement suggestions
+
+Competitor benchmarking
+
+Marketplace percentile ranking
+
+Historical health score trends
+
+Quality badges
+
+AI-generated product optimization
+
+Sales prediction based on health score
+
+Image quality scoring
+
+Content readability scoring
+
+Marketplace category-specific scoring models
+
+✅ Step 3.5.7.12 Completed (Contract Draft)
+
+Phase 3 — API Contract Freeze
+
+
+
+🚧 3.5.7 Product Validation APIs
+
+
+
+    ✅ 3.5.7.1 Validate Product API
+
+    ✅ 3.5.7.2 Validate Publish Readiness API
+
+    ✅ 3.5.7.3 Validate SKU API
+
+    ✅ 3.5.7.4 Validate Slug API
+
+    ✅ 3.5.7.5 Validate Variants API
+
+    ✅ 3.5.7.6 Validate Pricing API
+
+    ✅ 3.5.7.7 Validate Inventory API
+
+    ✅ 3.5.7.8 Validate Media API
+
+    ✅ 3.5.7.9 Validate Category Attributes API
+
+    ✅ 3.5.7.10 Validate Shipping API
+
+    ✅ 3.5.7.11 Validate SEO API
+
+    ✅ 3.5.7.12 Product Health Score API
+
+
+
+✅ Phase 3.5.7 Product Validation APIs — COMPLETE
+
+Frozen Engineering Decisions
+
+1. Product Health Score is an orchestration layer
+
+
+
+The Product Health Score API must not implement validation logic directly. It orchestrates and aggregates results from the existing validation engines (Product, Category, Media, Variants, Inventory, Pricing, Shipping, SEO, and Publish Readiness), ensuring a single source of truth.
+
+
+
+2. Publishability and score are independent
+
+
+
+The overall health score is a quality indicator for sellers and dashboards. It must never be used as the sole criterion for publishing. Publish eligibility is determined exclusively by validation errors from the underlying validation APIs.
+
+
+
+3. Configurable weighted scoring
+
+
+
+Module weights should be loaded from marketplace configuration rather than hardcoded, allowing administrators to adjust scoring without changing application code while maintaining a total weight of 100%.
+
+
+
+4. Partial scoring is supported
+
+
+
+If a module is unavailable, disabled, or introduced in a future release, the health engine must still return a valid response. Disabled modules contribute zero configured weight until activated.
+
+
+
+5. Shared validation results
+
+
+
+When possible, the Product Health Score service should reuse cached validation results generated during the same request lifecycle to avoid duplicate repository access and validation execution.

@@ -1,9 +1,9 @@
-import ProductsPage from '@/modules/products/section/productsSection'
+import { ProductsShelf } from '@/modules/products/components/products-shelf'
 import React from 'react'
 
 const page = () => {
   return (
-    <ProductsPage />
+    <ProductsShelf />
   )
 }
 

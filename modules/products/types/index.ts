@@ -1,7 +1,7 @@
-export type ProductStatus = "DRAFT" | "INCOMPLETE" | "PUBLISHED" | "ARCHIVED";
-export type ProductVisibility = "PUBLIC" | "HIDDEN" | "PRIVATE";
+export type ProductStatus = "DRAFT" | "PENDING_REVIEW" | "CHANGES_REQUESTED" | "APPROVED" | "PUBLISHED" | "SUSPENDED" | "REJECTED" | "ARCHIVED";
+export type ProductVisibility = "PUBLIC" | "PRIVATE" | "UNLISTED";
 export type ProductType = "PHYSICAL" | "DIGITAL" | "SERVICE";
-export type VariantStatus = "DRAFT" | "ACTIVE" | "INACTIVE";
+export type VariantStatus = "ACTIVE" | "INACTIVE" | "ARCHIVED";
 export type MediaType = "IMAGE" | "VIDEO" | "MODEL_3D" | "AR" | "SPIN_360";
 
 export interface ProductEntity {
@@ -67,4 +67,5 @@ export interface ProductCardViewModel {
   status: string;
   bg: string;
   initials: string;
+  primaryImage?: string | null;
 }

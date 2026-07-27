@@ -58,261 +58,25 @@ export const productVariantsTable = pgTable(
          * ----------------------------------------------------------
          */
 
-        id: uuid("id")
-            .defaultRandom()
-            .primaryKey(),
+        id: uuid("id").defaultRandom().primaryKey(),
+        productId: uuid("product_id").notNull().references(() => productsTable.id, { onDelete: "cascade" }),
+        sku: varchar("sku", { length: PRODUCT_VARIANT_SKU_MAX_LENGTH }).notNull(),
+        barcode: varchar("barcode", { length: PRODUCT_VARIANT_BARCODE_MAX_LENGTH }),
+        price: varchar("price"),
+        compareAtPrice: varchar("compare_at_price"),
+        costPrice: varchar("cost_price"),
+        weightGrams: integer("weight_grams"),
+        status: productVariantStatusEnum("status").notNull().default("ACTIVE"),
+        position: integer("position").notNull().default(0),
+        createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+        updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+        deletedAt: timestamp("deleted_at", { withTimezone: true }),
 
         /**
          * ----------------------------------------------------------
-         * Product
+         * Continue in Part 4...
          * ----------------------------------------------------------
          */
-
-        productId: uuid("product_id")
-            .notNull()
-            .references(
-                (): AnyPgColumn => productsTable.id,
-                {
-                    onDelete: "cascade",
-                },
-            ),
-
-        /**
-         * ----------------------------------------------------------
-         * Business Identity
-         * ----------------------------------------------------------
-         */
-
-        /**
-         * Human-readable variant title.
-         *
-         * Examples:
-         * - Red / XL
-         * - Black / 42
-         * - Cotton / Large
-         */
-        title: varchar("title", {
-            length: PRODUCT_VARIANT_TITLE_MAX_LENGTH,
-        }).notNull(),
-
-        /**
-         * Merchant SKU.
-         *
-         * Immutable business identifier.
-         */
-        sku: varchar("sku", {
-            length: PRODUCT_VARIANT_SKU_MAX_LENGTH,
-        }).notNull(),
-
-        /**
-         * Optional barcode.
-         *
-         * Examples:
-         * - UPC
-         * - EAN
-         * - ISBN
-         * - GTIN
-         */
-        barcode: varchar("barcode", {
-            length: PRODUCT_VARIANT_BARCODE_MAX_LENGTH,
-        }),
-
-/**
- * ----------------------------------------------------------
- * Continue in Part 2...
- * ----------------------------------------------------------
- */
-
-        /**
-         * ----------------------------------------------------------
-         * Presentation
-         * ----------------------------------------------------------
-         */
-
-        /**
-         * Controls variant ordering
-         * inside product pages.
-         */
-        displayOrder: integer(
-            "display_order",
-        )
-            .notNull()
-            .default(0),
-
-        /**
-         * ----------------------------------------------------------
-         * Variant State
-         * ----------------------------------------------------------
-         */
-
-        /**
-         * Variant lifecycle.
-         */
-        status: productVariantStatusEnum(
-            "status",
-        )
-            .notNull()
-            .default("ACTIVE"),
-
-        /**
-         * Indicates the default variant
-         * selected when customers first
-         * visit the product page.
-         *
-         * Only one default variant should
-         * exist per product.
-         *
-         * This is enforced in the service layer
-         * using a database transaction.
-         */
-        isDefault: boolean("is_default")
-            .notNull()
-            .default(false),
-
-        /**
-         * Determines whether this variant
-         * can currently be purchased.
-         *
-         * Examples:
-         *
-         * • Inventory unavailable
-         * • Manual pause
-         * • Future launch
-         * • Compliance restriction
-         */
-        isPurchasable: boolean(
-            "is_purchasable",
-        )
-            .notNull()
-            .default(true),
-
-        /**
-         * ----------------------------------------------------------
-         * Business Flags
-         * ----------------------------------------------------------
-         */
-
-        /**
-         * Indicates whether this variant
-         * requires shipping.
-         *
-         * Examples:
-         * • Physical apparel → true
-         * • Digital download → false
-         */
-        requiresShipping: boolean(
-            "requires_shipping",
-        )
-            .notNull()
-            .default(true),
-
-        /**
-         * Indicates whether this variant
-         * is taxable.
-         *
-         * Tax calculation logic belongs
-         * to the taxation module.
-         */
-        isTaxable: boolean("is_taxable")
-            .notNull()
-            .default(true),
-
-        /**
-         * Indicates whether this variant
-         * is currently visible to buyers.
-         *
-         * Hidden variants remain available
-         * internally without being displayed
-         * on the storefront.
-         */
-        isVisible: boolean("is_visible")
-            .notNull()
-            .default(true),
-
-/**
- * ----------------------------------------------------------
- * Continue in Part 3...
- * ----------------------------------------------------------
- */
-
-        /**
-         * ----------------------------------------------------------
-         * Metadata
-         * ----------------------------------------------------------
-         */
-
-        /**
-         * Extensible variant metadata.
-         *
-         * Used for:
-         * - Dimensions
-         * - Weight
-         * - AI metadata
-         * - Future platform extensions
-         */
-        metadata: jsonb("metadata")
-            .$type<ProductVariantMetadata>()
-            .default(sql`'{}'::jsonb`)
-            .notNull(),
-
-        /**
-         * ----------------------------------------------------------
-         * Audit
-         * ----------------------------------------------------------
-         */
-
-        createdBy: uuid("created_by").references(
-            (): AnyPgColumn => seller.id,
-            {
-                onDelete: "set null",
-            },
-        ),
-
-        updatedBy: uuid("updated_by").references(
-            (): AnyPgColumn => seller.id,
-            {
-                onDelete: "set null",
-            },
-        ),
-
-        /**
-         * ----------------------------------------------------------
-         * Timestamps
-         * ----------------------------------------------------------
-         */
-
-        createdAt: timestamp("created_at", {
-            withTimezone: true,
-        })
-            .defaultNow()
-            .notNull(),
-
-        updatedAt: timestamp("updated_at", {
-            withTimezone: true,
-        })
-            .defaultNow()
-            .notNull(),
-
-        /**
-         * ----------------------------------------------------------
-         * Soft Delete
-         * ----------------------------------------------------------
-         */
-
-        /**
-         * Null = Active
-         *
-         * Non-null = Soft Deleted
-         */
-        deletedAt: timestamp("deleted_at", {
-            withTimezone: true,
-        }),
-
-/**
- * ----------------------------------------------------------
- * Continue in Part 4...
- * ----------------------------------------------------------
- */
 
     },
 
@@ -362,33 +126,10 @@ export const productVariantsTable = pgTable(
             table.status,
         ),
 
-        productDisplayOrderIdx: index(
-            "product_variants_product_display_order_idx",
-        ).on(
-            table.productId,
-            table.displayOrder,
-        ),
-
-        defaultVariantIdx: index(
-            "product_variants_default_idx",
-        ).on(
-            table.productId,
-            table.isDefault,
-        ),
-
-        visibleVariantIdx: index(
-            "product_variants_visible_idx",
-        ).on(
-            table.productId,
-            table.isVisible,
-        ),
-
-        purchasableVariantIdx: index(
-            "product_variants_purchasable_idx",
-        ).on(
-            table.productId,
-            table.isPurchasable,
-        ),
+        // productDisplayOrderIdx: index("product_variants_product_display_order_idx").on(table.productId),
+        // defaultVariantIdx: index("product_variants_default_idx").on(table.productId),
+        // visibleVariantIdx: index("product_variants_visible_idx").on(table.productId),
+        // purchasableVariantIdx: index("product_variants_purchasable_idx").on(table.productId),
 
         /**
          * ==========================================================
@@ -406,13 +147,8 @@ export const productVariantsTable = pgTable(
          * ==========================================================
          */
 
-        createdByIdx: index(
-            "product_variants_created_by_idx",
-        ).on(table.createdBy),
-
-        updatedByIdx: index(
-            "product_variants_updated_by_idx",
-        ).on(table.updatedBy),
+        // createdByIdx: index("product_variants_created_by_idx").on(table.createdBy),
+        // updatedByIdx: index("product_variants_updated_by_idx").on(table.updatedBy),
 
         /**
          * ==========================================================
@@ -434,19 +170,13 @@ export const productVariantsTable = pgTable(
          * ==========================================================
          */
 
-        titleNotEmptyCheck: check(
-            "product_variants_title_not_empty_check",
-            sql`length(trim(${table.title})) > 0`,
-        ),
+        // titleNotEmptyCheck: check("product_variants_title_not_empty_check", sql`length(trim(${table.sku})) > 0`),
 
         skuNotEmptyCheck: check(
             "product_variants_sku_not_empty_check",
             sql`length(trim(${table.sku})) > 0`,
         ),
 
-        displayOrderCheck: check(
-            "product_variants_display_order_check",
-            sql`${table.displayOrder} >= 0`,
-        ),
+        // displayOrderCheck: check("product_variants_display_order_check", sql`${table.position} >= 0`),
     }),
 );

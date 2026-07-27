@@ -1,12 +1,29 @@
 import React, { useState } from 'react';
 import { Star, CornerDownRight, ShieldAlert, Reply, Send } from 'lucide-react';
 
-export default function ReviewRow({ review, onReport }) {
+interface Review {
+  id: number;
+  customerName: string;
+  avatar: string;
+  date: string;
+  rating: number;
+  productTitle: string;
+  title: string;
+  comment: string;
+  reply: string | null;
+}
+
+interface ReviewRowProps {
+  review: Review;
+  onReport: (id: number) => void;
+}
+
+export default function ReviewRow({ review, onReport }: ReviewRowProps) {
   const [isReplying, setIsReplying] = useState(false);
   const [replyText, setReplyText] = useState(review.reply || '');
   const [hasSubmittedReply, setHasSubmittedReply] = useState(!!review.reply);
 
-  const handleSendReply = (e) => {
+  const handleSendReply = (e: React.FormEvent) => {
     e.preventDefault();
     if (!replyText.trim()) return;
     setHasSubmittedReply(true);

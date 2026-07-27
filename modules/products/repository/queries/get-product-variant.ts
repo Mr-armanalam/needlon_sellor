@@ -1,22 +1,18 @@
 import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
-import { productVariants } from "@/db/schema/products/product_variants";
+import { productVariantsTable as productVariants } from "@/db/schema/catalog/products/product-variants/table";
 
 export async function getProductVariantById(variantId: string) {
-  return db.query.productVariants.findFirst({
+  return db.query.productVariantsTable.findFirst({
     where: and(
       eq(productVariants.id, variantId),
       isNull(productVariants.deletedAt)
     ),
-    with: {
-      product: true,
-      media: true,
-    },
   });
 }
 
 export async function getProductVariantBySku(sku: string) {
-  return db.query.productVariants.findFirst({
+  return db.query.productVariantsTable.findFirst({
     where: and(
       eq(productVariants.sku, sku),
       isNull(productVariants.deletedAt)

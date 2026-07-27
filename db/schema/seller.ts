@@ -21,9 +21,9 @@ export const seller = pgTable("seller", {
   role: roleEnum("role").default("seller").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-  deletedAt: timestamp("deleted_at", {
-    withTimezone: true,
-  }),
+  // deletedAt: timestamp("deleted_at", {
+  //   withTimezone: true,
+  // }),
 });
 
 // export const sellerTable TODO: naming convention

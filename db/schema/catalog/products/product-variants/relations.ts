@@ -45,27 +45,21 @@ export const productVariantsRelations =
              * ----------------------------------------------------------
              */
 
-            createdBySeller: one(seller, {
-                fields: [
-                    productVariantsTable.createdBy,
-                ],
-                references: [seller.id],
-                relationName:
-                    "product_variant_created_by",
-            }),
+            // createdBySeller: one(seller, {
+            //     fields: [productVariantsTable.createdBy],
+            //     references: [seller.id],
+            //     relationName: "product_variant_created_by",
+            // }),
 
             inventory: one(inventoryTable),
             pricing: one(pricingTable),
             shipping: one(shippingTable),
 
-            updatedBySeller: one(seller, {
-                fields: [
-                    productVariantsTable.updatedBy,
-                ],
-                references: [seller.id],
-                relationName:
-                    "product_variant_updated_by",
-            }),
+            // updatedBySeller: one(seller, {
+            //     fields: [productVariantsTable.updatedBy],
+            //     references: [seller.id],
+            //     relationName: "product_variant_updated_by",
+            // }),
 
             /**
              * ----------------------------------------------------------

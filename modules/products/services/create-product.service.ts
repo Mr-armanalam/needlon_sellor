@@ -2,17 +2,17 @@ import { generateUniqueSlug } from "@/modules/shared/slug/generate-unique-slug";
 import { createProduct } from "../repository/commands/create-product";
 import { createProductVariant } from "../repository/commands/create-product-variant";
 import { existsProductSlug } from "../repository/queries/exists-product-slug";
+import { ProductStatus, ProductVisibility } from "../types";
 
-export interface CreateProductInput {
+export interface CreateProductServiceInput {
   sellerId: string;
   categoryId: string;
-  brandId?: string | null;
   name: string;
   shortDescription?: string;
   description?: string;
   productType?: "PHYSICAL" | "DIGITAL" | "SERVICE";
-  status?: "DRAFT" | "INCOMPLETE" | "PUBLISHED" | "ARCHIVED";
-  visibility?: "PUBLIC" | "HIDDEN" | "PRIVATE";
+  status?: ProductStatus;
+  visibility?: ProductVisibility;
   isFeatured?: boolean;
 
   defaultVariant?: {
@@ -25,7 +25,7 @@ export interface CreateProductInput {
   };
 }
 
-export async function createProductService(input: CreateProductInput) {
+export async function createProductService(input: CreateProductServiceInput) {
   if (!input.name || !input.name.trim()) {
     throw new Error("Product name is required.");
   }
@@ -41,9 +41,8 @@ export async function createProductService(input: CreateProductInput) {
   );
 
   const product = await createProduct({
-    sellerId: input.sellerId,
+    storeId: input.sellerId,
     categoryId: input.categoryId,
-    brandId: input.brandId ?? null,
     name: input.name.trim(),
     slug,
     shortDescription: input.shortDescription,

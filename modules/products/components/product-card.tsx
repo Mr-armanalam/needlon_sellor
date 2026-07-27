@@ -6,19 +6,29 @@ import { ProductCardViewModel } from '../types';
 
 interface ProductCardProps {
   product: ProductCardViewModel;
-  onDuplicate: (product: ProductCardViewModel) => void;
+  onEdit: (id: string) => void;
+  onDuplicate: (id: string) => void;
   onDelete: (id: string) => void;
+  onShare: (product: ProductCardViewModel) => void;
 }
 
-export function ProductCard({ product, onDuplicate, onDelete }: ProductCardProps) {
+export function ProductCard({ product, onEdit, onDuplicate, onDelete, onShare }: ProductCardProps) {
   return (
     <div className="group relative bg-white border border-neutral-100 rounded-2xl p-4 flex flex-col justify-between gap-4 transition-all duration-300 hover:shadow-[0_16px_32px_rgba(0,0,0,0.03)] animate-fade-in">
       
       {/* Aspect Square Image Canvas Box */}
       <div className="relative w-full aspect-square rounded-xl bg-neutral-50 border border-neutral-100/70 overflow-hidden flex items-center justify-center select-none">
-        <div className={`w-20 h-20 rounded-2xl flex items-center justify-center text-[22px] font-bold shadow-inner transition-transform duration-500 group-hover:scale-105 ${product.bg}`}>
-          {product.initials}
-        </div>
+        {product.primaryImage ? (
+          <img
+            src={product.primaryImage}
+            alt={product.name}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className={`w-20 h-20 rounded-2xl flex items-center justify-center text-[22px] font-bold shadow-inner transition-transform duration-500 group-hover:scale-105 ${product.bg}`}>
+            {product.initials}
+          </div>
+        )}
 
         {/* Left Float: Active Status Ticker */}
         <span className={`absolute top-3 left-3 text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm ${
@@ -35,9 +45,9 @@ export function ProductCard({ product, onDuplicate, onDelete }: ProductCardProps
 
         {/* Premium Backdrop Hover Tool Drawer */}
         <div className="absolute inset-0 bg-neutral-900/10 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2">
-          <button title="Edit Product" className="p-2.5 bg-white text-neutral-800 hover:text-neutral-900 rounded-xl shadow-md transition-transform duration-150 hover:scale-105 active:scale-95 outline-none"><Edit3 size={14} /></button>
-          <button onClick={() => onDuplicate(product)} title="Duplicate Product" className="p-2.5 bg-white text-neutral-800 hover:text-neutral-900 rounded-xl shadow-md transition-transform duration-150 hover:scale-105 active:scale-95 outline-none"><Copy size={14} /></button>
-          <button title="Share Showcase Link" className="p-2.5 bg-white text-neutral-800 hover:text-neutral-900 rounded-xl shadow-md transition-transform duration-150 hover:scale-105 active:scale-95 outline-none"><Share2 size={14} /></button>
+          <button onClick={() => onEdit(product.id)} title="Edit Product" className="p-2.5 bg-white text-neutral-800 hover:text-neutral-900 rounded-xl shadow-md transition-transform duration-150 hover:scale-105 active:scale-95 outline-none"><Edit3 size={14} /></button>
+          <button onClick={() => onDuplicate(product.id)} title="Duplicate Product" className="p-2.5 bg-white text-neutral-800 hover:text-neutral-900 rounded-xl shadow-md transition-transform duration-150 hover:scale-105 active:scale-95 outline-none"><Copy size={14} /></button>
+          <button onClick={() => onShare(product)} title="Share Showcase Link" className="p-2.5 bg-white text-neutral-800 hover:text-neutral-900 rounded-xl shadow-md transition-transform duration-150 hover:scale-105 active:scale-95 outline-none"><Share2 size={14} /></button>
           <button onClick={() => onDelete(product.id)} title="Delete Product" className="p-2.5 bg-white text-red-500 hover:text-red-600 rounded-xl shadow-md transition-transform duration-150 hover:scale-105 active:scale-95 outline-none"><Trash2 size={14} /></button>
         </div>
       </div>
@@ -48,18 +58,32 @@ export function ProductCard({ product, onDuplicate, onDelete }: ProductCardProps
         <h4 className="text-[14px] font-semibold text-neutral-800 tracking-tight group-hover:text-neutral-900 transition-colors line-clamp-1 mt-0.5">{product.name}</h4>
         <div className="flex items-center gap-2 mt-1">
           <span className="text-[15px] font-bold text-neutral-900">{product.price}</span>
-          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">{product.discount}</span>
+          {product.discount && product.discount !== "0% OFF" && (
+            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">{product.discount}</span>
+          )}
         </div>
         <span className={`text-[11px] font-medium mt-1.5 ${product.stock === 0 ? 'text-red-500 font-semibold' : 'text-neutral-400'}`}>
           {product.stock === 0 ? 'Out of stock' : `${product.stock} pieces left in boutique`}
         </span>
       </div>
 
-      {/* Integrated Micro-Analytics Footer Ticker */}
+      {/* Integrated Micro-Analytics Footer Ticker (Matches Attached Screenshot) */}
       <div className="grid grid-cols-3 gap-1 border-t border-neutral-100 pt-3 text-center text-neutral-400">
-        <div className="flex flex-col items-center justify-center"><Eye size={13} /><span className="text-[11px] font-bold text-neutral-700 mt-0.5">{product.views}</span><span className="text-[9px] font-medium tracking-tight">Views</span></div>
-        <div className="flex flex-col items-center justify-center"><Heart size={13} /><span className="text-[11px] font-bold text-neutral-700 mt-0.5">{product.likes}</span><span className="text-[9px] font-medium tracking-tight">Likes</span></div>
-        <div className="flex flex-col items-center justify-center"><ShoppingBag size={13} /><span className="text-[11px] font-bold text-neutral-700 mt-0.5">{product.orders}</span><span className="text-[9px] font-medium tracking-tight">Orders</span></div>
+        <div className="flex flex-col items-center justify-center">
+          <Eye size={13} />
+          <span className="text-[11px] font-bold text-neutral-700 mt-0.5">{product.views}</span>
+          <span className="text-[9px] font-medium tracking-tight">Views</span>
+        </div>
+        <div className="flex flex-col items-center justify-center">
+          <Heart size={13} />
+          <span className="text-[11px] font-bold text-neutral-700 mt-0.5">{product.likes}</span>
+          <span className="text-[9px] font-medium tracking-tight">Likes</span>
+        </div>
+        <div className="flex flex-col items-center justify-center">
+          <ShoppingBag size={13} />
+          <span className="text-[11px] font-bold text-neutral-700 mt-0.5">{product.orders}</span>
+          <span className="text-[9px] font-medium tracking-tight">Orders</span>
+        </div>
       </div>
 
     </div>

@@ -2,21 +2,21 @@ import { generateUniqueSlug } from "@/modules/shared/slug/generate-unique-slug";
 import { updateProduct } from "../repository/commands/update-product";
 import { getProduct } from "../repository/queries/get-product";
 import { existsProductSlug } from "../repository/queries/exists-product-slug";
+import { ProductStatus, ProductVisibility } from "../types";
 
-export interface UpdateProductInput {
+export interface UpdateProductServiceInput {
   id: string;
   name?: string;
   shortDescription?: string;
   description?: string;
   categoryId?: string;
-  brandId?: string | null;
   productType?: "PHYSICAL" | "DIGITAL" | "SERVICE";
-  status?: "DRAFT" | "INCOMPLETE" | "PUBLISHED" | "ARCHIVED";
-  visibility?: "PUBLIC" | "HIDDEN" | "PRIVATE";
+  status?: ProductStatus;
+  visibility?: ProductVisibility;
   isFeatured?: boolean;
 }
 
-export async function updateProductService(input: UpdateProductInput) {
+export async function updateProductService(input: UpdateProductServiceInput) {
   const existing = await getProduct(input.id);
   if (!existing) {
     throw new Error(`Product with ID "${input.id}" not found.`);
@@ -41,7 +41,6 @@ export async function updateProductService(input: UpdateProductInput) {
     shortDescription: input.shortDescription ?? existing.shortDescription,
     description: input.description ?? existing.description,
     categoryId: input.categoryId ?? existing.categoryId,
-    brandId: input.brandId !== undefined ? input.brandId : existing.brandId,
     productType: input.productType ?? existing.productType,
     status: input.status ?? existing.status,
     visibility: input.visibility ?? existing.visibility,

@@ -13,9 +13,9 @@ import { product_orders } from "../orders/orders";
 import { usersTable } from "../users";
 import { seller } from "../seller";
 import { orderItems } from "../order-items";
-import { productVariants } from "../products/product_variants";
+import { productVariantsTable as productVariants } from "../catalog/products/product-variants/table";
 import { shipmentOrders } from "../delivery/shipping-orders";
-import { products } from "../products/products";
+import { productsTable as products } from "../catalog/products/table";
 
 // Enums
 export const exchangeStatusEnum = pgEnum("exchange_status", [

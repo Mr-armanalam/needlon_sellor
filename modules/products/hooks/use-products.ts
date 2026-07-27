@@ -1,45 +1,20 @@
 'use client'
 import { useState, useEffect, useCallback } from "react";
-import { fetchProductsClient, deleteProductClient } from "../api/product-client";
-import { toProductCardViewModel } from "../mapper";
+import { fetchProductsClient, deleteProductClient, duplicateProductClient } from "../api/product-client";
+import { toProductCardViewModel } from "../mappers";
 import { ProductCardViewModel } from "../types";
 
-const INITIAL_PRODUCTS: ProductCardViewModel[] = [
-  {
-    id: "1",
-    name: "Handloom Chikankari Kurti",
-    category: "Ethnic Wear",
-    subcategory: "Kurtis",
-    price: "₹2,450",
-    discount: "10% OFF",
-    stock: 14,
-    views: 520,
-    likes: 84,
-    orders: 32,
-    rating: 4.8,
-    status: "Active",
-    bg: "bg-orange-50 text-orange-700",
-    initials: "CK",
-  },
-  {
-    id: "2",
-    name: "Pure Cotton Indigo Shirt",
-    category: "Western Wear",
-    subcategory: "Casual Shirts",
-    price: "₹1,850",
-    discount: "5% OFF",
-    stock: 0,
-    views: 340,
-    likes: 41,
-    orders: 18,
-    rating: 4.5,
-    status: "Out of Stock",
-    bg: "bg-blue-50 text-blue-700",
-    initials: "IS",
-  },
-];
+const INITIAL_PRODUCTS: ProductCardViewModel[] = [];
 
-export function useProducts(activeTab: string = "All", searchQuery: string = "") {
+export function useProducts(
+  activeTab: string = "All",
+  searchQuery: string = "",
+  category?: string,
+  size?: string,
+  priceRange?: string,
+  stockStatus?: string,
+  sort?: string
+) {
   const [products, setProducts] = useState<ProductCardViewModel[]>(INITIAL_PRODUCTS);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,17 +23,27 @@ export function useProducts(activeTab: string = "All", searchQuery: string = "")
     try {
       setIsLoading(true);
       setError(null);
-      const json = await fetchProductsClient(activeTab, searchQuery);
-      if (json.data?.items && json.data.items.length > 0) {
+      const json = await fetchProductsClient(
+        activeTab,
+        searchQuery,
+        category,
+        size,
+        priceRange,
+        stockStatus,
+        sort
+      );
+      if (json.data?.items) {
         const mapped = json.data.items.map(toProductCardViewModel);
         setProducts(mapped);
+      } else {
+        setProducts([]);
       }
     } catch (err: any) {
       setError(err.message || "Error loading products");
     } finally {
       setIsLoading(false);
     }
-  }, [activeTab, searchQuery]);
+  }, [activeTab, searchQuery, category, size, priceRange, stockStatus, sort]);
 
   useEffect(() => {
     fetchProducts();
@@ -69,17 +54,21 @@ export function useProducts(activeTab: string = "All", searchQuery: string = "")
       if (id.includes("-")) {
         await deleteProductClient(id);
       }
-      setProducts((prev) => prev.filter((p) => p.id !== id));
+      await fetchProducts();
     } catch (err: any) {
-      console.error(err);
+      console.error("Failed to delete product:", err);
     }
   };
 
-  const duplicateProduct = (product: ProductCardViewModel) => {
-    setProducts((prev) => [
-      ...prev,
-      { ...product, id: `copy-${Date.now()}`, name: `${product.name} (Copy)` },
-    ]);
+  const duplicateProduct = async (id: string) => {
+    try {
+      if (id.includes("-")) {
+        await duplicateProductClient(id);
+      }
+      await fetchProducts();
+    } catch (err: any) {
+      console.error("Failed to duplicate product:", err);
+    }
   };
 
   return {

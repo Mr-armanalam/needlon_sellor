@@ -9,7 +9,7 @@ import {
     pgEnum,
     uniqueIndex,
 } from "drizzle-orm/pg-core";
-import { categories } from "./table";
+import { categoriesTable as categories } from "./table";
 
 // Defining the input type options for the UI wizard generation
 export const inputTypeEnum = pgEnum("attribute_input_type", [

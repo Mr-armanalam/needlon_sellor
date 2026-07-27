@@ -26,22 +26,16 @@ export const inventoryRelations = relations(
             references: [productVariantsTable.id],
         }),
 
-        /**
-         * ----------------------------------------------------------
-         * Audit
-         * ----------------------------------------------------------
-         */
+        // createdBySeller: one(seller, {
+        //     fields: [inventoryTable.createdBy],
+        //     references: [seller.id],
+        //     relationName: "inventory_created_by",
+        // }),
 
-        createdBySeller: one(seller, {
-            fields: [inventoryTable.createdBy],
-            references: [seller.id],
-            relationName: "inventory_created_by",
-        }),
-
-        updatedBySeller: one(seller, {
-            fields: [inventoryTable.updatedBy],
-            references: [seller.id],
-            relationName: "inventory_updated_by",
-        }),
+        // updatedBySeller: one(seller, {
+        //     fields: [inventoryTable.updatedBy],
+        //     references: [seller.id],
+        //     relationName: "inventory_updated_by",
+        // }),
     }),
 );

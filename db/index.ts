@@ -17,13 +17,25 @@ import {sellerStore} from "@/db/schema/seller/seller-store";
 import {sellerDocuments} from "@/db/schema/seller/seller-document";
 import {sellerBankAccounts} from "@/db/schema/seller/seller-bank-account";
 import {sellerVerification} from "@/db/schema/seller/seller-verification";
-import {categories} from "@/db/schema/catalog/categories/table";
-import {categoryRelations} from "@/db/schema/catalog/categories/relations";
-import {products} from "@/db/schema/products/products";
-import {productVariants} from "@/db/schema/products/product_variants";
-import {productMedia} from "@/db/schema/products/product_media";
-import {inventory} from "@/db/schema/products/inventry";
-import {productsRelations, productVariantsRelations, productMediaRelations} from "@/db/schema/products/relations";
+import { productsRelations, productsTable } from "@/db/schema/catalog/products";
+import { productVariantsTable } from "@/db/schema/catalog/products/product-variants";
+import { productVariantsRelations } from "@/db/schema/catalog/products/product-variants/relations";
+import {categoriesRelations, categoriesTable} from "@/db/schema/catalog/categories";
+import {categoryAttributeOptionsTable} from "@/db/schema/catalog/category-attribute-options";
+import {categoryAttributesTable} from "@/db/schema/catalog/category-attributes";
+import {inventoryTable} from "@/db/schema/catalog/products/inventory/table";
+import {pricingTable} from "@/db/schema/catalog/products/pricing";
+import {productAiTable} from "@/db/schema/catalog/products/product-ai";
+import {productAttributeValuesTable} from "@/db/schema/catalog/products/product-attribute-values";
+import {productImagesTable} from "@/db/schema/catalog/products/product-images";
+import {productSeoTable} from "@/db/schema/catalog/products/product-seo";
+import {productTagMappingsTable} from "@/db/schema/catalog/products/product-tag-mappings";
+import {productTagsTable} from "@/db/schema/catalog/products/product-tags";
+import {productVariantOptionsTable} from "@/db/schema/catalog/products/product-variant-options";
+import {productVideosTable} from "@/db/schema/catalog/products/product-videos";
+import {shippingTable} from "@/db/schema/catalog/products/shipping";
+
+
 
 export const schema = {
   cartItems: cartItems.cartItems,
@@ -45,15 +57,25 @@ export const schema = {
   sellerDocuments: sellerDocuments,
   sellerBankAccounts: sellerBankAccounts,
   sellerVerification: sellerVerification,
-  categories: categories,
-  categoryRelations: categoryRelations,
-  products: products,
+  categoriesTable: categoriesTable,
+  categoryRelations: categoriesRelations,
+  productsTable: productsTable,
   productsRelations: productsRelations,
-  productVariants: productVariants,
-  productVariantsRelations: productVariantsRelations,
-  productMedia: productMedia,
-  productMediaRelations: productMediaRelations,
-  inventory: inventory,
+  categoryAttributeOptionsTable,
+  categoryAttributesTable,
+  inventoryTable,
+  pricingTable,
+  productAiTable,
+  productAttributeValuesTable,
+  productImagesTable,
+  productSeoTable,
+  productTagMappingsTable,
+  productTagsTable,
+  productVariantOptionsTable,
+  productVariantsTable,
+  productVariantsRelations,
+  productVideosTable,
+  shippingTable
 };
 
 const client = postgres(process.env.DATABASE_URL!);

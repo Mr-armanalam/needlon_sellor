@@ -10,7 +10,7 @@ export interface CreateVariantInput {
   compareAtPrice?: string;
   costPrice?: string;
   weightGrams?: number;
-  status?: "DRAFT" | "ACTIVE" | "INACTIVE";
+  status?: "ACTIVE" | "INACTIVE" | "ARCHIVED";
   position?: number;
 }
 

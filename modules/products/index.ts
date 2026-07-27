@@ -1,6 +1,6 @@
 export * from "./types";
 export * from "./dto";
-export * from "./mapper";
+export * from "./mappers";
 export * from "./validations";
 export * from "./repository";
 export * from "./services";

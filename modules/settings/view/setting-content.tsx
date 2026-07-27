@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ShieldAlert, Moon, Sun, Monitor, Trash2, Shield, Bell, CreditCard, MapPin, Globe } from 'lucide-react';
 
-export default function SettingsContent({ activeTab }) {
+export default function SettingsContent({ activeTab }: { activeTab: string }) {
   const [themeMode, setThemeMode] = useState('light');
 
   return (

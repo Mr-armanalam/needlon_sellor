@@ -1,0 +1,9 @@
+export const SEO = {
+    TITLE_MAX_LENGTH: 70,
+
+    DESCRIPTION_MAX_LENGTH: 160,
+
+    KEYWORDS_MAX_COUNT: 20,
+
+    SLUG_MAX_LENGTH: 200,
+} as const;

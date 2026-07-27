@@ -147,7 +147,7 @@ export const productImageTypeEnum = pgEnum(
  * Physical storage backend.
  *
  * Allows migration between providers
- * without schema changes.
+ * without schemas changes.
  */
 
 export const productImageStorageProviderEnum =

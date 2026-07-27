@@ -62,6 +62,7 @@ import {sellerStore} from "@/db/schema/seller/seller-store";
  * ============================================================
  */
 
+
 export const productsTable = pgTable(
     "products",
     {
@@ -81,8 +82,7 @@ export const productsTable = pgTable(
          * ----------------------------------------------------------
          */
 
-        storeId: uuid("store_id")
-            .notNull()
+        storeId: uuid("seller_id")
             .references(
                 (): AnyPgColumn => sellerStore.sellerId,
                 {
@@ -125,89 +125,20 @@ export const productsTable = pgTable(
             length: PRODUCT_SLUG_MAX_LENGTH,
         }).notNull(),
 
-        /**
-         * Seller SKU.
-         *
-         * Unique only within a store.
-         */
-        sku: varchar("sku", {
-            length: PRODUCT_SKU_MAX_LENGTH,
-        }).notNull(),
+        // sku: varchar("sku", {
+        //     length: PRODUCT_SKU_MAX_LENGTH,
+        // }),
 
         /**
          * Optional manufacturer brand.
          */
-        brand: varchar("brand", {
-            length: PRODUCT_BRAND_MAX_LENGTH,
-        }),
-
-        /**
-         * Optional manufacturer model.
-         */
-        model: varchar("model", {
-            length: PRODUCT_MODEL_MAX_LENGTH,
-        }),
-
-        /**
-         * Indian HSN code.
-         */
-        hsnCode: varchar("hsn_code", {
-            length: PRODUCT_HSN_CODE_MAX_LENGTH,
-        }),
-
-        /**
-         * Country of origin.
-         */
-        countryOfOrigin: varchar(
-            "country_of_origin",
-            {
-                length:
-                PRODUCT_COUNTRY_OF_ORIGIN_MAX_LENGTH,
-            },
-        ),
-
-/**
- * Continue in Part 2...
- */
-
-        /**
-         * ----------------------------------------------------------
-         * Product Information
-         * ----------------------------------------------------------
-         */
-
-        /**
-         * Short summary displayed in cards,
-         * search results and previews.
-         */
-        shortDescription: varchar(
-            "short_description",
-            {
-                length:
-                PRODUCT_SHORT_DESCRIPTION_MAX_LENGTH,
-            },
-        ),
-
-        /**
-         * Full product description.
-         *
-         * Rich text / markdown HTML is handled
-         * by the application layer.
-         */
-        description: varchar(
-            "description",
-            {
-                length:
-                PRODUCT_DESCRIPTION_MAX_LENGTH,
-            },
-        ),
-
-        /**
-         * Seller warranty information.
-         */
-        warranty: varchar("warranty", {
-            length: PRODUCT_WARRANTY_MAX_LENGTH,
-        }),
+        // brand: varchar("brand"),
+        // model: varchar("model"),
+        // hsnCode: varchar("hsn_code"),
+        // countryOfOrigin: varchar("country_of_origin"),
+        // shortDescription: varchar("short_description"),
+        // description: varchar("description"),
+        // warranty: varchar("warranty"),
 
         /**
          * ----------------------------------------------------------
@@ -241,93 +172,14 @@ export const productsTable = pgTable(
          * ----------------------------------------------------------
          */
 
-        /**
-         * Featured by platform.
-         */
-        isFeatured: boolean(
-            "is_featured",
-        )
-            .notNull()
-            .default(false),
+        shortDescription: varchar("short_description"),
+        description: varchar("description"),
+        isFeatured: boolean("is_featured").default(false),
+        publishedAt: timestamp("published_at", { withTimezone: true }),
 
-        /**
-         * Seller can temporarily disable
-         * purchasing without deleting
-         * the product.
-         */
-        isAvailable: boolean(
-            "is_available",
-        )
-            .notNull()
-            .default(true),
-
-        /**
-         * Soft publish scheduling.
-         *
-         * Product becomes visible after
-         * this timestamp if eligible.
-         */
-        publishedAt: timestamp(
-            "published_at",
-            {
-                withTimezone: true,
-            },
-        ),
-
-        /**
-         * Manual archive timestamp.
-         */
-        archivedAt: timestamp(
-            "archived_at",
-            {
-                withTimezone: true,
-            },
-        ),
-
-        /**
-         * Internal ordering inside seller
-         * product listing.
-         */
-        sortOrder: integer("sort_order")
-            .notNull()
-            .default(0),
-
-/**
- * ----------------------------------------------------------
- * Continue in Part 3...
- * ----------------------------------------------------------
- */
-
-        /**
-         * ----------------------------------------------------------
-         * Metadata
-         * ----------------------------------------------------------
-         */
-
-        metadata: jsonb("metadata")
-            .$type<ProductMetadata>()
-            .default(sql`'{}'::jsonb`)
-            .notNull(),
-
-        /**
-         * ----------------------------------------------------------
-         * Audit
-         * ----------------------------------------------------------
-         */
-
-        createdBy: uuid("created_by").references(
-            () => seller.id,
-            {
-                onDelete: "set null",
-            },
-        ),
-
-        updatedBy: uuid("updated_by").references(
-            () => seller.id,
-            {
-                onDelete: "set null",
-            },
-        ),
+        // metadata: jsonb("metadata"),
+        // createdBy: uuid("created_by"),
+        // updatedBy: uuid("updated_by"),
 
         /**
          * ----------------------------------------------------------
@@ -357,11 +209,11 @@ export const productsTable = pgTable(
             withTimezone: true,
         }),
 
-/**
- * ----------------------------------------------------------
- * Continue in Part 4...
- * ----------------------------------------------------------
- */
+        /**
+         * ----------------------------------------------------------
+         * Continue in Part 4...
+         * ----------------------------------------------------------
+         */
 
     },
 
@@ -398,12 +250,12 @@ export const productsTable = pgTable(
         /**
          * SKU must be unique inside a store.
          */
-        productStoreSkuUniqueIdx: uniqueIndex(
-            "products_store_sku_uidx",
-        ).on(
-            table.storeId,
-            table.sku,
-        ),
+        // productStoreSkuUniqueIdx: uniqueIndex(
+        //     "products_store_sku_uidx",
+        // ).on(
+        //     table.storeId,
+        //     table.sku,
+        // ),
 
         /**
          * ----------------------------------------------------------
@@ -425,12 +277,12 @@ export const productsTable = pgTable(
          * ----------------------------------------------------------
          */
 
-        productStoreSortOrderIdx: index(
-            "products_store_sort_order_idx",
-        ).on(
-            table.storeId,
-            table.sortOrder,
-        ),
+        // productStoreSortOrderIdx: index(
+        //     "products_store_sort_order_idx",
+        // ).on(
+        //     table.storeId,
+        //     table.sortOrder,
+        // ),
 
         /**
          * Seller dashboard
@@ -492,47 +344,31 @@ export const productsTable = pgTable(
          * Featured products
          */
 
-        featuredProductsIdx: index(
-            "products_featured_idx",
-        ).on(
-            table.isFeatured,
-            table.status,
-        ),
-
-        /**
-         * Availability
-         */
-
-        availableProductsIdx: index(
-            "products_available_idx",
-        ).on(
-            table.isAvailable,
-            table.status,
-        ),
-
-        /**
-         * Publish scheduler
-         */
-
-        publishedAtIdx: index(
-            "products_published_at_idx",
-        ).on(table.publishedAt),
-
-        archivedAtIdx: index(
-            "products_archived_at_idx",
-        ).on(table.archivedAt),
+        // featuredProductsIdx: index(
+        //     "products_featured_idx",
+        // ).on(
+        //     table.isFeatured,
+        //     table.status,
+        // ),
+        // availableProductsIdx: index(
+        //     "products_available_idx",
+        // ).on(
+        //     table.isAvailable,
+        //     table.status,
+        // ),
+        // publishedAtIdx: index(
+        //     "products_published_at_idx",
+        // ).on(table.publishedAt),
+        // archivedAtIdx: index(
+        //     "products_archived_at_idx",
+        // ).on(table.archivedAt),
 
         /**
          * Audit
          */
 
-        createdByIdx: index(
-            "products_created_by_idx",
-        ).on(table.createdBy),
-
-        updatedByIdx: index(
-            "products_updated_by_idx",
-        ).on(table.updatedBy),
+        // createdByIdx: index("products_created_by_idx").on(table.createdBy),
+        // updatedByIdx: index("products_updated_by_idx").on(table.updatedBy),
 
         /**
          * Soft delete
@@ -548,9 +384,9 @@ export const productsTable = pgTable(
          * ----------------------------------------------------------
          */
 
-        sortOrderCheck: check(
-            "products_sort_order_check",
-            sql`${table.sortOrder} >= 0`,
-        ),
+        // sortOrderCheck: check(
+        //     "products_sort_order_check",
+        //     sql`${table.sortOrder} >= 0`,
+        // ),
     }),
 );

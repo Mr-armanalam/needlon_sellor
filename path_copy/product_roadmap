@@ -1536,3 +1536,486 @@ Phase 4 — Product Backend Implementation
 
 
 
+
+
+
+
+
+Phase 4 — Product Backend Implementation
+
+4.1 Module Foundation                  ✅
+4.2 DTO Architecture                   ✅
+4.3 Repository Architecture            ✅
+4.4 Domain Service Architecture        ✅
+
+4.5 Application Service Architecture
+    4.5.1 Product Application Service
+    4.5.2 Category Application Service
+    4.5.3 Variant Application Service
+    4.5.4 Inventory Application Service
+    4.5.5 Pricing Application Service
+    4.5.6 Media Application Service
+    4.5.7 Search Application Service
+    4.5.8 Authorization & Transaction Coordination
+    4.5.9 Application Event Coordination
+
+4.6 Controller Architecture
+    REST Controllers
+    Request Mapping
+    Response Mapping
+    Error Mapping
+
+4.7 Routing & Middleware
+    Route Registration
+    Authentication
+    Authorization
+    Rate Limiting
+    Validation Middleware
+
+4.8 Background Processing
+    Queue Producers
+    Queue Workers
+    Scheduled Jobs
+    Retry Policies
+    Dead Letter Queue
+
+4.9 Event Architecture
+    Domain Events
+    Integration Events
+    Event Publishers
+    Event Consumers
+
+4.10 Infrastructure Integrations
+    Search Index
+    Storage
+    Cache
+    External Services
+
+4.11 Testing
+    Unit Tests
+    Integration Tests
+    Contract Tests
+    End-to-End Tests
+    Performance Tests
+
+4.12 Production Readiness
+    Observability
+    Metrics
+    Logging
+    Tracing
+    Security Hardening
+    Deployment Readiness
+
+
+
+
+
+
+
+
+
+
+Phase 5 — Product Module Implementation
+
+Unlike previous phases, Phase 5 is not architecture.
+
+This phase is 100% production code.
+
+Every file written from now on should be production-ready.
+
+No pseudo code.
+
+No placeholders.
+
+No TODOs.
+
+No simplified examples.
+
+No educational implementations.
+
+Everything should be deployable.
+
+Phase 5 Roadmap (Frozen)
+5.1 Shared Foundation
+5.1.1 Module Bootstrap
+5.1.2 Shared Utilities
+5.1.3 Shared Constants
+5.1.4 Error Classes
+5.1.5 Exception Handling
+5.1.6 Logger Integration
+5.1.7 Configuration Registration
+5.2 DTO Implementation
+
+Implement every DTO defined in Phase 4.
+
+Request DTOs
+Response DTOs
+Validation Schemas
+Transformers
+Mappers
+5.3 Repository Implementation
+
+Production implementation for every repository.
+
+Product Repository
+Category Repository
+Variant Repository
+Inventory Repository
+Pricing Repository
+Media Repository
+Search Repository
+
+Includes:
+
+Drizzle ORM queries
+Transactions
+Pagination
+Cursor support
+Optimistic locking
+Error handling
+Query optimization
+5.4 Domain Service Implementation
+
+Implement complete business logic.
+
+Includes:
+
+Product Service
+Category Service
+Variant Service
+Inventory Service
+Pricing Service
+Media Service
+
+Everything implemented exactly as frozen.
+
+5.5 Application Service Implementation
+
+Implement orchestration layer.
+
+Includes:
+
+Authorization
+Transactions
+DTO Mapping
+Repository Coordination
+Event Coordination
+Background Job Coordination
+5.6 Controller Implementation
+
+Implement REST controllers.
+
+Includes:
+
+CRUD
+Bulk APIs
+SEO APIs
+Search APIs
+Media APIs
+Inventory APIs
+Pricing APIs
+Validation APIs
+5.7 Route Implementation
+
+Implement
+
+Route Registration
+Middleware
+Validation
+Authentication
+Authorization
+Rate Limiting
+5.8 Background Processing Implementation
+
+Implement
+
+Queue Producers
+Queue Workers
+Scheduled Jobs
+Retry Policies
+Dead Letter Queue
+5.9 Event Implementation
+
+Implement
+
+Domain Events
+Integration Events
+Event Publishers
+Event Consumers
+5.10 Infrastructure Implementation
+
+Implement adapters for
+
+Search
+Storage
+Cache
+External Services
+5.11 Testing Implementation
+
+Implement
+
+Unit Tests
+Integration Tests
+Contract Tests
+End-to-End Tests
+Performance Tests
+5.12 Production Readiness Implementation
+
+Implement
+
+Logging
+Metrics
+Tracing
+Health Checks
+Security
+Deployment Readiness
+
+
+
+
+
+
+
+
+5.1 Shared Foundation
+        ↓
+5.2 DTO Implementation
+        ↓
+5.3 Repository Implementation
+        ↓
+5.4 Domain Service Implementation
+        ↓
+5.5 Application Service Implementation
+        ↓
+5.6 Controllers
+        ↓
+5.7 Routes & Middleware
+        ↓
+5.8 Background Processing
+        ↓
+5.9 Events
+        ↓
+5.10 Infrastructure Integrations
+        ↓
+5.11 Testing
+        ↓
+5.12 Production Readiness
+
+
+
+
+
+
+
+
+Phase 5.2 Implementation Order
+✅ 5.2.1 Shared DTO Foundation
+
+Create
+
+BaseResponse
+
+PaginationResponse
+
+CursorResponse
+
+ApiMeta
+
+Sort DTO
+
+Filter DTO
+
+Page DTO
+✅ 5.2.2 Product DTOs
+
+This is the largest part.
+
+We'll create
+
+CreateProductRequest
+
+UpdateProductRequest
+
+PublishProductRequest
+
+ProductResponse
+
+ProductCardResponse
+
+ProductDetailsResponse
+
+ProductPreviewResponse
+
+ProductSummaryResponse
+
+DeleteProductResponse
+
+ArchiveProductResponse
+
+RestoreProductResponse
+✅ 5.2.3 Media DTOs
+UploadMediaRequest
+
+UploadMediaResponse
+
+DeleteMediaRequest
+
+ReorderMediaRequest
+
+MediaResponse
+✅ 5.2.4 Variant DTOs
+CreateVariantRequest
+
+UpdateVariantRequest
+
+VariantResponse
+
+VariantOptionResponse
+✅ 5.2.5 Inventory DTOs
+UpdateInventoryRequest
+
+InventoryResponse
+
+BulkInventoryRequest
+✅ 5.2.6 Pricing DTOs
+UpdatePricingRequest
+
+PricingResponse
+
+DiscountResponse
+✅ 5.2.7 Search DTOs
+SearchProductsRequest
+
+SearchProductsResponse
+
+FilterResponse
+
+SuggestionResponse
+✅ 5.2.8 Validation Schemas
+
+Every DTO receives a matching Zod schema.
+
+create-product.schema.ts
+
+update-product.schema.ts
+
+publish-product.schema.ts
+
+...
+✅ 5.2.9 Transformers
+
+Convert
+
+Request DTO
+
+↓
+
+Entity
+
+and
+
+Entity
+
+↓
+
+Response DTO
+✅ 5.2.10 Mappers
+
+Map
+
+Product
+
+↓
+
+Product Card
+
+↓
+
+Product Preview
+
+↓
+
+Product Details
+
+↓
+
+Search Result
+
+↓
+
+Analytics
+
+
+
+
+
+
+Phase 5.4.1 should be implemented in this order
+✅ 5.4.1.1 Draft DTOs
+dto/
+    draft/
+        create-draft.request.ts
+        create-draft.response.ts
+
+↓
+
+✅ 5.4.1.2 Draft Validation
+validation/
+    draft-product.schema.ts
+
+↓
+
+✅ 5.4.1.3 Repository
+
+Extend only:
+
+product.repository.ts
+
+with:
+
+createDraft()
+findDraftById()
+updateDraft()
+
+↓
+
+✅ 5.4.1.4 Service
+services/
+   draft-product.service.ts
+
+↓
+
+✅ 5.4.1.5 Route Handler
+app/api/seller/products/draft/route.ts
+
+using:
+
+export async function POST(request: NextRequest)
+
+↓
+
+✅ 5.4.1.6 Frontend Integration
+
+When the seller clicks Add Product:
+
+POST /api/seller/products/draft
+
+Save:
+
+productId
+
+into your Product Wizard store.
+
+
+
+
+
+
+
+
+
+
+
+
+
+

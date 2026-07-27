@@ -5,7 +5,7 @@ export const updateSellerAddressSchema = createSellerAddressSchema.partial();
 
 
 // import { z } from "zod";
-// import {createSellerAddressSchema} from "@/modules/seller-profile/validations/create-seller-address-schema";
+// import {createSellerAddressSchema} from "@/modules/seller-profile/validations/create-seller-address-schemas";
 //
 // export const updateSellerAddressSchema = z.object({
 //     id: z.uuid(),

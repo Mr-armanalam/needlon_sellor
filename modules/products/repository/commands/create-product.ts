@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { products } from "@/db/schema/products/products";
+import { productsTable as products } from "@/db/schema/catalog/products/table";
 
 export type CreateProductData = typeof products.$inferInsert;
 

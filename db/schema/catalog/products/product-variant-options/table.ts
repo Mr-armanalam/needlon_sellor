@@ -44,7 +44,7 @@ import type { ProductVariantOptionMetadata } from "./metadata";
 
 export const productVariantOptionsTable =
     pgTable(
-        "product_variant_options",
+        "variant_attributes",
         {
             /**
              * ----------------------------------------------------------
@@ -95,7 +95,7 @@ export const productVariantOptionsTable =
              */
 
             attributeOptionId: uuid(
-                "attribute_option_id",
+                "option_id",
             )
                 .notNull()
                 .references(

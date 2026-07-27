@@ -10,7 +10,7 @@ import {
   AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { conversations } from "./conversation";
-import { products } from "../products/products";
+import { productsTable as products } from "../catalog/products/table";
 import { product_orders } from "../orders/orders";
 
 // 1. Defining Messaging Core Enums

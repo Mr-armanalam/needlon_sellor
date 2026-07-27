@@ -11,8 +11,8 @@ import {
 } from "drizzle-orm/pg-core";
 import { returnRequests } from "./return-request";
 import { orderItems } from "../order-items";
-import { products } from "../products/products";
-import { productVariants } from "../products/product_variants";
+import { productsTable as products } from "../catalog/products/table";
+import { productVariantsTable as productVariants } from "../catalog/products/product-variants/table";
 
 // Enums
 export const inspectionStatusEnum = pgEnum("inspection_status", [

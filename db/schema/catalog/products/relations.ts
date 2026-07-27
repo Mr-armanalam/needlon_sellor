@@ -52,26 +52,26 @@ export const productsRelations = relations(
          * ----------------------------------------------------------
          */
 
-        createdBySeller: one(seller, {
-            fields: [productsTable.createdBy],
-            references: [seller.id],
-            relationName: "product_created_by",
-        }),
+        // createdBySeller: one(seller, {
+        //     fields: [productsTable.createdBy],
+        //     references: [seller.id],
+        //     relationName: "product_created_by",
+        // }),
 
-        updatedBySeller: one(seller, {
-            fields: [productsTable.updatedBy],
-            references: [seller.id],
-            relationName: "product_updated_by",
-        }),
+        // updatedBySeller: one(seller, {
+        //     fields: [productsTable.updatedBy],
+        //     references: [seller.id],
+        //     relationName: "product_updated_by",
+        // }),
 
-        images: many(productImagesTable),
-        videos: many(productVideosTable),
         variants: many(productVariantsTable),
-        options: many(productVariantOptionsTable),
-        attributeValues: many(productAttributeValuesTable),
-        seo: one(productSeoTable),
-        tagMappings: many(productTagMappingsTable),
-        ai: one(productAiTable),
+        // images: many(productImagesTable),
+        // videos: many(productVideosTable),
+        // options: many(productVariantOptionsTable),
+        // attributeValues: many(productAttributeValuesTable),
+        // seo: one(productSeoTable),
+        // tagMappings: many(productTagMappingsTable),
+        // ai: one(productAiTable),
 
         /**
          * ----------------------------------------------------------

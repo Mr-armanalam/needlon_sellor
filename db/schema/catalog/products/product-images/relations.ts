@@ -29,28 +29,22 @@ export const productImagesRelations =
                 references: [productsTable.id],
             }),
 
-            /**
-             * ----------------------------------------------------------
-             * Audit
-             * ----------------------------------------------------------
-             */
+            // createdBySeller: one(seller, {
+            //     fields: [
+            //         productImagesTable.createdBy,
+            //     ],
+            //     references: [seller.id],
+            //     relationName:
+            //         "product_image_created_by",
+            // }),
 
-            createdBySeller: one(seller, {
-                fields: [
-                    productImagesTable.createdBy,
-                ],
-                references: [seller.id],
-                relationName:
-                    "product_image_created_by",
-            }),
-
-            updatedBySeller: one(seller, {
-                fields: [
-                    productImagesTable.updatedBy,
-                ],
-                references: [seller.id],
-                relationName:
-                    "product_image_updated_by",
-            }),
+            // updatedBySeller: one(seller, {
+            //     fields: [
+            //         productImagesTable.updatedBy,
+            //     ],
+            //     references: [seller.id],
+            //     relationName:
+            //         "product_image_updated_by",
+            // }),
         }),
     );
