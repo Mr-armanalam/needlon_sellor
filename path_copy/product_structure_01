@@ -1,0 +1,533 @@
+Phase 3 — Product Backend (API Layer)
+
+3.1 Product Repository
+3.2 Product Service
+3.3 Product DTOs
+3.4 Product Validation (Zod)
+3.5 Product Mappers
+3.6 Product API Routes
+3.7 Product Permissions
+3.8 Product Search & Filters
+3.9 Product Transactions
+3.10 Product Tests
+
+
+
+
+
+
+
+
+
+src/
+└── modules/
+    └── products/
+        │
+        ├── module.ts
+        ├── routes.ts
+        ├── permissions.ts
+        ├── constants.ts
+        ├── errors.ts
+        ├── index.ts
+        │
+        ├── dto/
+        │   ├── requests/
+        │   ├── responses/
+        │   ├── query/
+        │   ├── bulk/
+        │   ├── validation/
+        │   └── index.ts
+        │
+        ├── schemas/
+        │   ├── product.schema.ts
+        │   ├── pricing.schema.ts
+        │   ├── inventory.schema.ts
+        │   ├── variant.schema.ts
+        │   ├── media.schema.ts
+        │   ├── search.schema.ts
+        │   ├── bulk.schema.ts
+        │   └── index.ts
+        │
+        ├── controllers/
+        │   ├── product.controller.ts
+        │   ├── media.controller.ts
+        │   ├── variant.controller.ts
+        │   ├── inventory.controller.ts
+        │   ├── pricing.controller.ts
+        │   ├── search.controller.ts
+        │   ├── validation.controller.ts
+        │   ├── bulk.controller.ts
+        │   └── index.ts
+        │
+        ├── services/
+        │   ├── product/
+        │   ├── media/
+        │   ├── variant/
+        │   ├── inventory/
+        │   ├── pricing/
+        │   ├── search/
+        │   ├── validation/
+        │   ├── category/
+        │   ├── seo/
+        │   ├── bulk/
+        │   ├── lifecycle/
+        │   ├── health/
+        │   └── shared/
+        │
+        ├── repositories/
+        │   ├── product.repository.ts
+        │   ├── variant.repository.ts
+        │   ├── inventory.repository.ts
+        │   ├── pricing.repository.ts
+        │   ├── media.repository.ts
+        │   ├── search.repository.ts
+        │   ├── category.repository.ts
+        │   ├── bulk-job.repository.ts
+        │   └── index.ts
+        │
+        ├── mappers/
+        │   ├── product.mapper.ts
+        │   ├── variant.mapper.ts
+        │   ├── inventory.mapper.ts
+        │   ├── pricing.mapper.ts
+        │   ├── media.mapper.ts
+        │   └── index.ts
+        │
+        ├── validators/
+        │   ├── product.validator.ts
+        │   ├── publish.validator.ts
+        │   ├── pricing.validator.ts
+        │   ├── inventory.validator.ts
+        │   ├── variant.validator.ts
+        │   ├── media.validator.ts
+        │   ├── seo.validator.ts
+        │   ├── shipping.validator.ts
+        │   ├── category.validator.ts
+        │   └── index.ts
+        │
+        ├── events/
+        │   ├── publishers/
+        │   ├── consumers/
+        │   ├── event-types.ts
+        │   └── index.ts
+        │
+        ├── jobs/
+        │   ├── bulk/
+        │   ├── pricing/
+        │   ├── inventory/
+        │   ├── search/
+        │   ├── import/
+        │   ├── export/
+        │   └── index.ts
+        │
+        ├── cache/
+        │   ├── cache-keys.ts
+        │   ├── cache.service.ts
+        │   └── index.ts
+        │
+        ├── utils/
+        │   ├── slug.ts
+        │   ├── sku.ts
+        │   ├── pagination.dto.ts
+        │   ├── sorting.ts
+        │   ├── filters.ts
+        │   └── index.ts
+        │
+        ├── types/
+        │   ├── product.types.ts
+        │   ├── pricing.types.ts
+        │   ├── inventory.types.ts
+        │   ├── bulk.types.ts
+        │   └── index.ts
+        │
+        ├── tests/
+        │   ├── unit/
+        │   ├── integration/
+        │   ├── e2e/
+        │   ├── fixtures/
+        │   ├── factories/
+        │   └── helpers/
+        │
+        └── README.md
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+src/modules/products/
+└── dto/
+    └── requests/
+        │
+        ├── product/
+        │   ├── create-product.request.ts
+        │   ├── update-product.request.ts
+        │   ├── duplicate-product.request.ts
+        │   ├── publish-product.request.ts
+        │   ├── archive-product.request.ts
+        │   └── delete-product.request.ts
+        │
+        ├── media/
+        │   ├── upload-image.request.ts
+        │   ├── upload-video.request.ts
+        │   ├── reorder-media.request.ts
+        │   ├── set-primary-media.request.ts
+        │   └── delete-media.request.ts
+        │
+        ├── variants/
+        │   ├── create-variant.request.ts
+        │   ├── update-variant.request.ts
+        │   ├── update-variant-status.request.ts
+        │   └── delete-variant.request.ts
+        │
+        ├── inventory/
+        │   ├── update-inventory.request.ts
+        │   ├── reserve-inventory.request.ts
+        │   ├── release-reservation.request.ts
+        │   └── reconcile-inventory.request.ts
+        │
+        ├── pricing/
+        │   ├── update-pricing.request.ts
+        │   ├── schedule-pricing.request.ts
+        │   └── activate-pricing.request.ts
+        │
+        ├── search/
+        │   ├── search-products.request.ts
+        │   ├── autocomplete.request.ts
+        │   ├── suggestions.request.ts
+        │   └── search-facets.request.ts
+        │
+        ├── validation/
+        │   ├── validate-product.request.ts
+        │   ├── validate-publish.request.ts
+        │   ├── validate-pricing.request.ts
+        │   ├── validate-media.request.ts
+        │   └── health-score.request.ts
+        │
+        ├── bulk/
+        │   ├── bulk-update.request.ts
+        │   ├── bulk-delete.request.ts
+        │   ├── bulk-import.request.ts
+        │   ├── bulk-export.request.ts
+        │   ├── bulk-validation.request.ts
+        │   └── bulk-health.request.ts
+        │
+        └── index.ts
+
+
+
+
+
+
+
+
+
+src/modules/products/
+└── dto/
+    └── responses/
+        │
+        ├── common/
+        │   ├── pagination.response.ts
+        │   ├── cursor.response.ts
+        │   ├── success.response.ts
+        │   ├── metadata.response.ts
+        │   └── index.ts
+        │
+        ├── product/
+        │   ├── product.response.ts
+        │   ├── product-detail.response.ts
+        │   ├── product-summary.response.ts
+        │   ├── product-list.response.ts
+        │   └── index.ts
+        │
+        ├── media/
+        │   ├── image.response.ts
+        │   ├── video.response.ts
+        │   ├── media-list.response.ts
+        │   └── index.ts
+        │
+        ├── variants/
+        │   ├── variant.response.ts
+        │   ├── variant-list.response.ts
+        │   └── index.ts
+        │
+        ├── inventory/
+        │   ├── inventory.response.ts
+        │   ├── reservation.response.ts
+        │   ├── inventory-history.response.ts
+        │   └── index.ts
+        │
+        ├── pricing/
+        │   ├── pricing.response.ts
+        │   ├── pricing-history.response.ts
+        │   └── index.ts
+        │
+        ├── search/
+        │   ├── search.response.ts
+        │   ├── search-facet.response.ts
+        │   ├── suggestion.response.ts
+        │   └── index.ts
+        │
+        ├── validation/
+        │   ├── validation.response.ts
+        │   ├── health-score.response.ts
+        │   ├── publish-validation.response.ts
+        │   └── index.ts
+        │
+        ├── bulk/
+        │   ├── bulk-job.response.ts
+        │   ├── bulk-progress.response.ts
+        │   ├── bulk-result.response.ts
+        │   └── index.ts
+        │
+        └── index.ts
+
+
+
+
+
+src/modules/products/
+│
+├── schemas/
+│   │
+│   ├── common/
+│   │   ├── pagination.schema.ts
+│   │   ├── uuid.schema.ts
+│   │   ├── slug.schema.ts
+│   │   ├── money.schema.ts
+│   │   ├── metadata.schema.ts
+│   │   └── index.ts
+│   │
+│   ├── product/
+│   │   ├── create-product.schema.ts
+│   │   ├── update-product.schema.ts
+│   │   ├── publish-product.schema.ts
+│   │   ├── archive-product.schema.ts
+│   │   ├── duplicate-product.schema.ts
+│   │   └── index.ts
+│   │
+│   ├── media/
+│   │   ├── upload-image.schema.ts
+│   │   ├── upload-video.schema.ts
+│   │   ├── reorder-media.schema.ts
+│   │   ├── set-primary-media.schema.ts
+│   │   └── index.ts
+│   │
+│   ├── variants/
+│   │   ├── create-variant.schema.ts
+│   │   ├── update-variant.schema.ts
+│   │   ├── variant-option.schema.ts
+│   │   └── index.ts
+│   │
+│   ├── inventory/
+│   │   ├── update-inventory.schema.ts
+│   │   ├── reserve.schema.ts
+│   │   ├── release.schema.ts
+│   │   ├── reconciliation.schema.ts
+│   │   └── index.ts
+│   │
+│   ├── pricing/
+│   │   ├── update-pricing.schema.ts
+│   │   ├── schedule-pricing.schema.ts
+│   │   └── index.ts
+│   │
+│   ├── search/
+│   │   ├── search.schema.ts
+│   │   ├── autocomplete.schema.ts
+│   │   ├── facets.schema.ts
+│   │   └── index.ts
+│   │
+│   ├── validation/
+│   │   ├── validate-product.schema.ts
+│   │   ├── validate-pricing.schema.ts
+│   │   ├── validate-media.schema.ts
+│   │   ├── health-score.schema.ts
+│   │   └── index.ts
+│   │
+│   ├── bulk/
+│   │   ├── bulk-update.schema.ts
+│   │   ├── bulk-import.schema.ts
+│   │   ├── bulk-export.schema.ts
+│   │   ├── bulk-validation.schema.ts
+│   │   └── index.ts
+│   │
+│   └── index.ts
+
+
+src/modules/products/
+│
+├── transformers/
+│   │
+│   ├── common/
+│   │   ├── string.transformer.ts
+│   │   ├── array.transformer.ts
+│   │   ├── date.transformer.ts
+│   │   ├── pagination.transformer.ts
+│   │   └── index.ts
+│   │
+│   ├── product/
+│   │   ├── create-product.transformer.ts
+│   │   ├── update-product.transformer.ts
+│   │   └── index.ts
+│   │
+│   ├── media/
+│   │   ├── image.transformer.ts
+│   │   ├── video.transformer.ts
+│   │   └── index.ts
+│   │
+│   ├── variants/
+│   │   ├── variant.transformer.ts
+│   │   └── index.ts
+│   │
+│   ├── inventory/
+│   │   ├── inventory.transformer.ts
+│   │   └── index.ts
+│   │
+│   ├── pricing/
+│   │   ├── pricing.transformer.ts
+│   │   └── index.ts
+│   │
+│   ├── search/
+│   │   ├── filters.transformer.ts
+│   │   ├── sorting.transformer.ts
+│   │   └── index.ts
+│   │
+│   ├── bulk/
+│   │   ├── bulk.transformer.ts
+│   │   └── index.ts
+│   │
+│   └── index.ts
+
+
+
+src/modules/products/
+│
+├── mappers/
+│   │
+│   ├── common/
+│   │   ├── pagination.mapper.ts
+│   │   ├── metadata.mapper.ts
+│   │   ├── audit.mapper.ts
+│   │   └── index.ts
+│   │
+│   ├── product/
+│   │   ├── product.mapper.ts
+│   │   ├── product-summary.mapper.ts
+│   │   ├── product-detail.mapper.ts
+│   │   ├── product-search.mapper.ts
+│   │   └── index.ts
+│   │
+│   ├── media/
+│   │   ├── image.mapper.ts
+│   │   ├── video.mapper.ts
+│   │   └── index.ts
+│   │
+│   ├── variants/
+│   │   ├── variant.mapper.ts
+│   │   └── index.ts
+│   │
+│   ├── inventory/
+│   │   ├── inventory.mapper.ts
+│   │   ├── reservation.mapper.ts
+│   │   └── index.ts
+│   │
+│   ├── pricing/
+│   │   ├── pricing.mapper.ts
+│   │   ├── pricing-history.mapper.ts
+│   │   └── index.ts
+│   │
+│   ├── search/
+│   │   ├── search.mapper.ts
+│   │   ├── search-document.mapper.ts
+│   │   └── index.ts
+│   │
+│   ├── validation/
+│   │   ├── health-score.mapper.ts
+│   │   └── index.ts
+│   │
+│   ├── bulk/
+│   │   ├── export.mapper.ts
+│   │   ├── import.mapper.ts
+│   │   ├── bulk-result.mapper.ts
+│   │   └── index.ts
+│   │
+│   └── index.ts
+
+
+
+
+Application Startup
+        │
+        ▼
+Load Configuration
+        │
+        ▼
+Validate Configuration
+        │
+        ▼
+Create Logger
+        │
+        ▼
+Create Infrastructure Adapters
+        │
+        ▼
+Create Repositories
+        │
+        ▼
+Create Domain Services
+        │
+        ▼
+Create Application Services
+        │
+        ▼
+Create Controllers
+        │
+        ▼
+Register Routes
+        │
+        ▼
+Register Background Workers
+        │
+        ▼
+Register Event Consumers
+        │
+        ▼
+Run Health Checks
+        │
+        ▼
+Product Module Ready
+
+
+
+
+
+
+Phase 5
+
+5.1 Shared Product Module
+5.2 API Client
+5.3 TanStack Query
+5.4 Product Repository
+5.5 Product Services
+5.6 Product Mutations
+5.7 Product Studio Store
+5.8 React Hook Form
+5.9 Draft Autosave
+5.10 Product Shelf Integration
+5.11 Product Studio Integration
+5.12 Publish Workflow
+
+
+
+
+
+
+

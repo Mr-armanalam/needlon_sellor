@@ -9,7 +9,7 @@ import {
   uniqueIndex,
   index,
 } from "drizzle-orm/pg-core";
-import { product_orders } from "./orders"; // Reference to your custom order schema
+import { product_orders } from "./orders"; // Reference to your custom order schemas
 import { isNotNull } from "drizzle-orm";
 
 // 1. Payment Core Operational Enums

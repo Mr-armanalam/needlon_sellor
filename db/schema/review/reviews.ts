@@ -13,8 +13,8 @@ import {
 } from "drizzle-orm/pg-core";
 import { orderedItems } from "../orders/order-items";
 import { product_orders } from "../orders/orders";
-import { products } from "../products/products";
-import { productVariants } from "../products/product_variants";
+import { productsTable as products } from "../catalog/products/table";
+import { productVariantsTable as productVariants } from "../catalog/products/product-variants/table";
 
 // Review Status Enum for moderation pipelines
 export const reviewStatusEnum = pgEnum("review_status", [

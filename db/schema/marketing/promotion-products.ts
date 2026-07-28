@@ -6,7 +6,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { promotions } from "./promotion";
-import { products } from "../products/products";
+import { productsTable as products } from "../catalog/products/table";
 
 export const promotionProducts = pgTable(
   "promotion_products",

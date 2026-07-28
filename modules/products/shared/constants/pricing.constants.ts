@@ -1,0 +1,11 @@
+export const PRICING = {
+    MIN_PRICE: 0,
+
+    MAX_PRICE: 999999,
+
+    MAX_COMPARE_AT_PRICE: 999999,
+
+    DEFAULT_CURRENCY: "INR",
+
+    MAX_DISCOUNT_PERCENTAGE: 100,
+} as const;

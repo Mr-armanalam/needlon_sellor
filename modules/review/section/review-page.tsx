@@ -33,7 +33,7 @@ export default function ReviewsPage() {
   const [search, setSearch] = useState('');
   const [ratingFilter, setRatingFilter] = useState('all');
 
-  const handleReportAction = (id) => {
+  const handleReportAction = (id: number) => {
     alert(`Review #${id} flagged for content moderation review.`);
   };
 

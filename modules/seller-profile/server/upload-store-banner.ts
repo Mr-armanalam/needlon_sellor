@@ -1,4 +1,4 @@
-import { getCurrentSellerOrThrow } from "@/modules/seller/services/get-current-seller-or-throw";
+import { getCurrentSellerOrThrow } from "@/modules/seller-profile/services/get-current-seller-or-throw";
 import { validateProfileImage } from "@/modules/seller-profile/lib/validate-profile-image";
 
 import {findSellerStore, updateSellerStore} from "../repositery";

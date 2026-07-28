@@ -3,7 +3,7 @@ import { successResponse } from "@/modules/shared/api/success-response";
 
 import {
     setPrimaryBankAccountService,
-} from "@/modules/seller/services";
+} from "@/modules/seller-profile/services";
 
 interface RouteParams {
     params: Promise<{

@@ -4,7 +4,7 @@ import { routeHandler } from "@/modules/shared/api/route-handler";
 import { successResponse } from "@/modules/shared/api/success-response";
 import { parseBody } from "@/modules/shared/api/parse-body";
 import {sellerStoreSchema} from "@/modules/seller-profile/validations/seller-store-schema";
-import {updateSellerStoreService,getSellerStore} from "@/modules/seller/services";
+import {updateSellerStoreService,getSellerStore} from "@/modules/seller-profile/services";
 
 
 

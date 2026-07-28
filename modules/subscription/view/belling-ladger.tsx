@@ -53,7 +53,7 @@ export default function BillingLedger() {
               <tr key={row.id} className="hover:bg-slate-50/50 transition-colors">
                 <td className="p-4 font-semibold text-gray-900">{row.id}</td>
                 <td className="p-4 text-gray-400 whitespace-nowrap">{row.date}</td>
-                <td className="p-4 text-gray-500">{row.method || row.period}</td>
+                <td className="p-4 text-gray-500">{'method' in row ? row.method : row.period}</td>
                 <td className="p-4 font-bold text-gray-900">{row.total}</td>
                 <td className="p-4 text-right">
                   <button className="text-gray-400 hover:text-blue-600 p-1.5 inline-flex items-center gap-1 border border-gray-200 rounded-xl hover:bg-gray-50 transition-all font-semibold text-[11px]">

@@ -8,7 +8,7 @@ import {
   index,
 } from "drizzle-orm/pg-core";
 import { product_orders } from "./orders";
-import { productVariants } from "../products/product_variants";
+import { productVariantsTable as productVariants } from "../catalog/products/product-variants/table";
 
 export const orderedItems = pgTable(
   "ordered_items",

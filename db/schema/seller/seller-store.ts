@@ -60,6 +60,10 @@ export const sellerStore = pgTable("seller_store", {
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
+
+  deletedAt: timestamp("deleted_at", {
+    withTimezone: true,
+  }),
 },
     (table) => [
       index("seller_store_name_idx").on(table.storeName),

@@ -1,0 +1,250 @@
+02-ARCHITECTURE.md
+
+PART I
+========
+Architecture Foundations
+
+Chapter 1
+Architecture Overview
+
+Chapter 2
+System Context (C4 Level 1)
+
+Chapter 3
+Container Architecture (C4 Level 2)
+
+Chapter 4
+Component Architecture (C4 Level 3)
+
+--------------------------------
+
+PART II
+========
+Repository Architecture
+
+Chapter 5
+Repository Structure
+
+Chapter 6
+Module Architecture
+
+Chapter 7
+Layer Architecture
+
+Chapter 8
+Dependency Rules
+
+--------------------------------
+
+PART III
+========
+Backend Architecture
+
+Chapter 9
+API Architecture
+
+Chapter 10
+Business Layer
+
+Chapter 11
+Repository Layer
+
+Chapter 12
+Infrastructure Layer
+
+--------------------------------
+
+PART IV
+========
+Frontend Architecture
+
+Chapter 13
+Frontend Module Structure
+
+Chapter 14
+UI Composition
+
+Chapter 15
+State Management
+
+--------------------------------
+
+PART V
+========
+Cross Cutting Concerns
+
+Chapter 16
+Authentication
+
+Chapter 17
+Authorization
+
+Chapter 18
+Validation
+
+Chapter 19
+Caching
+
+Chapter 20
+Events
+
+Chapter 21
+Logging
+
+Chapter 22
+Error Handling
+
+--------------------------------
+
+PART VI
+========
+Data Architecture
+
+Chapter 23
+Database Architecture
+
+Chapter 24
+Transactions
+
+Chapter 25
+Search
+
+Chapter 26
+Storage
+
+--------------------------------
+
+PART VII
+========
+Quality
+
+Chapter 27
+Testing
+
+Chapter 28
+Observability
+
+Chapter 29
+Performance
+
+Chapter 30
+Security
+
+--------------------------------
+
+PART VIII
+========
+Architecture Governance
+
+ADR Index
+
+Dependency Matrix
+
+Architecture Rules
+
+Future Evolution
+
+Architecture Review Process
+
+docs/
+
+00-PROJECT-CONSTITUTION.md
+01-PRODUCT-VISION.md
+02-ARCHITECTURE.md
+03-ENGINEERING-STANDARDS.md - "How should we build it consistently?"
+04-FOLDER-STRUCTURE.md
+05-DATABASE-DESIGN.md
+06-UI-DESIGN-SYSTEM.md
+07-CURRENT-PROGRESS.md
+08-DECISIONS.md
+09-AI-COLLABORATION.md
+10-ROADMAP.md
+11-CHANGELOG.md
+12-AI_MEMORY.md
+13-GLOSSARY.md
+14-CONTRIBUTING.md
+
+
+
+If I generate the entire 02-ARCHITECTURE.md in a single response, it will be incomplete.
+
+Not because I can't write it, but because your project is too large.
+
+Based on everything we've built and discussed, this document will realistically be 120–180 pages in Markdown. It covers:
+
+Repository architecture
+Module architecture
+Backend architecture
+Frontend architecture
+API architecture
+Authentication architecture
+Database architecture
+Dependency rules
+Module ownership
+Event flows
+Layer responsibilities
+Import rules
+Naming conventions
+Directory standards
+Transactions
+Error handling
+Caching
+Background jobs
+Security boundaries
+Testing architecture
+Deployment architecture
+Future extensibility
+
+
+
+docs/
+└── 02-ARCHITECTURE.md
+
+Chapter 1  Architecture Overview
+Chapter 2  System Architecture
+Chapter 3  Repository Architecture
+Chapter 4  Module Architecture
+Chapter 5  Layer Architecture
+Chapter 6  Frontend Architecture
+Chapter 7  Backend Architecture
+Chapter 8  API Architecture
+Chapter 9  Database Architecture
+Chapter 10 Dependency Rules
+Chapter 11 Cross-Cutting Concerns
+Chapter 12 Scalability Strategy
+Chapter 13 Security Architecture
+Chapter 14 Testing Architecture
+Chapter 15 Deployment Architecture
+Chapter 16 Architecture Decision Records
+Chapter 17 Architecture Governance
+
+
+Chapter 1 → Why the architecture exists
+Chapter 2 → What the system looks like
+Chapter 3 → Where the containers are
+Chapter 4 → How modules are organized
+Chapter 5 → How every module is built
+Chapter 6 → Shared platform capabilities
+Chapter 7 → How the platform executes
+Chapter 8 -> "How is the software released into physical runtime environments?"
+
+
+
+
+| File                            | Responsibility                                                                                               |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| **00-PROJECT-CONSTITUTION.md**  | Project laws, vision, non-negotiable principles, documentation governance                                    |
+| **01-PRODUCT-VISION.md**        | Business vision, users, product strategy, marketplace rules                                                  |
+| **02-ARCHITECTURE.md**          | System architecture (C4, backend, frontend, security, governance)                                            |
+| **03-ENGINEERING-STANDARDS.md** | How engineers build software (coding, Git, testing, CI/CD, API, DevOps, observability, engineering workflow) |
+| **04-FOLDER-STRUCTURE.md**      | Repository layout, naming conventions, package/module organization                                           |
+| **05-DATABASE-DESIGN.md**       | ERD, schemas, conventions, migrations, indexing, performance, data lifecycle                                 |
+| **06-UI-DESIGN-SYSTEM.md**      | Design tokens, components, UX patterns, accessibility, motion, theming                                       |
+| **07-CURRENT-PROGRESS.md**      | Live implementation status and completion tracking                                                           |
+| **08-DECISIONS.md**             | Project-level decision log (lightweight), linked to architecture ADRs                                        |
+| **09-AI-COLLABORATION.md**      | AI workflow, prompting rules, AI contribution guidelines                                                     |
+| **10-ROADMAP.md**               | Milestones, releases, backlog, product evolution                                                             |
+| **11-CHANGELOG.md**             | Release history                                                                                              |
+| **12-AI_MEMORY.md**             | Persistent project memory and context for AI collaboration                                                   |
+| **13-GLOSSARY.md**              | Shared terminology                                                                                           |
+| **14-CONTRIBUTING.md**          | Onboarding, development workflow, pull request process                                                       |

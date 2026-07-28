@@ -1,6 +1,6 @@
 import { routeHandler } from "@/modules/shared/api/route-handler";
 import { successResponse } from "@/modules/shared/api/success-response";
-import {setUPI_IDService} from "@/modules/seller/services/set_upi_id.service";
+import {setUPI_IDService} from "@/modules/seller-profile/services/set_upi_id.service";
 
 
 export async function POST(

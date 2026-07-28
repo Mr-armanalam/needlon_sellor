@@ -10,6 +10,7 @@ export function errorResponse(error: unknown) {
                 error: {
                     code: error.code,
                     message: error.message,
+                    details: "details" in error ? (error as { details?: unknown }).details : undefined,
                 },
             },
             {

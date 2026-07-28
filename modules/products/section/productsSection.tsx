@@ -1,61 +1,84 @@
-'use client'
-// import React, { useState } from 'react';
-// import { ArrowLeft, Sparkles, Eye } from 'lucide-react';
-// import ProductsCanvas from '../view/products-canvas';
-// import AddProductWizard from '../view/add-product-wizard';
-// // import ProductDetailsForm from '../view/product-details-form';
+'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Plus, SlidersHorizontal, Eye, Heart, ShoppingBag, Edit3, Share2, Copy, 
   Trash2, ChevronDown, ArrowLeft, Sparkles, Upload, Check, ArrowRight, 
   ChevronLeft, Star, Search, ArrowUpDown, Layers, Info, Image, HelpCircle 
 } from 'lucide-react';
 
-// Mock initial data matching boutique requirements
 const INITIAL_PRODUCTS = [
   {
-    id: 1,
-    name: "Handloom Chikankari Kurti",
-    category: "Ethnic Wear",
-    subcategory: "Kurtis",
-    price: "₹2,450",
-    discount: "10% OFF",
+    id: '1',
+    name: 'Handloom Chikankari Kurti',
+    category: 'Ethnic Wear',
+    subcategory: 'Kurtis',
+    price: '₹2,450',
+    discount: '10% OFF',
     stock: 14,
     views: 520,
     likes: 84,
     orders: 32,
     rating: 4.8,
-    status: "Active",
-    bg: "bg-orange-50 text-orange-700",
-    initials: "CK"
+    status: 'Active',
+    bg: 'bg-orange-50 text-orange-700',
+    initials: 'CK'
   },
   {
-    id: 2,
-    name: "Pure Cotton Indigo Shirt",
-    category: "Western Wear",
-    subcategory: "Casual Shirts",
-    price: "₹1,850",
-    discount: "5% OFF",
+    id: '2',
+    name: 'Pure Cotton Indigo Shirt',
+    category: 'Western Wear',
+    subcategory: 'Casual Shirts',
+    price: '₹1,850',
+    discount: '5% OFF',
     stock: 0,
     views: 340,
     likes: 41,
     orders: 18,
     rating: 4.5,
-    status: "Out of Stock",
-    bg: "bg-blue-50 text-blue-700",
-    initials: "IS"
+    status: 'Out of Stock',
+    bg: 'bg-blue-50 text-blue-700',
+    initials: 'IS'
   }
 ];
 
+const DEFAULT_FORM_DATA = {
+  name: 'Handloom Chikankari Kurti',
+  brandLabel: 'House of Needlon',
+  category: 'Ethnic Wear',
+  subcategory: 'Kurtis',
+  descriptionStory: 'Write about the weave type, artisan background, and tailoring elements...',
+  retailPrice: '2450',
+  discountOfferRate: '10',
+  sizesMatrix: 'S, M, L, XL, XXL',
+  colorsTrack: 'Ivory White, Indigo Blue',
+  fabricMaterial: '100% Chanderi Cotton',
+  sleevesStyle: 'Three-Quarter Sleeve',
+  fitType: 'Straight Regular Fit',
+  occasionFocus: 'Festival, Office Wear',
+  genderProfile: 'Women',
+  targetAgeGroup: 'Adults (18-45 Years)',
+  boutiqueStockCount: '14',
+  uniqueSku: 'NDLN-CH-KRT-01',
+  pickupHubAddress: 'Studio Workshop, Block 4C, Kalyan, Maharashtra',
+  packageWeight: '0.35',
+  deliveryRadiusRange: 'Nationwide Shipping',
+  estimatedDeliveryWindow: '3 - 5 business days delivery timeline',
+  searchKeywords: 'handloom, chikankari, festive kurti, cotton apparel',
+  customVisibility: 'PUBLIC' as const,
+  mediaUrls: [] as string[],
+};
+
 export default function ProductManagement() {
   const [viewMode, setViewMode] = useState<'shelf' | 'wizard'>('shelf');
-  const [products, setProducts] = useState(INITIAL_PRODUCTS);
+  const [products, setProducts] = useState<any[]>(INITIAL_PRODUCTS);
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentStep, setCurrentStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState(DEFAULT_FORM_DATA);
 
-  // Wizard Steps (Fully matches your exact 8-step blueprint)
+  // 8-Step Blueprint Stepper
   const wizardSteps = [
     { number: 1, label: "Photos" },
     { number: 2, label: "Basic Info" },
@@ -67,15 +90,105 @@ export default function ProductManagement() {
     { number: 8, label: "Preview" }
   ];
 
+  // Fetch real products from API
+  const fetchProducts = useCallback(async () => {
+    try {
+      const params = new URLSearchParams();
+      if (activeTab !== 'All') params.append('status', activeTab.toUpperCase().replace(' ', '_'));
+      if (searchQuery) params.append('search', searchQuery);
+
+      const res = await fetch(`/api/products?${params.toString()}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data?.items && json.data.items.length > 0) {
+          const mapped = json.data.items.map((item: any) => {
+            const primaryVariant = item.variants?.[0];
+            const priceVal = primaryVariant?.price ? `₹${Number(primaryVariant.price).toLocaleString()}` : '₹0';
+            const stockVal = primaryVariant ? (item.inventory?.quantity ?? 14) : 0;
+            const initials = item.name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() || 'PD';
+            return {
+              id: item.id,
+              name: item.name,
+              category: item.category?.name || 'Apparel',
+              subcategory: item.shortDescription || 'Boutique',
+              price: priceVal,
+              discount: '10% OFF',
+              stock: stockVal,
+              views: 120,
+              likes: 24,
+              orders: 8,
+              rating: 4.8,
+              status: item.status === 'PUBLISHED' ? (stockVal > 0 ? 'Active' : 'Out of Stock') : 'Draft',
+              bg: 'bg-orange-50 text-orange-700',
+              initials,
+            };
+          });
+          setProducts(mapped);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch products:', err);
+    }
+  }, [activeTab, searchQuery]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
   const handleNextStep = () => { if (currentStep < wizardSteps.length) setCurrentStep(prev => prev + 1); };
   const handleBackStep = () => { if (currentStep > 1) setCurrentStep(prev => prev - 1); };
 
-  const handleDelete = (id: number) => {
-    setProducts(prev => prev.filter(p => p.id !== id));
+  const handleInputChange = (field: keyof typeof DEFAULT_FORM_DATA, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleDuplicate = (product: typeof INITIAL_PRODUCTS[0]) => {
-    setProducts(prev => [...prev, { ...product, id: Date.now(), name: `${product.name} (Copy)` }]);
+  const handleSaveProduct = async (status: 'DRAFT' | 'PUBLISHED') => {
+    try {
+      setIsSubmitting(true);
+      const sku = formData.uniqueSku.trim() || `NDLN-${Date.now().toString().slice(-6)}`;
+      const payload = {
+        ...formData,
+        uniqueSku: sku,
+        status,
+      };
+
+      const res = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        await fetchProducts();
+        setViewMode('shelf');
+        setFormData({
+          ...DEFAULT_FORM_DATA,
+          uniqueSku: `NDLN-${Date.now().toString().slice(-6)}`,
+        });
+      } else {
+        const errJson = await res.json();
+        alert(errJson.error?.message || 'Failed to create product');
+      }
+    } catch (err) {
+      console.error('Failed to save product:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id: string | number) => {
+    try {
+      if (typeof id === 'string' && id.includes('-')) {
+        await fetch(`/api/products/${id}`, { method: 'DELETE' });
+      }
+      setProducts(prev => prev.filter(p => p.id !== id));
+    } catch (err) {
+      console.error('Failed to delete product:', err);
+    }
+  };
+
+  const handleDuplicate = (product: any) => {
+    setProducts(prev => [...prev, { ...product, id: `copy-${Date.now()}`, name: `${product.name} (Copy)` }]);
   };
 
   return (
@@ -99,7 +212,14 @@ export default function ProductManagement() {
                 Bulk Upload
               </button>
               <button 
-                onClick={() => { setViewMode('wizard'); setCurrentStep(1); }}
+                onClick={() => { 
+                  setFormData({
+                    ...DEFAULT_FORM_DATA,
+                    uniqueSku: `NDLN-CH-KRT-${Math.floor(10 + Math.random() * 90)}`,
+                  });
+                  setViewMode('wizard'); 
+                  setCurrentStep(1); 
+                }}
                 className="px-4 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white text-[13px] font-bold rounded-xl flex items-center gap-2 transition-all duration-200 shadow-sm group outline-none"
               >
                 <Plus size={16} strokeWidth={2.5} />
@@ -130,7 +250,7 @@ export default function ProductManagement() {
 
             {/* Smart Sub-Utilities Deck */}
             <div className="flex flex-wrap items-center gap-3">
-              {/* Lightweight Live Search Box */}
+              {/* Live Search Box */}
               <div className="relative w-full sm:w-60">
                 <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
                 <input 
@@ -142,7 +262,7 @@ export default function ProductManagement() {
                 />
               </div>
 
-              {/* Filtering & Sorting Pop-drawers */}
+              {/* Filtering & Sorting */}
               <div className="flex items-center gap-2">
                 {['Category', 'Size', 'Price Range', 'Stock Status'].map((f) => (
                   <button key={f} className="px-3 py-2 bg-white border border-neutral-200/60 hover:border-neutral-400 text-neutral-600 hover:text-neutral-900 text-[12px] font-medium rounded-xl transition-all duration-200 flex items-center gap-1.5 outline-none">
@@ -300,11 +420,56 @@ export default function ProductManagement() {
                     <p className="text-[13px] text-neutral-400">Define your custom piece title, detailed taxonomy categories, and target fit profiles.</p>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="flex flex-col gap-1.5"><label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Product Name</label><input type="text" placeholder="e.g. Handloom Chikankari Kurti" className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" /></div>
-                    <div className="flex flex-col gap-1.5"><label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Brand Label</label><input type="text" placeholder="House of Needlon" className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" /></div>
-                    <div className="flex flex-col gap-1.5"><label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Category</label><input type="text" placeholder="Ethnic Wear" className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" /></div>
-                    <div className="flex flex-col gap-1.5"><label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Subcategory</label><input type="text" placeholder="Kurtis" className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" /></div>
-                    <div className="flex flex-col sm:col-span-2 flex-col gap-1.5"><label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Description Story</label><textarea rows={2} placeholder="Write about the weave type, artisan background, and tailoring elements..." className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all resize-none" /></div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Product Name</label>
+                      <input 
+                        type="text" 
+                        placeholder="e.g. Handloom Chikankari Kurti" 
+                        value={formData.name}
+                        onChange={(e) => handleInputChange('name', e.target.value)}
+                        className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" 
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Brand Label</label>
+                      <input 
+                        type="text" 
+                        placeholder="House of Needlon" 
+                        value={formData.brandLabel}
+                        onChange={(e) => handleInputChange('brandLabel', e.target.value)}
+                        className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" 
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Category</label>
+                      <input 
+                        type="text" 
+                        placeholder="Ethnic Wear" 
+                        value={formData.category}
+                        onChange={(e) => handleInputChange('category', e.target.value)}
+                        className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" 
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Subcategory</label>
+                      <input 
+                        type="text" 
+                        placeholder="Kurtis" 
+                        value={formData.subcategory}
+                        onChange={(e) => handleInputChange('subcategory', e.target.value)}
+                        className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" 
+                      />
+                    </div>
+                    <div className="flex flex-col sm:col-span-2 flex-col gap-1.5">
+                      <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Description Story</label>
+                      <textarea 
+                        rows={2} 
+                        placeholder="Write about the weave type, artisan background, and tailoring elements..." 
+                        value={formData.descriptionStory}
+                        onChange={(e) => handleInputChange('descriptionStory', e.target.value)}
+                        className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all resize-none" 
+                      />
+                    </div>
                   </div>
                 </div>
               )}
@@ -319,11 +484,23 @@ export default function ProductManagement() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1.5">
                       <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Retail Price (INR)</label>
-                      <input type="text" placeholder="₹2,450" className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" />
+                      <input 
+                        type="text" 
+                        placeholder="₹2,450" 
+                        value={formData.retailPrice}
+                        onChange={(e) => handleInputChange('retailPrice', e.target.value)}
+                        className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" 
+                      />
                     </div>
                     <div className="flex flex-col gap-1.5">
                       <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Discount Offer Rate (%)</label>
-                      <input type="text" placeholder="10%" className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" />
+                      <input 
+                        type="text" 
+                        placeholder="10%" 
+                        value={formData.discountOfferRate}
+                        onChange={(e) => handleInputChange('discountOfferRate', e.target.value)}
+                        className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" 
+                      />
                     </div>
                   </div>
                 </div>
@@ -337,14 +514,86 @@ export default function ProductManagement() {
                     <p className="text-[13px] text-neutral-400">Map out the complete spectrum of available sizes, colors, and specific fit metrics.</p>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="flex flex-col gap-1.5"><label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Sizes Matrix</label><input type="text" placeholder="S, M, L, XL, XXL" className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" /></div>
-                    <div className="flex flex-col gap-1.5"><label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Colors Track</label><input type="text" placeholder="Ivory White, Indigo Blue" className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" /></div>
-                    <div className="flex flex-col gap-1.5"><label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Fabric Material</label><input type="text" placeholder="100% Chanderi Cotton" className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" /></div>
-                    <div className="flex flex-col gap-1.5"><label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Sleeves Style</label><input type="text" placeholder="Three-Quarter Sleeve" className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" /></div>
-                    <div className="flex flex-col gap-1.5"><label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Fit Type</label><input type="text" placeholder="Straight Regular Fit" className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" /></div>
-                    <div className="flex flex-col gap-1.5"><label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Occasion Focus</label><input type="text" placeholder="Festival, Office Wear" className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" /></div>
-                    <div className="flex flex-col gap-1.5"><label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Gender Profile</label><input type="text" placeholder="Women" className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" /></div>
-                    <div className="flex flex-col sm:col-span-2 flex-col gap-1.5"><label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Target Age Group</label><input type="text" placeholder="Adults (18-45 Years)" className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" /></div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Sizes Matrix</label>
+                      <input 
+                        type="text" 
+                        placeholder="S, M, L, XL, XXL" 
+                        value={formData.sizesMatrix}
+                        onChange={(e) => handleInputChange('sizesMatrix', e.target.value)}
+                        className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" 
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Colors Track</label>
+                      <input 
+                        type="text" 
+                        placeholder="Ivory White, Indigo Blue" 
+                        value={formData.colorsTrack}
+                        onChange={(e) => handleInputChange('colorsTrack', e.target.value)}
+                        className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" 
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Fabric Material</label>
+                      <input 
+                        type="text" 
+                        placeholder="100% Chanderi Cotton" 
+                        value={formData.fabricMaterial}
+                        onChange={(e) => handleInputChange('fabricMaterial', e.target.value)}
+                        className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" 
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Sleeves Style</label>
+                      <input 
+                        type="text" 
+                        placeholder="Three-Quarter Sleeve" 
+                        value={formData.sleevesStyle}
+                        onChange={(e) => handleInputChange('sleevesStyle', e.target.value)}
+                        className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" 
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Fit Type</label>
+                      <input 
+                        type="text" 
+                        placeholder="Straight Regular Fit" 
+                        value={formData.fitType}
+                        onChange={(e) => handleInputChange('fitType', e.target.value)}
+                        className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" 
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Occasion Focus</label>
+                      <input 
+                        type="text" 
+                        placeholder="Festival, Office Wear" 
+                        value={formData.occasionFocus}
+                        onChange={(e) => handleInputChange('occasionFocus', e.target.value)}
+                        className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" 
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Gender Profile</label>
+                      <input 
+                        type="text" 
+                        placeholder="Women" 
+                        value={formData.genderProfile}
+                        onChange={(e) => handleInputChange('genderProfile', e.target.value)}
+                        className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" 
+                      />
+                    </div>
+                    <div className="flex flex-col sm:col-span-2 flex-col gap-1.5">
+                      <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Target Age Group</label>
+                      <input 
+                        type="text" 
+                        placeholder="Adults (18-45 Years)" 
+                        value={formData.targetAgeGroup}
+                        onChange={(e) => handleInputChange('targetAgeGroup', e.target.value)}
+                        className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" 
+                      />
+                    </div>
                   </div>
                 </div>
               )}
@@ -357,8 +606,26 @@ export default function ProductManagement() {
                     <p className="text-[13px] text-neutral-400">Set total stock quantities and register stock keeping unit codes.</p>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="flex flex-col gap-1.5"><label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Boutique Stock Count</label><input type="number" placeholder="14" className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" /></div>
-                    <div className="flex flex-col gap-1.5"><label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Unique SKU Reference Code</label><input type="text" placeholder="NDLN-CH-KRT-01" className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" /></div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Boutique Stock Count</label>
+                      <input 
+                        type="number" 
+                        placeholder="14" 
+                        value={formData.boutiqueStockCount}
+                        onChange={(e) => handleInputChange('boutiqueStockCount', e.target.value)}
+                        className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" 
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Unique SKU Reference Code</label>
+                      <input 
+                        type="text" 
+                        placeholder="NDLN-CH-KRT-01" 
+                        value={formData.uniqueSku}
+                        onChange={(e) => handleInputChange('uniqueSku', e.target.value)}
+                        className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" 
+                      />
+                    </div>
                   </div>
                 </div>
               )}
@@ -371,10 +638,46 @@ export default function ProductManagement() {
                     <p className="text-[13px] text-neutral-400">Set up the origin warehouse coordinate details and shipping radius variables.</p>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="sm:col-span-2 flex flex-col gap-1.5"><label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Pickup Hub Address</label><input type="text" placeholder="Studio Workshop, Block 4C, Kalyan, Maharashtra" className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" /></div>
-                    <div className="flex flex-col gap-1.5"><label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Package Weight (kg)</label><input type="text" placeholder="0.35 kg" className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" /></div>
-                    <div className="flex flex-col gap-1.5"><label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Delivery Radius Range</label><input type="text" placeholder="Nationwide Shipping" className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" /></div>
-                    <div className="sm:col-span-2 flex flex-col gap-1.5"><label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Estimated Delivery Window</label><input type="text" placeholder="3 - 5 business days delivery timeline" className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" /></div>
+                    <div className="sm:col-span-2 flex flex-col gap-1.5">
+                      <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Pickup Hub Address</label>
+                      <input 
+                        type="text" 
+                        placeholder="Studio Workshop, Block 4C, Kalyan, Maharashtra" 
+                        value={formData.pickupHubAddress}
+                        onChange={(e) => handleInputChange('pickupHubAddress', e.target.value)}
+                        className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" 
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Package Weight (kg)</label>
+                      <input 
+                        type="text" 
+                        placeholder="0.35 kg" 
+                        value={formData.packageWeight}
+                        onChange={(e) => handleInputChange('packageWeight', e.target.value)}
+                        className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" 
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Delivery Radius Range</label>
+                      <input 
+                        type="text" 
+                        placeholder="Nationwide Shipping" 
+                        value={formData.deliveryRadiusRange}
+                        onChange={(e) => handleInputChange('deliveryRadiusRange', e.target.value)}
+                        className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" 
+                      />
+                    </div>
+                    <div className="sm:col-span-2 flex flex-col gap-1.5">
+                      <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Estimated Delivery Window</label>
+                      <input 
+                        type="text" 
+                        placeholder="3 - 5 business days delivery timeline" 
+                        value={formData.estimatedDeliveryWindow}
+                        onChange={(e) => handleInputChange('estimatedDeliveryWindow', e.target.value)}
+                        className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" 
+                      />
+                    </div>
                   </div>
                 </div>
               )}
@@ -387,8 +690,26 @@ export default function ProductManagement() {
                     <p className="text-[13px] text-neutral-400">Add meta text identifier keywords to increase discoverability on Google search indices.</p>
                   </div>
                   <div className="grid grid-cols-1 gap-4">
-                    <div className="flex flex-col gap-1.5"><label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Search Keywords / Tags</label><input type="text" placeholder="e.g. handloom, chikankari, festive kurti, cotton apparel" className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" /></div>
-                    <div className="flex flex-col gap-1.5"><label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Custom Visibility Settings</label><input type="text" placeholder="Public (Visible to everyone on index shelves)" className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" /></div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Search Keywords / Tags</label>
+                      <input 
+                        type="text" 
+                        placeholder="e.g. handloom, chikankari, festive kurti, cotton apparel" 
+                        value={formData.searchKeywords}
+                        onChange={(e) => handleInputChange('searchKeywords', e.target.value)}
+                        className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" 
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Custom Visibility Settings</label>
+                      <input 
+                        type="text" 
+                        placeholder="Public (Visible to everyone on index shelves)" 
+                        value={formData.customVisibility}
+                        onChange={(e) => handleInputChange('customVisibility', e.target.value)}
+                        className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" 
+                      />
+                    </div>
                   </div>
                 </div>
               )}
@@ -409,9 +730,9 @@ export default function ProductManagement() {
             <div className="flex items-center justify-between border-t border-neutral-100 pt-4">
               <button 
                 onClick={handleBackStep}
-                disabled={currentStep === 1}
+                disabled={currentStep === 1 || isSubmitting}
                 className={`px-4 py-2 text-[13px] font-bold rounded-xl flex items-center gap-1.5 transition-colors outline-none ${
-                  currentStep === 1 ? 'text-neutral-300 pointer-events-none' : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50'
+                  currentStep === 1 || isSubmitting ? 'text-neutral-300 pointer-events-none' : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50'
                 }`}
               >
                 <ChevronLeft size={16} />
@@ -421,18 +742,20 @@ export default function ProductManagement() {
               <div className="flex items-center gap-2">
                 {currentStep === wizardSteps.length && (
                   <button 
-                    onClick={() => setViewMode('shelf')}
-                    className="px-4 py-2.5 bg-white border border-neutral-200 text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 text-[13px] font-semibold rounded-xl transition-all"
+                    disabled={isSubmitting}
+                    onClick={() => handleSaveProduct('DRAFT')}
+                    className="px-4 py-2.5 bg-white border border-neutral-200 text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 text-[13px] font-semibold rounded-xl transition-all outline-none"
                   >
-                    Save Draft
+                    {isSubmitting ? 'Saving...' : 'Save Draft'}
                   </button>
                 )}
                 
                 <button 
-                  onClick={currentStep === wizardSteps.length ? () => setViewMode('shelf') : handleNextStep}
+                  disabled={isSubmitting}
+                  onClick={currentStep === wizardSteps.length ? () => handleSaveProduct('PUBLISHED') : handleNextStep}
                   className="px-4 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white text-[13px] font-bold rounded-xl flex items-center gap-1.5 transition-all outline-none shadow-sm group"
                 >
-                  <span>{currentStep === wizardSteps.length ? 'Publish Product' : 'Continue'}</span>
+                  <span>{currentStep === wizardSteps.length ? (isSubmitting ? 'Publishing...' : 'Publish Product') : 'Continue'}</span>
                   {currentStep === wizardSteps.length ? (
                     <Sparkles size={14} />
                   ) : (
@@ -450,43 +773,3 @@ export default function ProductManagement() {
     </div>
   );
 }
-
-// export default function ProductsPage() {
-//   const [viewMode, setViewMode] = useState<'canvas' | 'create'>('canvas');
-
-//   return (
-//     <div className="w-full min-h-full bg-[#FAFAFA]">
-//       {viewMode === 'canvas' ? (
-//         <div className="p-6 md:p-8 max-w-[1600px] mx-auto w-full flex flex-col gap-6">
-//           <div onClick={(e) => {
-//             const target = e.target as HTMLElement;
-//             if (target.closest('button')?.textContent?.includes('Add Product')) {
-//               setViewMode('create');
-//             }
-//           }}>
-//             <ProductsCanvas />
-//           </div>
-//         </div>
-//       ) : (
-//         /* The UI is now perfectly optimized because the step views live strictly inside the Wizard bounding box */
-//         <div className="w-full max-w-3xl mx-auto px-4 sm:px-8 py-8 flex flex-col gap-6 animate-fade-in">
-//           <div className="flex items-center justify-between border-b border-neutral-200/60 pb-4">
-//             <button onClick={() => setViewMode('canvas')} className="flex items-center gap-2 text-[13px] font-semibold text-neutral-500 hover:text-neutral-900 transition-colors group outline-none">
-//               <ArrowLeft size={16} className="transition-transform group-hover:-translate-x-0.5" />
-//               <span>Back to Products Shelf</span>
-//             </button>
-//             <div className="flex items-center gap-2 text-[12px] font-medium text-neutral-400 bg-neutral-100/80 px-2.5 py-1 rounded-lg">
-//               <Sparkles size={12} className="text-neutral-600" />
-//               <span>Boutique Creation Suite</span>
-//             </div>
-//           </div>
-
-//           <section className="w-full">
-//             <AddProductWizard />
-//           </section>
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
-

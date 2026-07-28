@@ -1,0 +1,2145 @@
+Products Module
+
+│
+├── Product
+│
+├── Product Media
+│
+├── Product Variant
+│
+├── Product Variant Inventory
+│
+├── Product Pricing
+│
+├── Product Category
+│
+├── Product Attribute
+│
+├── Product SEO
+│
+├── Product Shipping
+│
+├── Product Status
+│
+├── Product Analytics
+│
+└── Product Publishing
+
+
+Database I Recommend
+
+Instead of one giant table
+
+products
+
+I recommend around 12-15 tables.
+
+Like Shopify.
+
+1
+products
+
+Contains
+
+id
+
+sellerId
+
+storeId
+
+title
+
+slug
+
+description
+
+status
+
+visibility
+
+brandId
+
+categoryId
+
+createdAt
+
+updatedAt
+
+Only core info.
+
+2
+product_media
+id
+
+productId
+
+url
+
+thumbnail
+
+type
+
+imageOrder
+
+alt
+
+isPrimary
+
+metadata
+3
+product_variants
+id
+
+productId
+
+sku
+
+barcode
+
+price
+
+comparePrice
+
+cost
+
+weight
+
+status
+4
+variant_options
+variantId
+
+size
+
+color
+
+fabric
+
+fit
+
+...
+
+Dynamic.
+
+Not fixed columns.
+
+5
+variant_inventory
+variantId
+
+warehouseId
+
+stock
+
+reserved
+
+available
+
+lowStockThreshold
+
+Future ready.
+
+6
+product_shipping
+weight
+
+length
+
+width
+
+height
+
+pickupAddress
+
+shippingProfile
+
+deliveryDays
+7
+product_seo
+metaTitle
+
+metaDescription
+
+keywords
+
+canonical
+
+robots
+8
+product_tags
+
+instead of comma separated text
+
+tag
+
+productId
+9
+product_categories
+
+Support multiple categories later.
+
+10
+product_reviews_summary
+
+Cache table.
+
+No joins.
+
+11
+product_statistics
+views
+
+likes
+
+wishlists
+
+orders
+
+returns
+
+shares
+
+Never calculate these live.
+
+12
+product_publish_history
+published
+
+draft
+
+archived
+
+restored
+
+who
+
+when
+
+
+Your Wizard
+
+Your wizard actually maps nicely.
+
+UI Step	Backend
+Photos	product_media
+Basic	products
+Pricing	product_variants
+Variants	variant_options
+Inventory	variant_inventory
+Delivery	shipping
+SEO	seo + tags
+Publish	status
+
+
+API Structure
+POST
+/products
+
+PATCH
+/products/:id
+
+GET
+/products/:id
+
+POST
+/products/:id/media
+
+DELETE
+/products/:id/media
+
+POST
+/products/:id/variants
+
+PATCH
+/products/:id/variants/:variantId
+
+POST
+/products/:id/publish
+
+POST
+/products/:id/archive
+
+POST
+/products/:id/duplicate
+
+GET
+/products
+
+
+Folder Structure
+modules/
+
+product/
+
+    actions/
+
+    repository/
+
+    services/
+
+    validators/
+
+    schemas/
+
+    dto/
+
+    types/
+
+    lib/
+
+    components/
+
+    hooks/
+
+    constants/
+
+    helpers/
+Product Lifecycle
+Create Draft
+
+↓
+
+Upload Images
+
+↓
+
+Fill Details
+
+↓
+
+Add Variants
+
+↓
+
+Inventory
+
+↓
+
+Shipping
+
+↓
+
+SEO
+
+↓
+
+Ready
+
+↓
+
+Publish
+
+↓
+
+Live
+
+↓
+
+Pause
+
+↓
+
+Archive
+
+↓
+
+Restore
+
+↓
+
+Delete
+
+#####################################################
+2nd approach:
+######################################################
+
+Product
+├── Media
+├── Category
+├── Brand
+├── Collections
+├── Attributes
+├── Variants
+│      ├── Inventory
+│      ├── Pricing
+│      └── SKU
+├── SEO
+├── Tags
+└── Status
+
+
+Phase 2 Architecture
+
+We'll build this exactly in this order.
+
+1. Categories
+categories
+
+Hierarchical
+
+Women
+   Dresses
+      Party Dresses
+
+Men
+   Shirts
+      Casual
+2. Brands
+brands
+Nike
+Adidas
+Needlon House
+Local Boutique
+3. Product Types
+product_types
+
+Examples
+
+Kurti
+
+Shirt
+
+Dress
+
+Jeans
+
+Blazer
+4. Products ⭐
+
+The main table.
+
+Only product-level information.
+
+id
+
+sellerId
+
+categoryId
+
+brandId
+
+productTypeId
+
+title
+
+description
+
+status
+
+visibility
+
+slug
+
+createdAt
+
+Nothing variant-specific lives here.
+
+5. Product Media
+product_media
+
+Every image
+
+Every video
+
+Thumbnail
+
+Order
+
+Alt text
+
+etc.
+
+6. Product Variants ⭐
+
+Most important table.
+
+Every purchasable item.
+
+Example
+
+Kurti
+
+Red
+
+S
+
+₹499
+
+SKU-001
+
+Qty 10
+
+Another row
+
+Kurti
+
+Red
+
+M
+
+₹499
+
+SKU-002
+
+Qty 8
+
+Another
+
+Kurti
+
+Blue
+
+XL
+
+₹549
+
+SKU-003
+7. Attributes
+Size
+
+Color
+
+Material
+
+Fit
+
+Sleeve
+
+Neck
+
+Fabric
+
+Pattern
+
+Dynamic.
+
+8. Variant Attribute Values
+
+This connects variants.
+
+Example
+
+Variant A
+
+Size = M
+
+Color = Red
+
+Fabric = Cotton
+
+Variant B
+
+Size = XL
+
+Color = Blue
+9. Inventory
+
+Separate.
+
+variantId
+
+quantity
+
+reserved
+
+available
+
+lowStock
+
+warehouse
+10. Pricing
+
+Separate.
+
+variantId
+
+MRP
+
+Selling Price
+
+Cost Price
+
+Tax
+
+Discount
+11. SEO
+
+Separate.
+
+Title
+
+Description
+
+Canonical
+
+Robots
+
+Keywords
+12. Collections
+Summer
+
+Wedding
+
+Festive
+
+Trending
+
+New Arrival
+
+Many-to-many.
+
+13. Tags
+
+Many-to-many.
+
+Cotton
+
+Party
+
+Office
+
+Casual
+
+Wedding
+Then map your UI
+
+Current Wizard
+
+Step 1
+
+Photos
+
+↓
+
+Works on
+
+product_media
+Step 2
+
+Basic Info
+
+↓
+
+Works on
+
+products
+
+category
+
+brand
+
+product type
+Step 3
+
+Pricing
+
+↓
+
+Works on
+
+product_variant_pricing
+Step 4
+
+Variants
+
+↓
+
+Works on
+
+variants
+
+attributes
+Step 5
+
+Inventory
+
+↓
+
+Works on
+
+inventory
+Step 6
+
+Delivery
+
+↓
+
+Eventually
+
+shipping profile
+warehouse
+weight
+dimensions
+Step 7
+
+SEO
+
+↓
+
+product_seo
+Step 8
+
+Publish
+
+↓
+
+Simply changes
+
+products.status
+
+Draft
+
+Published
+
+Archived
+Why this is the better approach
+
+If tomorrow you want to support:
+
+100 colors
+50 sizes
+Multiple warehouses
+Barcode scanning
+Bulk upload
+CSV import
+Amazon sync
+Flipkart sync
+Inventory history
+Analytics
+Multiple images per variant
+Digital products
+Rental products
+Subscription products
+
+Nothing in the database changes. You only add modules.
+
+That's the hallmark of a scalable commerce architecture.
+
+My implementation plan
+
+We'll build this incrementally so every step is production-ready and testable:
+
+✅ Categories
+✅ Brands
+✅ Product Types
+✅ Products (core)
+✅ Product Media
+✅ Attributes
+✅ Product Variants
+✅ Variant Attribute Values
+✅ Inventory
+✅ Pricing
+✅ Collections
+✅ Tags
+✅ SEO
+✅ Product Publish Workflow
+✅ Bulk Upload & Import Support
+
+
+Phase 2
+│
+├── 1. Catalog Foundation
+│     ├── Categories
+│     ├── Brands
+│     ├── Collections
+│     ├── Product Types
+│     ├── Attributes
+│     ├── Attribute Values
+│     ├── Specifications
+│     └── Tags
+│
+├── 2. Product Core
+│     ├── Product
+│     ├── Product Media
+│     ├── Product SEO
+│     ├── Product Status
+│     └── Product Visibility
+│
+├── 3. Variants
+│     ├── Variant
+│     ├── Variant Combination
+│     ├── Variant Images
+│     ├── SKU
+│     └── Inventory
+│
+├── 4. Publishing
+│     ├── Draft
+│     ├── Review
+│     ├── Active
+│     ├── Archived
+│     └── Deleted
+│
+└── 5. Search Layer
+      ├── Filters
+      ├── Tags
+      ├── SEO
+      └── Search Index
+
+
+1. Categories (Platform Managed)
+
+These should represent real product families.
+
+Mens Wear
+Womens Wear
+Kids Wear
+Accessories
+Footwear
+Fabric
+Services
+
+Notice
+
+NOT
+
+Shirts
+Kurta
+Wedding Sherwani
+
+Those belong somewhere else.
+
+2. Product Types
+
+This is where your current menu fits.
+
+Example
+
+Mens Wear
+Shirt
+T-Shirt
+Kurta
+Sherwani
+Suit
+Blazer
+Pant
+Jeans
+Jacket
+Coat
+Waistcoat
+Nehru Jacket
+Hoodie
+Sweater
+Womens Wear
+Kurti
+Lehenga
+Blouse
+Dress
+Top
+Skirt
+Suit
+Saree
+Jacket
+Coat
+Jeans
+Shirt
+Pant
+Services
+Tailoring
+Alteration
+Embroidery
+Customization
+Wedding Stitching
+Measurement Visit
+3. Collections
+
+Exactly what your navbar is showing.
+
+Collections are dynamic.
+
+New Arrivals
+
+Trending
+
+Best Sellers
+
+Wedding Season
+
+Summer Collection
+
+Winter Collection
+
+Festive Collection
+
+Office Wear
+
+Party Wear
+
+Traditional
+
+Casual
+
+Formal
+
+Premium
+
+Luxury
+
+Designer Picks
+
+Editor's Choice
+
+Under ₹999
+
+Made in India
+
+Handmade
+
+
+I actually like this direction. After analyzing your current navigation, I think you're already moving toward a scalable marketplace architecture rather than a simple clothing store.
+
+Here is what I extracted from your screenshots.
+
+Current Marketplace Structure
+Needlon
+
+├── New In
+│   ├── New Arrivals
+│   ├── Trending
+│   └── Best Sellers
+│
+├── For Men's
+│   ├── Shirts
+│   ├── Pants
+│   ├── Kurtas
+│   └── Outerwear
+│
+├── For Women
+│   ├── Office Wear
+│   ├── Suits
+│   ├── Lehengas & Blouses
+│   └── Outerwear
+│
+├── Services
+│   ├── Men's Tailoring
+│   ├── Women's Tailoring
+│   ├── Wedding & Occasion Wear
+│   └── Alterations
+What these actually represent
+
+One mistake many marketplaces make is mixing categories with navigation.
+
+These menus are navigation collections, not actual database categories.
+
+Example:
+
+For Men's
+
+is NOT a category.
+
+It is a storefront.
+
+Inside it,
+
+Shirts
+Pants
+Kurta
+Outerwear
+
+are also still not complete categories.
+
+They are shopping shortcuts.
+
+Database shouldn't follow navbar
+
+Instead think like Amazon.
+
+Navbar
+
+For Men's
+
+↓
+
+Collection
+
+↓
+
+Categories
+
+↓
+
+Product Types
+
+↓
+
+Products
+
+This separation gives unlimited scalability.
+
+My recommendation
+1. Categories (Platform Managed)
+
+These should represent real product families.
+
+Mens Wear
+Womens Wear
+Kids Wear
+Accessories
+Footwear
+Fabric
+Services
+
+Notice
+
+NOT
+
+Shirts
+Kurta
+Wedding Sherwani
+
+Those belong somewhere else.
+
+2. Product Types
+
+This is where your current menu fits.
+
+Example
+
+Mens Wear
+Shirt
+T-Shirt
+Kurta
+Sherwani
+Suit
+Blazer
+Pant
+Jeans
+Jacket
+Coat
+Waistcoat
+Nehru Jacket
+Hoodie
+Sweater
+Womens Wear
+Kurti
+Lehenga
+Blouse
+Dress
+Top
+Skirt
+Suit
+Saree
+Jacket
+Coat
+Jeans
+Shirt
+Pant
+Services
+Tailoring
+Alteration
+Embroidery
+Customization
+Wedding Stitching
+Measurement Visit
+3. Collections
+
+Exactly what your navbar is showing.
+
+Collections are dynamic.
+
+New Arrivals
+
+Trending
+
+Best Sellers
+
+Wedding Season
+
+Summer Collection
+
+Winter Collection
+
+Festive Collection
+
+Office Wear
+
+Party Wear
+
+Traditional
+
+Casual
+
+Formal
+
+Premium
+
+Luxury
+
+Designer Picks
+
+Editor's Choice
+
+Under ₹999
+
+Made in India
+
+Handmade
+
+
+Collections should simply query products.
+
+Example
+
+SELECT *
+
+WHERE
+
+created_at > 30 days
+
+↓
+
+New Arrivals
+
+sales > 500
+
+↓
+
+Best Sellers
+
+season = winter
+
+↓
+
+Winter Collection
+
+No duplicate data.
+
+4. Tags
+
+Seller Managed
+
+Examples
+
+wedding sherwani
+
+cotton
+
+linen
+
+party wear
+
+casual
+
+formal
+
+office
+
+embroidered
+
+plus size
+
+oversized
+
+slim fit
+
+premium
+
+ethnic
+
+festival
+
+bridal
+
+
+Used for
+
+Search
+
+Recommendations
+
+SEO
+
+AI search
+
+5. Attributes
+
+Platform Managed
+
+Example
+
+Color
+
+Size
+
+Material
+
+Sleeve Length
+
+Fit
+
+Collar
+
+Neck
+
+Pattern
+
+Occasion
+
+Closure
+
+Stretch
+
+Wash Care
+
+
+Shared across products.
+
+6. Specifications
+
+Platform Managed
+
+Example
+
+Fabric
+
+GSM
+
+Country
+
+Manufacturer
+
+Brand
+
+Care Instructions
+
+Package Contents
+
+Net Quantity
+
+7. Brands
+
+Hybrid
+
+Needlon Brands
+
+Raymond
+
+Allen Solly
+
+Manyavar
+
+FabIndia
+
+Seller Brands
+
+Arman's Boutique
+
+Needlon Tailors
+
+Royal Stitch
+
+8. Services
+
+This deserves its own ecosystem.
+
+Don't treat tailoring as products.
+
+Instead
+
+Service Category
+
+↓
+
+Service Type
+
+↓
+
+Seller Service
+
+↓
+
+Booking
+
+↓
+
+Measurements
+
+↓
+
+Schedule
+
+↓
+
+Order
+
+Because service booking is fundamentally different from product purchase.
+
+Based on your screenshots, I would normalize it like this
+UI Menu	Database
+New In	Collection
+Trending	Collection
+Best Sellers	Collection
+For Men's	Navigation
+Shirts	Product Type
+Pants	Product Type
+Kurta	Product Type
+Outerwear	Product Type
+For Women	Navigation
+Office Wear	Collection
+Suits	Product Type
+Lehenga	Product Type
+Outerwear	Product Type
+Services	Category
+Men's Tailoring	Service Type
+Women's Tailoring	Service Type
+Wedding Tailoring	Service Type
+Alterations	Service Type
+One improvement I would make immediately
+
+I would remove gender from the database hierarchy.
+
+Instead of:
+
+For Men's
+    Shirt
+
+store:
+
+Category
+    Clothing
+
+Product Type
+    Shirt
+
+Target Audience
+    Men
+
+This allows the same product type (Shirt) to work for:
+
+Men
+Women
+Unisex
+Boys
+Girls
+
+without duplicating product types like "Men's Shirt" and "Women's Shirt". It keeps your catalog cleaner and makes filtering much easier.
+
+Overall architecture I recommend for Needlon
+Navigation (Frontend)
+│
+├── New In
+├── Men
+├── Women
+├── Services
+│
+▼
+
+Collections
+│
+├── Trending
+├── New Arrival
+├── Office Wear
+├── Wedding
+├── Festival
+│
+▼
+
+Categories
+│
+├── Clothing
+├── Accessories
+├── Services
+│
+▼
+
+Product Types
+│
+├── Shirt
+├── Kurta
+├── Sherwani
+├── Blazer
+├── Dress
+├── Saree
+├── Tailoring
+│
+▼
+
+Products
+│
+▼
+
+Variants
+│
+▼
+
+Attributes
+│
+▼
+
+Specifications
+
+
+Final Catalog Architecture (Locked)
+Level 1 — Navigation (Frontend Only)
+
+These are purely for user experience.
+
+New In
+For Men
+For Women
+Services
+About
+
+Future additions:
+
+Kids
+Accessories
+Footwear
+Fabric
+Designers
+Offers
+
+Notice these never become database categories.
+
+Level 2 — Collections
+
+Purpose:
+Marketing and merchandising.
+
+Examples
+
+New Arrivals
+Trending
+Best Sellers
+
+Wedding Season
+Festive Collection
+Office Wear
+Party Wear
+Traditional
+Premium
+Luxury
+Handmade
+Made in India
+
+Summer Collection
+Winter Collection
+
+Editor's Picks
+
+Under ₹999
+
+Collections are dynamic.
+
+One product can belong to many collections.
+
+Sherwani
+
+↓
+
+Wedding
+Trending
+Premium
+Best Seller
+Festive
+
+No duplicated products.
+
+Level 3 — Categories
+
+These are permanent.
+
+Clothing
+
+Accessories
+
+Footwear
+
+Fabric
+
+Services
+
+Later
+
+Jewellery
+
+Home Decor
+
+Beauty
+
+Bags
+
+Kids
+
+Uniforms
+
+No redesign required.
+
+Level 4 — Product Types
+
+Example
+
+Clothing
+Shirt
+T-Shirt
+Kurta
+Sherwani
+Suit
+Blazer
+Waistcoat
+Pant
+Jeans
+Shorts
+Coat
+Jacket
+Hoodie
+Sweater
+Dress
+Kurti
+Lehenga
+Blouse
+Saree
+Skirt
+Top
+Accessories
+Tie
+
+Bow Tie
+
+Pocket Square
+
+Belt
+
+Wallet
+
+Scarf
+
+Cap
+
+Turban
+
+Cufflinks
+
+Socks
+Footwear
+Formal Shoes
+
+Sneakers
+
+Loafers
+
+Sandals
+
+Boots
+
+Heels
+
+Flats
+
+Kolhapuri
+Fabric
+Cotton
+
+Silk
+
+Linen
+
+Velvet
+
+Rayon
+
+Denim
+
+Wool
+
+Khadi
+Services
+Custom Tailoring
+
+Alteration
+
+Embroidery
+
+Measurement Visit
+
+Wedding Stitching
+
+Blouse Stitching
+
+Sherwani Stitching
+
+Suit Stitching
+Level 5 — Products
+
+Examples
+
+Premium White Cotton Shirt
+
+Classic Navy Blazer
+
+Wedding Sherwani Gold
+
+Women's Linen Office Shirt
+
+Designer Lehenga
+
+Custom Tailored Kurta
+Level 6 — Variants
+
+Example
+
+Color
+
+White
+Black
+Blue
+Size
+
+XS
+S
+M
+L
+XL
+XXL
+Material
+
+Cotton
+
+Silk
+
+Variant combinations
+
+White + M
+
+White + L
+
+Blue + XL
+Level 7 — Attributes
+
+Reusable filters.
+
+Color
+
+Material
+
+Pattern
+
+Fit
+
+Neck
+
+Sleeve
+
+Occasion
+
+Gender
+
+Age Group
+
+Season
+
+Stretch
+
+Transparency
+
+Closure
+
+Pocket
+
+Length
+
+Waist Rise
+
+Every product type only receives relevant attributes.
+
+Example
+
+Shirt
+
+Collar
+
+Sleeve
+
+Fit
+
+Shoes
+
+Heel Height
+
+Toe Shape
+Level 8 — Specifications
+
+Product information.
+
+Manufacturer
+
+Country
+
+Fabric Composition
+
+Weight
+
+Package Contents
+
+Wash Care
+
+Warranty
+
+Return Policy
+
+Net Quantity
+
+Not filters.
+
+Level 9 — Brands
+
+Hybrid.
+
+Platform
+
+Manyavar
+
+Raymond
+
+FabIndia
+
+Seller
+
+Arman's Boutique
+
+Needlon Tailors
+
+Royal Stitch
+Level 10 — Tags
+
+Seller Managed.
+
+Wedding
+
+Ethnic
+
+Cotton
+
+Premium
+
+Slim Fit
+
+Handmade
+
+Party Wear
+
+Festival
+
+Office
+
+Minimal
+
+Luxury
+
+Unlimited.
+
+Level 11 — SEO
+
+Platform
+
+Meta Title
+
+Meta Description
+
+Slug
+
+Canonical URL
+
+Open Graph
+
+Schema JSON-LD
+Level 12 — Product Status
+Draft
+
+Pending Review
+
+Rejected
+
+Approved
+
+Published
+
+Archived
+
+Out of Stock
+
+Hidden
+Service Catalog (Separate Domain)
+
+This is one architectural decision I'd like to lock in early.
+
+Products and services should not share the same lifecycle.
+
+Instead, create a dedicated service domain:
+
+Service Category
+        │
+        ▼
+Service Type
+        │
+        ▼
+Seller Service
+        │
+        ▼
+Pricing
+        │
+        ▼
+Availability
+        │
+        ▼
+Bookings
+        │
+        ▼
+Measurements
+        │
+        ▼
+Service Orders
+
+This separation avoids forcing booking, scheduling, measurements, and availability into the product model.
+
+One Important Improvement
+
+Instead of encoding gender into product types (e.g., "Men's Shirt" and "Women's Shirt"), model it as an attribute.
+
+For example:
+
+Category
+    Clothing
+
+Product Type
+    Shirt
+
+Target Audience
+    Men
+
+Later, the same Shirt product type can be used for:
+
+Men
+Women
+Unisex
+Boys
+Girls
+
+without duplicating product types.
+
+Implementation Roadmap
+
+To keep the project manageable and scalable, I recommend implementing the catalog in this order:
+
+Phase 2.1 – Catalog Foundation
+
+Categories
+Product Types
+Brands
+Collections
+
+Phase 2.2 – Product Core
+5. Products
+6. Product Media
+7. Product Variants
+
+Phase 2.3 – Product Intelligence
+8. Attributes
+9. Specifications
+10. Tags
+11. SEO
+
+Phase 2.4 – Publishing
+12. Product Status
+13. Review & Approval Workflow
+14. Search & Filtering
+15. Inventory Integration
+
+
+                                    NEEDLON
+                                       │
+───────────────────────────────────────┼──────────────────────────────────────
+
+                           PLATFORM CATALOG
+                                       │
+         ┌─────────────────────────────┼─────────────────────────────┐
+         │                             │                             │
+         ▼                             ▼                             ▼
+   Categories                  Product Types                    Collections
+         │                             │                             │
+         └──────────────┐              │              ┌──────────────┘
+                        ▼              ▼
+                  Catalog Products
+                        │
+        ┌───────────────┼────────────────┐
+        │               │                │
+        ▼               ▼                ▼
+ Attribute Templates  Specification     SEO Template
+                      Templates
+
+──────────────────────────────────────────────────────────────────────────────
+
+                              SELLER DOMAIN
+                                      │
+                                      ▼
+                               Seller Product
+                                      │
+        ┌───────────────┬─────────────┼───────────────┬───────────────┐
+        ▼               ▼             ▼               ▼               ▼
+     Media          Variants      Collections       Tags           Shipping
+                        │
+                        ▼
+                  Variant Pricing
+                        │
+                        ▼
+                   Variant Inventory
+
+──────────────────────────────────────────────────────────────────────────────
+
+                               CUSTOMER DOMAIN
+                                      │
+                                      ▼
+                              Product Listing
+                                      │
+                   ┌──────────────────┼──────────────────┐
+                   ▼                  ▼                  ▼
+               Reviews           Wishlist            Analytics
+
+
+Category
+
+ProductType
+
+Brand
+
+Collection
+
+CatalogProduct
+
+CatalogAttributeTemplate
+
+CatalogSpecificationTemplate
+
+SellerProduct
+
+SellerProductMedia
+
+SellerProductVariant
+
+SellerProductVariantPrice
+
+SellerProductInventory
+
+SellerProductAttribute
+
+SellerProductSpecification
+
+Tag
+
+ProductTag
+
+ProductCollection
+
+SEO
+
+PublishingWorkflow
+
+Analytics
+
+
+modules/
+
+├── seller/
+│
+├── seller-profile/
+│
+├── catalog/
+│   │
+│   ├── categories/
+│   ├── product-types/
+│   ├── brands/
+│   ├── collections/
+│   ├── templates/
+│   │
+│   ├── dto/
+│   ├── mapper/
+│   ├── services/
+│   ├── repository/
+│   ├── hooks/
+│   ├── lib/
+│   ├── schemas/
+│   ├── types/
+│   ├── constants/
+│   └── validations/
+│
+├── seller-products/
+│   │
+│   ├── products/
+│   ├── media/
+│   ├── variants/
+│   ├── pricing/
+│   ├── inventory/
+│   ├── seo/
+│   ├── publishing/
+│   └── shipping/
+│
+├── orders/
+├── analytics/
+├── search/
+└── shared/
+
+
+
+FOUNDATION
+│
+├── Authentication          ✅
+├── Seller Foundation       ✅
+├── Shared Core             🔜
+├── Catalog Core            🔜
+│
+PLATFORM
+│
+├── Categories
+├── Brands
+├── Product Types
+├── Templates
+├── Attributes
+├── Specifications
+├── Collections
+└── Tags
+│
+SELLER
+│
+├── Products
+├── Variants
+├── Media
+├── Pricing
+├── SEO
+├── Inventory
+└── Publishing
+│
+COMMERCE
+│
+├── Cart
+├── Checkout
+├── Orders
+├── Payments
+├── Shipping
+├── Returns
+└── Refunds
+│
+ENGAGEMENT
+│
+├── Reviews
+├── Wishlist
+├── Notifications
+├── Coupons
+└── Analytics
+
+
+❌ Wrong Architecture
+Category Upload
+
+Brand Upload
+
+Product Upload
+
+Seller Upload
+
+Document Upload
+
+Store Upload
+
+Every module ends up implementing upload logic differently.
+
+✅ Correct Architecture
+Asset Framework
+
+        ▲
+        │
+────────┼─────────────
+        │
+
+Category
+
+Brand
+
+Product
+
+Seller
+
+Documents
+
+Store
+
+CMS
+
+Reviews
+
+db/
+
+schema/
+
+    catalog/
+
+        enums.ts
+
+        category/
+
+            category.ts
+            category-relations.ts
+            category-indexes.ts
+            index.ts
+
+        brand/
+
+            brand.ts
+            brand-relations.ts
+            index.ts
+
+        product-type/
+
+            product-types.ts
+            product-type-relations.ts
+            index.ts
+
+        collection/
+
+        tag/
+
+        attribute/
+
+        specification/
+
+        index.ts
+
+
+
+modules/
+
+catalog/
+
+category/
+
+repository/
+
+    internal/
+
+        base-category-query.ts
+
+    commands/
+
+        create-category.ts
+
+        update-category.ts
+
+        move-category.ts
+
+        delete-category.ts
+
+        restore-category.ts
+
+    queries/
+
+        get-category.ts
+
+        get-category-list.ts
+
+        get-category-tree.ts
+
+        exists-category.ts
+
+        exists-category-slug.ts
+
+    index.ts
+
+

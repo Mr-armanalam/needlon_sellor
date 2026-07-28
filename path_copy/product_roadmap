@@ -1,0 +1,2021 @@
+Final Roadmap (Products Module)
+Phase 0 — Discovery & Audit (No Code)
+
+Goal: Understand the existing implementation and avoid duplication.
+
+Step 0.1 — Documentation Review
+Review the five project documents
+Extract product-related rules
+Verify engineering standards
+Verify UI design rules
+Verify glossary
+Verify approved decisions
+Step 0.2 — Existing Code Audit
+
+Review existing:
+
+Product schemas
+Category schemas
+Variant schemas
+Inventory schemas
+Upload/media implementation
+Existing APIs
+Existing UI
+Existing hooks
+Existing shared components
+Existing utilities
+Step 0.3 — Gap Analysis
+
+Document:
+
+Existing
+Missing
+Reusable
+Refactor required
+
+Deliverable: Product Module Audit Report
+
+Phase 1 — Architecture Freeze (No Code)
+
+Nothing changes after approval.
+
+1. Folder Structure Freeze
+
+Every feature under Products will follow the same module structure.
+
+modules/
+└── products/
+    ├── listing/
+    ├── create-product/
+    ├── edit-product/
+    ├── media/
+    ├── variants/
+    ├── inventory/
+    ├── pricing/
+    ├── seo/
+    ├── delivery/
+    └── shared/
+
+Inside every module:
+
+module/
+│
+├── api/
+├── dto/
+├── hooks/
+├── mapper/
+├── repository/
+├── services/
+├── validation/
+│
+├── constants.ts
+├── keys.ts
+└── types.ts
+
+This structure will remain consistent throughout the Product module.
+
+2. Execution Flow Freeze
+UI Component
+      │
+React Query Hook
+      │
+Frontend API
+      │
+HTTP
+      │
+Route Handler
+(Auth + Validation)
+      │
+Service
+(Business Logic)
+      │
+Repository
+(Database)
+      │
+Drizzle
+      │
+PostgreSQL
+
+No shortcuts.
+
+Repositories never call HTTP.
+
+Services never know about Route Handlers.
+
+Route Handlers never contain business logic.
+
+3. Responsibilities Freeze
+UI → Rendering only
+Hook → Server state only
+API → Network communication only
+Route → Auth, validation, response
+Service → Business rules
+Repository → Data access only
+4. DTO Strategy Freeze
+
+DTOs represent UI requirements, not database tables.
+
+They:
+
+hide database implementation
+combine fields where needed
+expose only what the frontend needs
+are exported through index.ts
+5. Mapper Strategy Freeze
+
+Mappers are the only place that converts between:
+
+Database Entity → DTO
+DTO → Repository Input
+
+No conversion logic in Services or UI.
+
+6. React Query Strategy Freeze
+
+Every server interaction gets:
+
+Query Key
+API Client
+Hook
+
+Pattern:
+
+keys.ts
+↓
+
+api/
+
+↓
+
+hooks/
+
+No component calls fetch() directly.
+
+7. Validation Strategy Freeze
+
+Validation occurs twice:
+
+Frontend:
+
+React Hook Form
+Zod
+
+Backend:
+
+Route Handler
+Same schema (or shared schema where appropriate)
+8. Error Strategy Freeze
+
+One unified response format.
+
+Validation errors
+
+↓
+
+Business errors
+
+↓
+
+Database errors
+
+↓
+
+Unexpected errors
+
+Everything returns through common response helpers.
+
+9. State Strategy Freeze
+
+Server State
+
+→ React Query
+
+Local Form State
+
+→ React Hook Form
+
+UI State
+
+→ React state
+
+No duplicated state.
+
+10. File Upload Strategy Freeze
+
+Media uploads will be isolated into their own module.
+
+Responsibilities:
+
+upload
+reorder
+delete
+cover image
+validation
+optimization
+11. Business Rules Freeze
+
+
+
+
+
+
+
+
+We'll define before coding:
+
+Draft lifecycle
+Publish lifecycle
+Archive
+Delete
+SKU generation
+Slug generation
+Image rules
+Stock rules
+Variant rules
+Permissions
+Phase 2 — Database Freeze
+
+Review and finalize:
+
+Tables
+Relations
+Constraints
+Indexes
+Enums
+Transactions
+
+After approval:
+No schema redesign unless explicitly approved.
+
+Phase 3 — API Contract Freeze
+
+Every endpoint finalized before implementation.
+
+Each endpoint will define:
+
+Method
+URL
+Request DTO
+Response DTO
+Validation schema
+Auth
+Repository calls
+Service flow
+Error cases
+Phase 4 — Backend Implementation
+
+Implementation order:
+
+Repository
+Service
+Route
+API tests
+
+Every step reviewed before moving on.
+
+Phase 5 — Frontend Integration
+
+Implementation order:
+
+API Client
+DTO
+Mapper
+React Query Hook
+UI Integration
+Loading
+Errors
+Optimistic Updates
+Phase 6 — Testing & Validation
+Repository tests
+Service tests
+Route tests
+Integration tests
+UI validation
+Manual QA against screenshots
+Phase 7 — Documentation Update
+
+Update project documentation if implementation introduces permanent architectural or business decisions.
+
+
+
+
+
+
+Product Module Milestones
+
+We'll implement the screenshots as these milestones:
+
+Products Shelf
+Product list
+Search
+Filters
+Sorting
+Tabs
+Pagination
+Product card
+Bulk upload entry
+Create Product Wizard
+Photos
+Basic Info
+Pricing
+Variants
+Inventory
+Delivery
+SEO
+Review & Publish
+Edit Product
+Load existing data
+Autosave draft
+Update
+Publish
+Product Lifecycle
+Draft
+Active
+Out of Stock
+Archived
+Delete/Restore (according to business rules)
+
+
+
+
+
+
+
+
+
+
+
+
+Phase 1 — Architecture Freeze
+
+This is the most important phase of the project. Before writing a single line of implementation code, we'll finalize every architectural decision for the Product module.
+
+Deliverables
+Step 1.1 — Module Boundaries
+
+Define the complete Product domain:
+
+Catalog
+├── Categories
+├── Products
+├── Brands
+├── Collections
+├── Tags
+├── Attributes
+├── Attribute Options
+├── Variants
+├── Inventory
+├── Media
+├── Pricing
+├── Shipping
+├── SEO
+└── Product Listing
+
+We'll also define ownership and interactions between these modules.
+
+Step 1.2 — Folder Structure (Freeze)
+
+Finalize the complete directory structure.
+
+modules/
+└── catalog/
+    ├── shared/
+    │   ├── constants/
+    │   ├── lib/
+    │   ├── validation/
+    │   ├── dto/
+    │   ├── mapper/
+    │   ├── types/
+    │   └── query/
+    │
+    ├── categories/
+    ├── products/
+    ├── brands/
+    ├── collections/
+    ├── attributes/
+    ├── inventory/
+    ├── media/
+    └── pricing/
+
+Each feature module will follow the same internal structure:
+
+feature/
+├── api/
+├── dto/
+├── hooks/
+├── mapper/
+├── repository/
+│   ├── commands/
+│   ├── queries/
+│   └── index.ts
+├── services/
+├── validation/
+├── constants.ts
+├── keys.ts
+├── types.ts
+└── index.ts
+
+
+
+
+
+
+This structure will remain fixed throughout implementation.
+
+Step 1.3 — Execution Flow (Freeze)
+UI Component
+      │
+React Query Hook
+      │
+Frontend API Client
+      │
+HTTP
+      │
+Next.js Route Handler
+(Auth + Validation + Response)
+      │
+Domain Service
+(Business Logic)
+      │
+Repository
+(Database Access)
+      │
+Drizzle ORM
+      │
+PostgreSQL
+
+No layer may bypass another.
+
+Step 1.4 — Layer Responsibilities
+
+Freeze the responsibilities for:
+
+UI
+React Query Hooks
+API Client
+Route Handlers
+Services
+Repositories
+Shared Libraries
+Step 1.5 — Shared Module Strategy
+
+Define what belongs in modules/catalog/shared versus feature-specific modules.
+
+Examples:
+
+Shared validation
+Shared query models
+Shared pagination
+Shared upload utilities
+Shared constants
+Step 1.6 — DTO & Mapper Strategy
+
+Finalize:
+
+DTOs represent UI requirements
+Database entities never reach the UI
+Mappers are the only conversion point between DTOs and entities
+Step 1.7 — API Contract Strategy
+
+Standardize:
+
+Request format
+Response format
+Pagination
+Filtering
+Sorting
+Error responses
+Step 1.8 — State Management Strategy
+
+Freeze responsibilities for:
+
+React Query (server state)
+React Hook Form (form state)
+Local component state
+Optimistic updates
+Cache invalidation
+Step 1.9 — Upload & Media Strategy
+
+Finalize:
+
+Supabase bucket layout
+Folder naming
+Image processing pipeline
+Validation
+Reordering
+Cover image rules
+Step 1.10 — Business Rules
+
+Freeze core rules for:
+
+Draft
+Publish
+Archive
+Delete
+Restore
+SKU generation
+Slug generation
+Category hierarchy
+Product lifecycle
+Inventory updates
+Step 1.11 — Naming Conventions
+
+Freeze naming for:
+
+Files
+Folders
+DTOs
+Services
+Repositories
+Hooks
+API clients
+Route handlers
+Constants
+Query keys
+Step 1.12 — Error Handling Strategy
+
+Define a unified approach for:
+
+Validation errors
+Business errors
+Database errors
+Storage errors
+Unexpected errors
+
+
+
+
+
+
+
+
+
+Phase 2 Roadmap
+Phase 2.1 — Catalog Foundation ⭐ (Start Here)
+Goal
+
+Build the entire catalog foundation that every product depends on.
+
+Deliverables
+db/
+└── schema/
+    └── catalog/
+        ├── categories/
+        │   ├── table.ts
+        │   ├── relations.ts
+        │   ├── indexes.ts
+        │   ├── types.ts
+        │   └── index.ts
+        │
+        ├── attributes/
+        │   ├── table.ts
+        │   ├── relations.ts
+        │   ├── index.ts
+        │
+        ├── attribute-options/
+        │   ├── table.ts
+        │   ├── relations.ts
+        │   ├── index.ts
+        │
+        ├── enums.ts
+        └── index.ts
+Includes
+Category
+Category hierarchy
+Attribute definitions
+Attribute options
+Relations
+Indexes
+Enums
+Soft delete
+Audit fields
+Self-reference
+Typed JSON
+Production constraints
+
+No Products yet.
+
+Phase 2.2 — Product Core
+Products
+Product status
+Product lifecycle
+Slug
+Store ownership
+Seller ownership
+Phase 2.3 — Product Media
+Images
+Videos (future-ready)
+Ordering
+Cover image
+Alt text
+Phase 2.4 — Variants
+Size
+Color
+Material
+Dynamic attributes
+Phase 2.5 — Inventory
+SKU
+Quantity
+Reserved stock
+Available stock
+Stock status
+Phase 2.6 — Pricing
+Selling price
+MRP
+Currency
+Discount
+Tax flags
+Phase 2.7 — Shipping
+Weight
+Dimensions
+Package type
+Phase 2.8 — SEO
+Meta title
+Meta description
+Open Graph
+Phase 2.9 — Database Review
+
+Final integrity review:
+
+Constraints
+FK
+Indexes
+Performance
+Naming
+Drizzle exports
+Migration validation
+Phase 2 Workflow (Locked)
+
+For every phase:
+
+Design
+Folder structure
+Table(s)
+Enums
+Relations
+Indexes
+Constraints
+Review
+Approval
+Next phase
+
+No skipping.
+
+We Will Not Write Code Immediately
+
+Even within Phase 2.1, we will proceed incrementally:
+
+Step 2.1.1 — Catalog Folder Structure
+
+Freeze:
+
+db/schema/catalog/
+├── categories/
+├── attributes/
+├── attribute-options/
+├── enums.ts
+└── index.ts
+Step 2.1.2 — Enums
+
+Finalize all catalog enums.
+
+Step 2.1.3 — Categories Table
+
+Production-grade implementation.
+
+Step 2.1.4 — Category Relations
+Step 2.1.5 — Attributes Table
+Step 2.1.6 — Attribute Options
+Step 2.1.7 — Exports & Review
+
+
+
+
+
+
+
+
+✅ Phase 2.1 — Catalog Database Schema Completed
+
+The entire catalog foundation is now frozen.
+
+Catalog
+│
+├── ✅ Enums
+│
+├── ✅ Categories
+│
+├── ✅ Category Attributes
+│
+└── ✅ Category Attribute Options
+
+This architecture will not change.
+
+🚀 Phase 2.2 — Product Database Schema
+
+This is the largest database module in the entire Needlon project.
+
+Everything else revolves around Products.
+
+Product Module Responsibilities
+
+The Product module must support:
+
+Seller Products
+Physical Products
+Digital Products (future)
+Product Variants
+Dynamic Category Attributes
+Inventory
+Pricing
+Images
+Videos
+SEO
+Search
+Recommendation
+AI Product Creation
+Moderation
+Draft Publishing
+Product Approval
+Analytics
+Wishlist
+Cart
+Orders
+
+without redesign later.
+
+Product Module Architecture
+
+Like Catalog, Product will be modular.
+
+db/schema/products/
+
+├── enums.ts
+│
+├── products/
+│   ├── constants.ts
+│   ├── metadata.ts
+│   ├── table.ts
+│   ├── relations.ts
+│   ├── types.ts
+│   └── index.ts
+│
+├── product-images/
+│
+├── product-videos/
+│
+├── product-variants/
+│
+├── product-variant-options/
+│
+├── product-attribute-values/
+│
+├── product-seo/
+│
+├── inventory/
+│
+├── pricing/
+│
+├── shipping/
+│
+├── product-tags/
+│
+├── product-tag-mappings/
+│
+├── product-documents/
+│
+├── product-ai/
+│
+└── index.ts
+
+This keeps every concern isolated and maintainable.
+
+Product Database Roadmap
+Phase 2.2.1 — Product Foundation
+
+Build the core product entity.
+
+products/
+Phase 2.2.2
+
+Product Images
+
+product-images/
+Phase 2.2.3
+
+Product Videos
+
+product-videos/
+Phase 2.2.4
+
+Product Variants
+
+product-variants/
+Phase 2.2.5
+
+Variant Options
+
+product-variant-options/
+Phase 2.2.6
+
+Dynamic Attribute Values
+
+product-attribute-values/
+Phase 2.2.7
+
+Inventory
+
+inventory/
+Phase 2.2.8
+
+Pricing
+
+pricing/
+Phase 2.2.9
+
+Shipping
+
+shipping/
+Phase 2.2.10
+
+SEO
+
+product-seo/
+Phase 2.2.11
+
+Tags
+
+product-tags/
+product-tag-mappings/
+Phase 2.2.12
+
+AI
+
+product-ai/
+
+
+
+
+
+
+
+
+
+
+
+
+
+Phase 3 — API Contract Freeze
+
+3.1 Product API Standards
+    • Base URL
+    • Response format
+    • Error format
+    • Pagination
+    • Sorting
+    • Filtering
+    • Authentication
+    • Authorization
+    • Idempotency
+    • Versioning
+
+3.2 Product CRUD
+    • Create Product
+    • Get Product
+    • Update Product
+    • Delete Product
+
+3.3 Product Listing
+    • Seller Products
+    • Public Products
+    • Product Details
+
+3.4 Draft Workflow
+    • Save Draft
+    • Publish
+    • Unpublish
+    • Archive
+    • Restore
+
+3.5 Product Images API
+
+3.6 Product Videos API
+
+3.7 Product Variants API
+
+3.8 Inventory API
+
+3.9 Pricing API
+
+3.10 Shipping API
+
+3.11 SEO API
+
+3.12 Product Tags API
+
+3.13 Product AI API
+
+3.14 Bulk Operations
+    • Bulk Update
+    • Bulk Delete
+    • Bulk Publish
+    • Bulk Archive
+
+3.15 Search & Filters
+
+3.16 Error Contract
+
+3.17 Final API Freeze
+
+
+
+
+
+
+
+
+
+Endpoint Name
+
+Method
+URL
+
+Purpose
+
+Authentication
+
+Authorization
+
+Headers
+
+Path Parameters
+
+Query Parameters
+
+Request DTO
+
+Validation Rules
+
+Business Rules
+
+Repository Calls
+
+Service Flow
+
+Response DTO
+
+HTTP Status Codes
+
+Error Cases
+
+Notes
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Phase 0 — Product Module Planning
+
+Status: ✅ Completed
+
+Purpose:
+
+Define Product capability boundaries.
+
+Includes:
+
+Product ownership
+Business responsibility
+Module boundaries
+Database ownership
+API scope
+Feature roadmap
+Phase 1 — Product Module Boundaries
+
+Status: ✅ Completed
+
+Purpose:
+
+Define what Product Module owns.
+
+Confirmed ownership:
+
+Product Module
+
+├── Products
+├── Product Images
+├── Product Videos
+├── Variants
+├── Variant Options
+├── Attributes
+├── Inventory Integration
+├── Pricing Integration
+├── Search Integration
+├── Validation
+└── Bulk Operations
+Phase 2 — Product Database Architecture
+
+Status: ✅ Completed / Frozen
+
+Purpose:
+
+Define persistence layer.
+
+Completed:
+
+2.1 Catalog Foundation
+
+2.2 Product Foundation
+
+    Products
+    Product Images
+    Product Videos
+    Product Variants
+    Variant Options
+    Product Attributes
+    Inventory
+    Pricing
+    Shipping
+    SEO
+    Tags
+
+Database schema decisions are frozen.
+
+Phase 3 — Product API Contract Design
+
+Status: ✅ Completed / Frozen
+
+Purpose:
+
+Define external API contracts.
+
+Completed:
+
+Product APIs
+Create Product
+Get Product
+List Products
+Update Product
+Delete Product
+Publish Product
+Archive Product
+Restore Product
+Variant APIs
+Create Variant
+
+Get Variant
+
+List Variants
+
+Update Variant Status
+Inventory APIs
+Get Inventory
+
+Update Inventory
+
+Reserve Inventory
+
+Release Reservation
+
+Inventory History
+
+Inventory Reconciliation
+Pricing APIs
+Get Pricing
+
+Update Pricing
+
+Schedule Pricing
+
+Activate Scheduled Pricing
+
+Pricing History
+
+Pricing Validation
+Search APIs
+Search Products
+
+Search Suggestions
+
+Search Autocomplete
+
+Search Facets
+
+Popular Searches
+
+Seller Search Analytics
+
+Internal Reindex
+Validation APIs
+Validate Product
+
+Validate Publish Readiness
+
+Validate SKU
+
+Validate Slug
+
+Validate Variants
+
+Validate Pricing
+
+Validate Inventory
+
+Validate Media
+
+Validate Category Attributes
+
+Validate Shipping
+
+Validate SEO
+
+Product Health Score
+Bulk APIs
+Bulk Update Products
+
+Bulk Delete Products
+
+Bulk Archive Products
+
+Bulk Restore Products
+
+Bulk Publish Products
+
+Bulk Unpublish Products
+
+Bulk Update Status
+
+Bulk Update Pricing
+
+Bulk Update Inventory
+
+Bulk Assign Category
+
+Bulk Export Products
+
+Bulk Import Products
+
+Bulk Validation
+
+Bulk Health Score
+Phase 4 — Product Backend Architecture
+
+Status: 🟡 In Progress
+
+Purpose:
+
+Define internal implementation architecture before writing code.
+
+Phase 4.1 — Module Foundation
+
+Status: ✅ Completed
+
+Completed:
+
+4.1.1 Product Module Folder Structure
+
+4.1.2 Module Registration
+
+4.1.3 Dependency Injection
+
+4.1.4 Shared Constants
+
+4.1.5 Error Definitions
+Phase 4.2 — DTO Architecture
+
+Status: ✅ Completed
+
+Purpose:
+
+Define communication contracts.
+
+Completed:
+
+4.2.1 Request DTOs
+
+Defines:
+
+Incoming data contracts
+
+Used by:
+
+APIs
+Jobs
+Events
+4.2.2 Response DTOs
+
+Defines:
+
+Outgoing data contracts
+
+Used by:
+
+APIs
+Events
+Exports
+4.2.3 Validation Schemas
+
+Defines:
+
+Structural validation rules
+
+Technology:
+
+Zod
+4.2.4 Transformers
+
+Defines:
+
+Input normalization layer
+
+Responsibilities:
+
+trimming
+formatting
+normalization
+4.2.5 Mappers
+
+Defines:
+
+Domain ↔ DTO transformation
+
+Responsibilities:
+
+Entity projection
+Response creation
+Search document mapping
+Phase 4.3 — Repository Architecture
+
+Status: ⏳ Next
+
+Purpose:
+
+Define database access layer.
+
+Planned:
+
+4.3.1 Product Repository
+
+4.3.2 Category Repository
+
+4.3.3 Variant Repository
+
+4.3.4 Inventory Repository
+
+4.3.5 Pricing Repository
+
+4.3.6 Media Repository
+
+4.3.7 Search Repository
+
+Responsibilities:
+
+Drizzle ORM queries
+Transactions
+Persistence abstraction
+
+No business logic.
+
+Phase 4.4 — Domain Service Architecture
+
+Status: ⏳ Pending
+
+Purpose:
+
+Define business logic layer.
+
+Planned:
+
+4.4.1 Product Service
+
+4.4.2 Variant Service
+
+4.4.3 Inventory Service
+
+4.4.4 Pricing Service
+
+4.4.5 Search Service
+
+4.4.6 Validation Service
+
+4.4.7 Bulk Operation Service
+
+Responsibilities:
+
+Business rules
+Workflow orchestration
+Domain decisions
+Phase 4.5 — Controller/API Architecture
+
+Status: ⏳ Pending
+
+Purpose:
+
+Define API delivery layer.
+
+Planned:
+
+4.5.1 Product Controllers
+
+4.5.2 Variant Controllers
+
+4.5.3 Inventory Controllers
+
+4.5.4 Pricing Controllers
+
+4.5.5 Search Controllers
+
+4.5.6 Validation Controllers
+
+4.5.7 Bulk Controllers
+
+Responsibilities:
+
+HTTP handling
+DTO conversion
+Authentication checks
+Response formatting
+Phase 4.6 — Integration Architecture
+
+Status: ⏳ Pending
+
+Define:
+
+Events
+
+Queues
+
+Storage
+
+Search Engine
+
+Notifications
+
+External Services
+Phase 5 — Product Module Implementation
+
+Status: ⏳ Future
+
+Only after Phase 4 architecture freeze.
+
+Implementation order:
+
+Database Layer
+
+↓
+
+Repositories
+
+↓
+
+Domain Services
+
+↓
+
+Validators
+
+↓
+
+Transformers
+
+↓
+
+Mappers
+
+↓
+
+Controllers
+
+↓
+
+API Routes
+
+↓
+
+Tests
+Phase 6 — Product Module Testing
+
+Status: ⏳ Future
+
+Testing:
+
+Unit Tests
+
+Repository Tests
+
+Service Tests
+
+API Tests
+
+Integration Tests
+
+Performance Tests
+
+Security Tests
+Phase 7 — Product Module Production Readiness
+
+Status: ⏳ Future
+
+Includes:
+
+Logging
+
+Monitoring
+
+Error Tracking
+
+Performance Optimization
+
+Security Review
+
+Documentation Update
+
+Deployment Validation
+Current Position
+Needlon Product Module
+
+Phase 0 ✅
+Phase 1 ✅
+Phase 2 ✅
+Phase 3 ✅
+
+Phase 4 🟡
+
+    4.1 Foundation
+        ✅ Completed
+
+    4.2 DTO Architecture
+        ✅ Completed
+
+    4.3 Repository Architecture
+        ⏳ Next
+
+
+
+
+
+
+
+
+
+
+Phase 4 — Product Backend Implementation
+
+4.1 Product Module Foundation
+    4.1.1 Folder Structure
+    4.1.2 Module Registration
+    4.1.3 Dependency Injection
+    4.1.4 Shared Constants
+    4.1.5 Error Definitions
+
+4.2 DTO Implementation
+    4.2.1 Request DTOs
+    4.2.2 Response DTOs
+    4.2.3 Validation Schemas
+    4.2.4 Transformers
+    4.2.5 Mappers
+
+4.3 Repository Layer
+    4.3.1 Product Repository
+    4.3.2 Category Repository
+    4.3.3 Variant Repository
+    4.3.4 Inventory Repository
+    4.3.5 Pricing Repository
+    4.3.6 Media Repository
+
+4.4 Service Layer
+    Product Business Logic
+    Validation Engine
+    Pricing Engine
+    Inventory Engine
+    Search Engine
+
+4.5 API Controllers
+
+4.6 Route Registration
+
+4.7 Background Job Processors
+
+4.8 Queue Workers
+
+4.9 Event Publishers
+
+4.10 Event Consumers
+
+4.11 Search Index Integration
+
+4.12 Cache Layer
+
+4.13 Integration Tests
+
+4.14 End-to-End Tests
+
+4.15 Performance Optimization
+
+4.16 Production Hardening
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Phase 4 — Product Backend Implementation
+
+4.1 Module Foundation                  ✅
+4.2 DTO Architecture                   ✅
+4.3 Repository Architecture            ✅
+4.4 Domain Service Architecture        ✅
+
+4.5 Application Service Architecture
+    4.5.1 Product Application Service
+    4.5.2 Category Application Service
+    4.5.3 Variant Application Service
+    4.5.4 Inventory Application Service
+    4.5.5 Pricing Application Service
+    4.5.6 Media Application Service
+    4.5.7 Search Application Service
+    4.5.8 Authorization & Transaction Coordination
+    4.5.9 Application Event Coordination
+
+4.6 Controller Architecture
+    REST Controllers
+    Request Mapping
+    Response Mapping
+    Error Mapping
+
+4.7 Routing & Middleware
+    Route Registration
+    Authentication
+    Authorization
+    Rate Limiting
+    Validation Middleware
+
+4.8 Background Processing
+    Queue Producers
+    Queue Workers
+    Scheduled Jobs
+    Retry Policies
+    Dead Letter Queue
+
+4.9 Event Architecture
+    Domain Events
+    Integration Events
+    Event Publishers
+    Event Consumers
+
+4.10 Infrastructure Integrations
+    Search Index
+    Storage
+    Cache
+    External Services
+
+4.11 Testing
+    Unit Tests
+    Integration Tests
+    Contract Tests
+    End-to-End Tests
+    Performance Tests
+
+4.12 Production Readiness
+    Observability
+    Metrics
+    Logging
+    Tracing
+    Security Hardening
+    Deployment Readiness
+
+
+
+
+
+
+
+
+
+
+Phase 5 — Product Module Implementation
+
+Unlike previous phases, Phase 5 is not architecture.
+
+This phase is 100% production code.
+
+Every file written from now on should be production-ready.
+
+No pseudo code.
+
+No placeholders.
+
+No TODOs.
+
+No simplified examples.
+
+No educational implementations.
+
+Everything should be deployable.
+
+Phase 5 Roadmap (Frozen)
+5.1 Shared Foundation
+5.1.1 Module Bootstrap
+5.1.2 Shared Utilities
+5.1.3 Shared Constants
+5.1.4 Error Classes
+5.1.5 Exception Handling
+5.1.6 Logger Integration
+5.1.7 Configuration Registration
+5.2 DTO Implementation
+
+Implement every DTO defined in Phase 4.
+
+Request DTOs
+Response DTOs
+Validation Schemas
+Transformers
+Mappers
+5.3 Repository Implementation
+
+Production implementation for every repository.
+
+Product Repository
+Category Repository
+Variant Repository
+Inventory Repository
+Pricing Repository
+Media Repository
+Search Repository
+
+Includes:
+
+Drizzle ORM queries
+Transactions
+Pagination
+Cursor support
+Optimistic locking
+Error handling
+Query optimization
+5.4 Domain Service Implementation
+
+Implement complete business logic.
+
+Includes:
+
+Product Service
+Category Service
+Variant Service
+Inventory Service
+Pricing Service
+Media Service
+
+Everything implemented exactly as frozen.
+
+5.5 Application Service Implementation
+
+Implement orchestration layer.
+
+Includes:
+
+Authorization
+Transactions
+DTO Mapping
+Repository Coordination
+Event Coordination
+Background Job Coordination
+5.6 Controller Implementation
+
+Implement REST controllers.
+
+Includes:
+
+CRUD
+Bulk APIs
+SEO APIs
+Search APIs
+Media APIs
+Inventory APIs
+Pricing APIs
+Validation APIs
+5.7 Route Implementation
+
+Implement
+
+Route Registration
+Middleware
+Validation
+Authentication
+Authorization
+Rate Limiting
+5.8 Background Processing Implementation
+
+Implement
+
+Queue Producers
+Queue Workers
+Scheduled Jobs
+Retry Policies
+Dead Letter Queue
+5.9 Event Implementation
+
+Implement
+
+Domain Events
+Integration Events
+Event Publishers
+Event Consumers
+5.10 Infrastructure Implementation
+
+Implement adapters for
+
+Search
+Storage
+Cache
+External Services
+5.11 Testing Implementation
+
+Implement
+
+Unit Tests
+Integration Tests
+Contract Tests
+End-to-End Tests
+Performance Tests
+5.12 Production Readiness Implementation
+
+Implement
+
+Logging
+Metrics
+Tracing
+Health Checks
+Security
+Deployment Readiness
+
+
+
+
+
+
+
+
+5.1 Shared Foundation
+        ↓
+5.2 DTO Implementation
+        ↓
+5.3 Repository Implementation
+        ↓
+5.4 Domain Service Implementation
+        ↓
+5.5 Application Service Implementation
+        ↓
+5.6 Controllers
+        ↓
+5.7 Routes & Middleware
+        ↓
+5.8 Background Processing
+        ↓
+5.9 Events
+        ↓
+5.10 Infrastructure Integrations
+        ↓
+5.11 Testing
+        ↓
+5.12 Production Readiness
+
+
+
+
+
+
+
+
+Phase 5.2 Implementation Order
+✅ 5.2.1 Shared DTO Foundation
+
+Create
+
+BaseResponse
+
+PaginationResponse
+
+CursorResponse
+
+ApiMeta
+
+Sort DTO
+
+Filter DTO
+
+Page DTO
+✅ 5.2.2 Product DTOs
+
+This is the largest part.
+
+We'll create
+
+CreateProductRequest
+
+UpdateProductRequest
+
+PublishProductRequest
+
+ProductResponse
+
+ProductCardResponse
+
+ProductDetailsResponse
+
+ProductPreviewResponse
+
+ProductSummaryResponse
+
+DeleteProductResponse
+
+ArchiveProductResponse
+
+RestoreProductResponse
+✅ 5.2.3 Media DTOs
+UploadMediaRequest
+
+UploadMediaResponse
+
+DeleteMediaRequest
+
+ReorderMediaRequest
+
+MediaResponse
+✅ 5.2.4 Variant DTOs
+CreateVariantRequest
+
+UpdateVariantRequest
+
+VariantResponse
+
+VariantOptionResponse
+✅ 5.2.5 Inventory DTOs
+UpdateInventoryRequest
+
+InventoryResponse
+
+BulkInventoryRequest
+✅ 5.2.6 Pricing DTOs
+UpdatePricingRequest
+
+PricingResponse
+
+DiscountResponse
+✅ 5.2.7 Search DTOs
+SearchProductsRequest
+
+SearchProductsResponse
+
+FilterResponse
+
+SuggestionResponse
+✅ 5.2.8 Validation Schemas
+
+Every DTO receives a matching Zod schema.
+
+create-product.schema.ts
+
+update-product.schema.ts
+
+publish-product.schema.ts
+
+...
+✅ 5.2.9 Transformers
+
+Convert
+
+Request DTO
+
+↓
+
+Entity
+
+and
+
+Entity
+
+↓
+
+Response DTO
+✅ 5.2.10 Mappers
+
+Map
+
+Product
+
+↓
+
+Product Card
+
+↓
+
+Product Preview
+
+↓
+
+Product Details
+
+↓
+
+Search Result
+
+↓
+
+Analytics
+
+
+
+
+
+
+Phase 5.4.1 should be implemented in this order
+✅ 5.4.1.1 Draft DTOs
+dto/
+    draft/
+        create-draft.request.ts
+        create-draft.response.ts
+
+↓
+
+✅ 5.4.1.2 Draft Validation
+validation/
+    draft-product.schema.ts
+
+↓
+
+✅ 5.4.1.3 Repository
+
+Extend only:
+
+product.repository.ts
+
+with:
+
+createDraft()
+findDraftById()
+updateDraft()
+
+↓
+
+✅ 5.4.1.4 Service
+services/
+   draft-product.service.ts
+
+↓
+
+✅ 5.4.1.5 Route Handler
+app/api/seller/products/draft/route.ts
+
+using:
+
+export async function POST(request: NextRequest)
+
+↓
+
+✅ 5.4.1.6 Frontend Integration
+
+When the seller clicks Add Product:
+
+POST /api/seller/products/draft
+
+Save:
+
+productId
+
+into your Product Wizard store.
+
+
+
+
+
+
+
+
+
+
+
+
+
+

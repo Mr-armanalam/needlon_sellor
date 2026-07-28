@@ -3,7 +3,7 @@ import { successResponse } from "@/modules/shared/api/success-response";
 
 import {
     getSellerVerificationService,
-} from "@/modules/seller/services";
+} from "@/modules/seller-profile/services";
 
 export async function GET() {
     return routeHandler(async () => {

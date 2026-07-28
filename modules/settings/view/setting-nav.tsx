@@ -1,10 +1,15 @@
 import React from 'react';
 import { 
-  User, Shop, MapPin, Globe, Sun, Shield, 
+  User, MapPin, Globe, Sun, Shield, 
   Bell, CreditCard, Truck, Settings, Trash2 
 } from 'lucide-react';
 
-export default function SettingsNav({ activeTab, setActiveTab }) {
+interface SettingsNavProps {
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+}
+
+export default function SettingsNav({ activeTab, setActiveTab }: SettingsNavProps) {
   const navItems = [
     { id: 'profile', label: 'Profile', icon: <User className="w-4 h-4" /> },
     { id: 'shop', label: 'Shop Information', icon: <Settings className="w-4 h-4" /> },

@@ -6,7 +6,7 @@ import {
   pgEnum,
   index 
 } from 'drizzle-orm/pg-core';
-import { product_orders } from './orders'; // Reference to your master orders schema
+import { product_orders } from './orders'; // Reference to your master orders schemas
 
 // Enums defining actors, accessibility levels, and categories
 export const orderNoteAuthorEnum = pgEnum('order_note_author_type', [
