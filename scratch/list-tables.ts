@@ -2,13 +2,9 @@ import { db } from "@/db";
 import { sql } from "drizzle-orm";
 
 async function main() {
-  const result = await db.execute(sql`
-    UPDATE products 
-    SET seller_id = 'e98e4537-b11e-4f04-9c68-06dcfcfdd691' 
-    WHERE seller_id = '00000000-0000-0000-0000-000000000000' 
-       OR seller_id = '00000000-0000-0000-0000-000000000001'
-  `);
-  console.log("Reassigned legacy dummy products to registered seller:", result);
+  console.log("Fixing missing column deleted_at in seller_store...");
+  await db.execute(sql`ALTER TABLE seller_store ADD COLUMN IF NOT EXISTS deleted_at timestamp with time zone;`);
+  console.log("✅ Successfully added deleted_at column to seller_store table!");
 }
 
 main().catch(console.error).finally(() => process.exit(0));

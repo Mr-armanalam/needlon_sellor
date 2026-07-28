@@ -6,13 +6,6 @@ import {
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
-import { cartItems } from "./cart-items";
-import { wishListItems } from "./wishlist-items";
-import { userAddress } from "./user-address";
-import { orders } from "./orders";
-import { productReview } from "./product-review";
-import { rewardSchema } from "./rewards";
-import { updateSchema } from "./updates";
 import { passwordResetTokens } from "./password-reset-tokens";
 
 
@@ -35,11 +28,5 @@ export const usersTable = pgTable("users", {
 });
 
 export const usersRelations = relations(usersTable, ({ many }) => ({
-  cartItems: many(cartItems),
-  wishlistItems: many(wishListItems),
-  userAddress: many(userAddress),
-  Orders: many(orders),
-  review: many(productReview),
-  updates: many(updateSchema),
   passwordResetTokens: many(passwordResetTokens),
 }));

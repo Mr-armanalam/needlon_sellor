@@ -198,7 +198,7 @@ export default function BusinessIdentitySection({
                     <input
                         type="text"
                         placeholder={'Your Name'}
-                        value={form?.displayName}
+                        value={form?.displayName ?? ""}
                         onChange={(e) =>
                             setField(
                                 "displayName",

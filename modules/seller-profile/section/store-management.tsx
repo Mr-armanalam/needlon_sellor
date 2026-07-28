@@ -196,7 +196,7 @@ export default function StoreManagementSection({
                 </label>
                 <input
                   type="text"
-                  value={form?.storeName}
+                  value={form?.storeName ?? ""}
                   onChange={(e) => setField(
                       "storeName",
                       e.target.value,
@@ -210,7 +210,7 @@ export default function StoreManagementSection({
                 </label>
                 <input
                   type="text"
-                  value={form?.storeSlug}
+                  value={form?.storeSlug ?? ""}
                   onChange={(e) => setField(
                       "storeSlug",
                       e.target.value,

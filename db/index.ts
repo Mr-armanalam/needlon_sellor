@@ -1,13 +1,7 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 
-import * as cartItems from './schema/cart-items';
-import * as coupons from './schema/coupons';
-import * as orders from './schema/orders';
-import * as productItems from './schema/product-items';
-import * as userAddress from './schema/user-address';
 import * as usersTable from './schema/users';
-import * as wishListItems from './schema/wishlist-items';
 import * as passwordResetToken from './schema/password-reset-tokens';
 import * as sellers from './schema/seller';
 import { sellerSettings } from './schema/seller/seller-setting';
@@ -38,13 +32,7 @@ import {shippingTable} from "@/db/schema/catalog/products/shipping";
 
 
 export const schema = {
-  cartItems: cartItems.cartItems,
-  coupons: coupons.coupons,
-  orders: orders.orders,
-  productItems: productItems.productItems,
-  userAddress: userAddress.userAddress,
   users: usersTable.usersTable,
-  wishlistItems: wishListItems.wishListItems,
   passwordResetToken: passwordResetToken.passwordResetTokens,
   sellers: sellers.seller,
   sellerSession: sellers.sessions,
