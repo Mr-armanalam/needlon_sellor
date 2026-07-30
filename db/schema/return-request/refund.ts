@@ -9,7 +9,7 @@ import {
   jsonb,
 } from "drizzle-orm/pg-core";
 import { returnRequests } from "./return-request";
-import { product_orders } from "../orders/orders";
+import { orders } from "../orders/table";
 import { usersTable } from "../users";
 import { seller } from "../seller";
 import { subscriptionPayments } from "../subscription/subscription-payment";
@@ -50,7 +50,7 @@ export const refunds = pgTable("refunds", {
 
   orderId: uuid("order_id")
     .notNull()
-    .references(() => product_orders.id, { onDelete: "restrict" }),
+    .references(() => orders.id, { onDelete: "restrict" }),
 
   buyerId: uuid("buyer_id")
     .notNull()

@@ -62,7 +62,15 @@ export const inventoryTable = pgTable(
          */
 
         id: uuid("id").defaultRandom().primaryKey(),
+        
+        /**
+         * ----------------------------------------------------------
+         * Product Variant
+         * ----------------------------------------------------------
+         */
+
         variantId: uuid("variant_id").notNull().references(() => productVariantsTable.id, { onDelete: "cascade" }),
+    
         quantity: integer("quantity").default(0).notNull(),
         reservedQuantity: integer("reserved_quantity").default(0),
         lowStockThreshold: integer("low_stock_threshold").default(0),
@@ -70,12 +78,6 @@ export const inventoryTable = pgTable(
         lastAdjustedAt: timestamp("last_adjusted_at", { withTimezone: true }),
         createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-
-        /**
-         * ----------------------------------------------------------
-         * Continue in Part 4...
-         * ----------------------------------------------------------
-         */
 
     },
 

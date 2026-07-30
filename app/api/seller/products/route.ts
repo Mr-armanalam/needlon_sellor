@@ -185,19 +185,36 @@ export async function GET(req: NextRequest) {
         }
 
         // Fetch DB metrics
-        const viewsRows: any = await db.execute(
-          sql`SELECT COUNT(*)::int as count FROM user_view_history WHERE product_id = ${row.product.id}`
-        );
-        const likesRows: any = await db.execute(
-          sql`SELECT COUNT(*)::int as count FROM wishlist_items WHERE product_id = ${row.product.id}`
-        );
-        const ordersRows: any = await db.execute(
-          sql`SELECT COALESCE(SUM(quantity), 0)::int as count FROM order_items WHERE product_id = ${row.product.id}`
-        );
+        let views = 0;
+        let likes = 0;
+        let orders = 0;
 
-        const views = viewsRows?.[0]?.count ?? 0;
-        const likes = likesRows?.[0]?.count ?? 0;
-        const orders = ordersRows?.[0]?.count ?? 0;
+        try {
+          const viewsRows: any = await db.execute(
+            sql`SELECT COUNT(*)::int as count FROM user_view_history WHERE product_id = ${row.product.id}`
+          );
+          views = viewsRows?.[0]?.count ?? 0;
+        } catch (err) {
+          // Gracefully fallback to 0 if user_view_history table is missing
+        }
+
+        try {
+          const likesRows: any = await db.execute(
+            sql`SELECT COUNT(*)::int as count FROM wishlist_items WHERE product_id = ${row.product.id}`
+          );
+          likes = likesRows?.[0]?.count ?? 0;
+        } catch (err) {
+          // Gracefully fallback to 0 if wishlist_items table is missing
+        }
+
+        try {
+          const ordersRows: any = await db.execute(
+            sql`SELECT COALESCE(SUM(quantity), 0)::int as count FROM order_items WHERE product_id = ${row.product.id}`
+          );
+          orders = ordersRows?.[0]?.count ?? 0;
+        } catch (err) {
+          // Gracefully fallback to 0 if order_items table is missing
+        }
 
         productMap.set(row.product.id, {
           id: row.product.id,

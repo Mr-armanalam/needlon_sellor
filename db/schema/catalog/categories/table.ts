@@ -169,18 +169,12 @@ export const categoriesTable = pgTable(
             .notNull()
             .default(true),
 
-/**
- * ----------------------------------------------------------
- * Metadata
- * ----------------------------------------------------------
- *
- * Continue in Part 2...
- */
 
-metadata: jsonb("metadata")
-    .$type<CategoryMetadata>()
-    .default(sql`'{}'::jsonb`)
-    .notNull(),
+
+        metadata: jsonb("metadata")
+            .$type<CategoryMetadata>()
+            .default(sql`'{}'::jsonb`)
+            .notNull(),
 
         /**
          * ----------------------------------------------------------

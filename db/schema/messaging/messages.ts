@@ -11,7 +11,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { conversations } from "./conversation";
 import { productsTable as products } from "../catalog/products/table";
-import { product_orders } from "../orders/orders";
+import { orders } from "../orders/table";
 
 // 1. Defining Messaging Core Enums
 export const messageTypeEnum = pgEnum("message_type", [
@@ -64,7 +64,7 @@ export const messages = pgTable(
       onDelete: "set null",
     }),
     relatedOrderId: uuid("related_order_id").references(
-      () => product_orders.id,
+      () => orders.id,
       { onDelete: "set null" },
     ),
 

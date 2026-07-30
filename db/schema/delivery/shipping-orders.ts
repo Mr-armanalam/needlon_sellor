@@ -10,7 +10,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { seller } from "../seller";
 import { usersTable } from "../users";
-import { product_orders } from "../orders/orders";
+import { orders } from "../orders/table";
 import { shippingPartners } from "./shipping-partners";
 import { shippingMethods } from "./shipping-method";
 
@@ -37,7 +37,7 @@ export const shipmentOrders = pgTable("shipment_orders", {
 
   orderId: uuid("order_id")
     .notNull()
-    .references(() => product_orders.id, { onDelete: "restrict" }),
+    .references(() => orders.id, { onDelete: "restrict" }),
 
   sellerId: uuid("seller_id")
     .notNull()

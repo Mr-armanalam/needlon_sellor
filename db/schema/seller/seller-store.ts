@@ -31,8 +31,8 @@ export const storeVisibilityEnum = pgEnum("store_visibility", [
 ]);
 
 export const sellerStore = pgTable("seller_store", {
+  id: uuid('id').primaryKey().defaultRandom(),
   sellerId: uuid("seller_id")
-    .primaryKey()
     .references(() => seller.id, { onDelete: "cascade" }),
 
   storeName: varchar("store_name", { length: 150 }).notNull(),
