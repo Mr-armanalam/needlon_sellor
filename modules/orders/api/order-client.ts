@@ -1,6 +1,11 @@
 export async function fetchOrdersClient(
   activeTab?: string,
-  searchQuery?: string
+  searchQuery?: string,
+  filters?: {
+    deliveryMode?: string;
+    valueTier?: string;
+    dateRange?: string;
+  }
 ) {
   const params = new URLSearchParams();
   if (activeTab) {
@@ -8,6 +13,17 @@ export async function fetchOrdersClient(
   }
   if (searchQuery) {
     params.append("search", searchQuery);
+  }
+  if (filters) {
+    if (filters.deliveryMode) {
+      params.append("deliveryMode", filters.deliveryMode);
+    }
+    if (filters.valueTier) {
+      params.append("valueTier", filters.valueTier);
+    }
+    if (filters.dateRange) {
+      params.append("dateRange", filters.dateRange);
+    }
   }
 
   const res = await fetch(`/api/seller/orders?${params.toString()}`);

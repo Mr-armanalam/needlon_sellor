@@ -26,6 +26,9 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const activeTab = (searchParams.get("status") || "NEW").toUpperCase();
     const search = searchParams.get("search");
+    const deliveryMode = searchParams.get("deliveryMode");
+    const valueTier = searchParams.get("valueTier");
+    const dateRange = searchParams.get("dateRange");
 
     const conditions: any[] = [];
     conditions.push(eq(orders.sellerId, sellerId));
@@ -60,6 +63,30 @@ export async function GET(req: NextRequest) {
           ilike(orders.buyerName, `%${search}%`)
         )
       );
+    }
+
+    if (deliveryMode && deliveryMode !== "ALL") {
+      conditions.push(eq(orders.shippingMethod, deliveryMode.toUpperCase() as any));
+    }
+
+    if (valueTier && valueTier !== "ALL") {
+      if (valueTier === "LOW") {
+        conditions.push(sql`${orders.grandTotal} < 1000`);
+      } else if (valueTier === "MEDIUM") {
+        conditions.push(sql`${orders.grandTotal} >= 1000 AND ${orders.grandTotal} <= 3000`);
+      } else if (valueTier === "HIGH") {
+        conditions.push(sql`${orders.grandTotal} > 3000`);
+      }
+    }
+
+    if (dateRange && dateRange !== "ALL") {
+      if (dateRange === "TODAY") {
+        conditions.push(sql`${orders.createdAt} >= NOW() - INTERVAL '1 DAY'`);
+      } else if (dateRange === "WEEK") {
+        conditions.push(sql`${orders.createdAt} >= NOW() - INTERVAL '7 DAYS'`);
+      } else if (dateRange === "MONTH") {
+        conditions.push(sql`${orders.createdAt} >= NOW() - INTERVAL '30 DAYS'`);
+      }
     }
 
     // Fetch order headers
