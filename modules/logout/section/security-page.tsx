@@ -1,27 +1,134 @@
 'use client'
-import React, { useState } from 'react';
-import { Shield, Key, ShieldAlert, LogOut, X } from 'lucide-react';
-import ActiveSessions from '../view/active-sessions';
-import SecurityLogs from '../view/security-log';
-
+import React, { useState, useEffect, useCallback } from 'react';
+import { Key, ShieldAlert, LogOut, X } from 'lucide-react';
+import ActiveSessions, { SessionItem } from '../view/active-sessions';
+import SecurityLogs, { AlertLogItem, AuditLogItem } from '../view/security-log';
+import { authApi } from '@/modules/auth/api/auth';
+import { toast } from 'sonner';
 
 export default function SecurityPage() {
-  const [modalState, setModalState] = useState({ show: false, mode: '' }); // mode: 'current', 'others', 'all'
-  const [sessionTimeout, setSessionTimeout] = useState('30');
+  const [modalState, setModalState] = useState<{
+    show: boolean;
+    mode: string;
+    targetSessionId?: string;
+  }>({ show: false, mode: '' });
 
-  const openConfirmationModal = (modeString) => {
-    setModalState({ show: true, mode: modeString });
+  const [sessionTimeout, setSessionTimeout] = useState('30');
+  const [sessions, setSessions] = useState<SessionItem[]>([]);
+  const [securityAlerts, setSecurityAlerts] = useState<AlertLogItem[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const fetchSecurityData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      // Fetch Active Sessions
+      const resSessions = await authApi.getSessions();
+      if (resSessions.ok) {
+        const data = await resSessions.json();
+        if (Array.isArray(data)) {
+          setSessions(data);
+        }
+      }
+
+      // Fetch Security Alerts
+      const resAlerts = await authApi.getSecurityAlerts();
+      if (resAlerts.ok) {
+        const alertsData = await resAlerts.json();
+        if (Array.isArray(alertsData)) {
+          setSecurityAlerts(alertsData);
+        }
+      }
+
+      // Fetch Security Audit Logs
+      const resAudit = await authApi.getAuditLogs();
+      if (resAudit.ok) {
+        const auditData = await resAudit.json();
+        if (Array.isArray(auditData)) {
+          setAuditLogs(auditData);
+        }
+      }
+
+      // Fetch Security Preferences
+      const resPref = await authApi.getSecurityPreferences();
+      if (resPref.ok) {
+        const prefData = await resPref.json();
+        if (prefData.inactivityTimeout) {
+          setSessionTimeout(String(prefData.inactivityTimeout));
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load security data:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSecurityData();
+  }, [fetchSecurityData]);
+
+  const openConfirmationModal = (modeString: string, targetSessionId?: string) => {
+    setModalState({ show: true, mode: modeString, targetSessionId });
   };
 
-  const handleConfirmLogout = () => {
-    const mode = modalState.mode;
+  const handleConfirmLogout = async () => {
+    const { mode, targetSessionId } = modalState;
     setModalState({ show: false, mode: '' });
-    
-    if (mode === 'current' || mode === 'all') {
-      alert("Invalidating access tokens, revoking refresh tokens, and redirecting to login...");
-      // Production navigation hook: window.location.href = '/login';
-    } else if (mode === 'others') {
-      alert("All other device refresh tokens have been revoked. Other devices successfully logged out.");
+    setIsSubmitting(true);
+
+    try {
+      if (mode === 'current') {
+        const res = await authApi.logout();
+        if (res.ok) {
+          toast.success("Successfully logged out");
+          window.location.href = '/login';
+        } else {
+          toast.error("Failed to log out");
+        }
+      } else if (mode === 'others') {
+        const res = await authApi.logoutOthers();
+        if (res.ok) {
+          toast.success("All other device sessions have been revoked");
+          await fetchSecurityData();
+        } else {
+          toast.error("Failed to revoke other sessions");
+        }
+      } else if (mode === 'all') {
+        const res = await authApi.logoutAllSessions();
+        if (res.ok) {
+          toast.success("All active sessions terminated");
+          window.location.href = '/login';
+        } else {
+          toast.error("Failed to terminate all sessions");
+        }
+      } else if (mode === 'revoke' && targetSessionId) {
+        const res = await authApi.logoutSession(targetSessionId);
+        if (res.ok) {
+          toast.success("Device access revoked");
+          await fetchSecurityData();
+        } else {
+          toast.error("Failed to revoke device session");
+        }
+      }
+    } catch (err) {
+      console.error("Logout action error:", err);
+      toast.error("An error occurred while processing your request");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleTimeoutChange = async (newTimeout: string) => {
+    setSessionTimeout(newTimeout);
+    try {
+      const res = await authApi.updateSecurityPreferences(newTimeout);
+      if (res.ok) {
+        toast.success(`Inactivity timeout updated to ${newTimeout} minutes`);
+      }
+    } catch (err) {
+      console.error("Failed to update security preferences:", err);
     }
   };
 
@@ -39,6 +146,7 @@ export default function SecurityPage() {
               <button 
                 onClick={() => setModalState({ show: false, mode: '' })}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
+                disabled={isSubmitting}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -49,26 +157,30 @@ export default function SecurityPage() {
                 {modalState.mode === 'current' && 'Log Out of Current Session?'}
                 {modalState.mode === 'others' && 'Log Out of Other Devices?'}
                 {modalState.mode === 'all' && 'Log Out of All Active Sessions?'}
+                {modalState.mode === 'revoke' && 'Revoke Access for Selected Device?'}
               </h3>
               <p className="text-gray-500 leading-relaxed font-medium">
                 {modalState.mode === 'current' && 'This will invalidate your current session access token. You will need to re-verify your identity to log back in.'}
                 {modalState.mode === 'others' && 'This keeps your current device active but revokes access for all other phones, tablets, or computers instantly.'}
                 {modalState.mode === 'all' && 'This is an absolute account reset. Every single linked connection will be dropped and trusted devices cleared.'}
+                {modalState.mode === 'revoke' && 'This will instantly revoke access for the selected device and force it to re-authenticate.'}
               </p>
             </div>
 
             <div className="flex items-center gap-2 pt-2">
               <button 
                 onClick={() => setModalState({ show: false, mode: '' })}
-                className="flex-1 bg-gray-100 text-gray-600 font-bold py-2 px-4 rounded-xl hover:bg-gray-200 transition-all text-center"
+                disabled={isSubmitting}
+                className="flex-1 bg-gray-100 text-gray-600 font-bold py-2 px-4 rounded-xl hover:bg-gray-200 transition-all text-center disabled:opacity-50"
               >
                 Cancel
               </button>
               <button 
                 onClick={handleConfirmLogout}
-                className="flex-1 bg-rose-600 text-white font-bold py-2 px-4 rounded-xl shadow-md shadow-rose-600/10 hover:bg-rose-700 transition-all text-center"
+                disabled={isSubmitting}
+                className="flex-1 bg-rose-600 text-white font-bold py-2 px-4 rounded-xl shadow-md shadow-rose-600/10 hover:bg-rose-700 transition-all text-center disabled:opacity-50"
               >
-                Confirm Log Out
+                {isSubmitting ? 'Processing...' : 'Confirm Log Out'}
               </button>
             </div>
           </div>
@@ -91,12 +203,18 @@ export default function SecurityPage() {
 
       {/* 2. TOP PANEL: ACTIVE SESSIONS LIST */}
       <ActiveSessions 
-        onRevokeSession={(id) => openConfirmationModal('current')} 
+        sessions={sessions}
+        isLoading={isLoading}
+        onRevokeSession={(sessionId) => openConfirmationModal('revoke', sessionId)} 
         onLogoutOthers={() => openConfirmationModal('others')} 
       />
 
       {/* 3. MID PANEL: AUDIT HISTORY TRAIL */}
-      <SecurityLogs />
+      <SecurityLogs 
+        alerts={securityAlerts}
+        auditLogs={auditLogs}
+        isLoading={isLoading}
+      />
 
       {/* 4. LOWER PANEL: PLAIN ENGLISH SECURITY PREFERENCES */}
       <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4 flex-shrink-0 max-w-3xl">
@@ -110,7 +228,7 @@ export default function SecurityPage() {
             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Inactivity Session Timeout</label>
             <select
               value={sessionTimeout}
-              onChange={(e) => setSessionTimeout(e.target.value)}
+              onChange={(e) => handleTimeoutChange(e.target.value)}
               className="w-full bg-gray-50 border border-gray-200 rounded-xl text-xs px-4 py-2.5 font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             >
               <option value="15">Log out after 15 minutes of inactivity</option>

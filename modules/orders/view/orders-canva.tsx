@@ -7,6 +7,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import { DocumentPreviewModal } from "../components/document-preview-modal";
+import { BulkManifestModal } from "../components/bulk-manifest-modal";
 
 interface OrdersCanvasProps {
   onInspectOrder: (orderId: string) => void;
@@ -41,6 +43,12 @@ export default function OrdersCanvas({ onInspectOrder }: OrdersCanvasProps) {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Document Modals state
+  const [isManifestModalOpen, setIsManifestModalOpen] = useState(false);
+  const [selectedPreviewOrder, setSelectedPreviewOrder] = useState<any | null>(null);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+
 
   // Filter States
   const [deliveryMode, setDeliveryMode] = useState('ALL');
@@ -161,7 +169,10 @@ export default function OrdersCanvas({ onInspectOrder }: OrdersCanvasProps) {
         </div>
         
         {/* Quick Bulk Action */}
-        <button className="px-4 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white text-[13px] font-bold rounded-xl flex items-center gap-2 transition-all duration-200 shadow-sm outline-none">
+        <button
+          onClick={() => setIsManifestModalOpen(true)}
+          className="px-4 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white text-[13px] font-bold rounded-xl flex items-center gap-2 transition-all duration-200 shadow-sm outline-none cursor-pointer"
+        >
           <Printer size={15} />
           <span>Print Manifests</span>
         </button>
@@ -367,8 +378,15 @@ export default function OrdersCanvas({ onInspectOrder }: OrdersCanvasProps) {
                   <button title="Open Customer Chat" className="p-2 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-50 rounded-xl border border-transparent hover:border-neutral-100 transition-all duration-150">
                     <MessageSquare size={16} />
                   </button>
-                  <button title="Print Packing Invoice" className="p-2 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-50 rounded-xl border border-transparent hover:border-neutral-100 transition-all duration-150">
-                  <Printer size={16} />
+                  <button
+                    onClick={() => {
+                      setSelectedPreviewOrder(order);
+                      setIsPreviewModalOpen(true);
+                    }}
+                    title="Print Packing Invoice & Labels"
+                    className="p-2 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-50 rounded-xl border border-transparent hover:border-neutral-100 transition-all duration-150 cursor-pointer"
+                  >
+                    <Printer size={16} />
                   </button>
                   <button onClick={() => onInspectOrder(order.id)} title="View Full Order Timeline" className="pl-3 pr-2.5 py-2 bg-neutral-50 border border-neutral-100 group-hover:bg-neutral-900 group-hover:text-white group-hover:border-transparent text-neutral-800 text-[12px] font-bold rounded-xl transition-all duration-200 flex items-center gap-1.5 outline-none">
                     <span>Inspect Details</span>
@@ -381,6 +399,24 @@ export default function OrdersCanvas({ onInspectOrder }: OrdersCanvasProps) {
           ))
         )}
       </div>
+
+      {/* Document Preview Modal */}
+      {selectedPreviewOrder && (
+        <DocumentPreviewModal
+          isOpen={isPreviewModalOpen}
+          onClose={() => setIsPreviewModalOpen(false)}
+          orderId={selectedPreviewOrder.id}
+          orderNumber={selectedPreviewOrder.orderNumber}
+          initialTab="INVOICE"
+        />
+      )}
+
+      {/* Bulk Manifest Generator Modal */}
+      <BulkManifestModal
+        isOpen={isManifestModalOpen}
+        onClose={() => setIsManifestModalOpen(false)}
+        ordersList={orders}
+      />
 
     </div>
   );

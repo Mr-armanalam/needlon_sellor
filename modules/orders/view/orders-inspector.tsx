@@ -9,6 +9,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { getOrderDetailsClient, updateOrderStatusClient } from "../api/order-client";
+import { DocumentPreviewModal } from "../components/document-preview-modal";
 
 interface OrderInspectorProps {
   orderId: string;
@@ -38,6 +39,8 @@ export default function OrderInspector({ orderId, onBack }: OrderInspectorProps)
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [isDocumentModalOpen, setIsDocumentModalOpen] = useState(false);
+
 
   async function loadDetails() {
     setLoading(true);
@@ -174,7 +177,10 @@ export default function OrderInspector({ orderId, onBack }: OrderInspectorProps)
             <MessageSquare size={14} />
             <span>Chat with {buyerFirstName}</span>
           </button>
-          <button className="px-3.5 py-2 bg-white border border-neutral-200/80 hover:border-neutral-400 text-neutral-600 hover:text-neutral-900 text-[12px] font-medium rounded-xl transition-all flex items-center gap-1.5 outline-none">
+          <button
+            onClick={() => setIsDocumentModalOpen(true)}
+            className="px-3.5 py-2 bg-white border border-neutral-200/80 hover:border-neutral-400 text-neutral-600 hover:text-neutral-900 text-[12px] font-medium rounded-xl transition-all flex items-center gap-1.5 outline-none cursor-pointer"
+          >
             <Printer size={14} />
             <span>Print Invoice</span>
           </button>
@@ -389,6 +395,15 @@ export default function OrderInspector({ orderId, onBack }: OrderInspectorProps)
           </div>
         </div>
       </div>
+
+      {/* Order Document Preview Modal */}
+      <DocumentPreviewModal
+        isOpen={isDocumentModalOpen}
+        onClose={() => setIsDocumentModalOpen(false)}
+        orderId={orderId}
+        orderNumber={data.orderNumber}
+        initialTab="INVOICE"
+      />
     </div>
   );
 }

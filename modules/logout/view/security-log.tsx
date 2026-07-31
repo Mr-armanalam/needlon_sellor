@@ -1,17 +1,42 @@
 import React from 'react';
-import { ShieldAlert, History, CheckCircle2, AlertCircle, Key, Mail } from 'lucide-react';
+import { ShieldAlert, History, AlertCircle } from 'lucide-react';
 
-export default function SecurityLogs() {
-  const alertLogs = [
-    { id: 'ALT-01', type: 'device', text: 'New browser login detected from Chrome (macOS)', date: 'June 25, 2026', severity: 'low' },
-    { id: 'ALT-02', type: 'security', text: 'Account password changed successfully', date: 'May 12, 2026', severity: 'medium' }
-  ];
+export type AlertLogItem = {
+  id: string;
+  type: string;
+  text: string;
+  date: string;
+  severity: "low" | "medium" | "high" | string;
+};
 
-  const loginHistory = [
-    { id: 'LGN-902', type: 'Success', method: 'OTP Verification', date: 'June 25, 2026', desc: 'Login from New York, USA' },
-    { id: 'LGN-901', type: 'Failed', method: 'Password Attempt', date: 'June 22, 2026', desc: 'Incorrect credentials provided from 84.22.10.***' },
-    { id: 'LGN-900', type: 'Update', method: 'Email Changed', date: 'April 02, 2026', desc: 'Updated to arman@example.com' }
-  ];
+export type AuditLogItem = {
+  id: string;
+  type: "Success" | "Failed" | "Update" | string;
+  method: string;
+  date: string;
+  desc: string;
+};
+
+interface SecurityLogsProps {
+  alerts?: AlertLogItem[];
+  auditLogs?: AuditLogItem[];
+  isLoading?: boolean;
+}
+
+const defaultAlertLogs: AlertLogItem[] = [
+  { id: 'ALT-01', type: 'device', text: 'New browser login detected from Chrome (macOS)', date: 'June 25, 2026', severity: 'low' },
+  { id: 'ALT-02', type: 'security', text: 'Account password changed successfully', date: 'May 12, 2026', severity: 'medium' }
+];
+
+const defaultLoginHistory: AuditLogItem[] = [
+  { id: 'LGN-902', type: 'Success', method: 'OTP Verification', date: 'June 25, 2026', desc: 'Login from New York, USA' },
+  { id: 'LGN-901', type: 'Failed', method: 'Password Attempt', date: 'June 22, 2026', desc: 'Incorrect credentials provided from 84.22.10.***' },
+  { id: 'LGN-900', type: 'Update', method: 'Email Changed', date: 'April 02, 2026', desc: 'Updated to arman@example.com' }
+];
+
+export default function SecurityLogs({ alerts, auditLogs, isLoading }: SecurityLogsProps) {
+  const alertLogs = alerts && alerts.length > 0 ? alerts : defaultAlertLogs;
+  const loginHistory = auditLogs && auditLogs.length > 0 ? auditLogs : defaultLoginHistory;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-shrink-0">
@@ -24,17 +49,21 @@ export default function SecurityLogs() {
         </div>
         
         <div className="space-y-3 flex-1 overflow-y-auto pr-1">
-          {alertLogs.map((alert) => (
-            <div key={alert.id} className={`border rounded-xl p-3 flex gap-2.5 items-start ${
-              alert.severity === 'high' ? 'bg-rose-50/40 border-rose-100 text-rose-900' : 'bg-blue-50/20 border-blue-100 text-blue-900'
-            }`}>
-              <AlertCircle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${alert.severity === 'high' ? 'text-rose-500' : 'text-blue-500'}`} />
-              <div className="text-[11px] leading-relaxed">
-                <p className="font-semibold">{alert.text}</p>
-                <span className="text-[10px] text-gray-400 block mt-0.5">{alert.date}</span>
+          {isLoading ? (
+            <div className="text-xs text-gray-400 font-medium p-2">Loading security alerts...</div>
+          ) : (
+            alertLogs.map((alert) => (
+              <div key={alert.id} className={`border rounded-xl p-3 flex gap-2.5 items-start ${
+                alert.severity === 'high' ? 'bg-rose-50/40 border-rose-100 text-rose-900' : 'bg-blue-50/20 border-blue-100 text-blue-900'
+              }`}>
+                <AlertCircle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${alert.severity === 'high' ? 'text-rose-500' : 'text-blue-500'}`} />
+                <div className="text-[11px] leading-relaxed">
+                  <p className="font-semibold">{alert.text}</p>
+                  <span className="text-[10px] text-gray-400 block mt-0.5">{alert.date}</span>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 
@@ -56,22 +85,30 @@ export default function SecurityLogs() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 font-medium text-gray-600">
-              {loginHistory.map((row) => (
-                <tr key={row.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="p-3">
-                    <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                      row.type === 'Success' ? 'bg-green-50 text-green-700 border border-green-100' : 
-                      row.type === 'Failed' ? 'bg-rose-50 text-rose-700 border border-rose-100' : 
-                      'bg-gray-100 text-gray-700 border border-gray-200'
-                    }`}>
-                      {row.type}
-                    </span>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={4} className="p-4 text-center text-gray-400 text-xs font-medium">
+                    Loading audit trail logs...
                   </td>
-                  <td className="p-3 font-semibold text-gray-900">{row.method}</td>
-                  <td className="p-3 text-gray-500 max-w-xs truncate">{row.desc}</td>
-                  <td className="p-3 text-right text-gray-400 whitespace-nowrap">{row.date}</td>
                 </tr>
-              ))}
+              ) : (
+                loginHistory.map((row) => (
+                  <tr key={row.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="p-3">
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        row.type === 'Success' ? 'bg-green-50 text-green-700 border border-green-100' : 
+                        row.type === 'Failed' ? 'bg-rose-50 text-rose-700 border border-rose-100' : 
+                        'bg-gray-100 text-gray-700 border border-gray-200'
+                      }`}>
+                        {row.type}
+                      </span>
+                    </td>
+                    <td className="p-3 font-semibold text-gray-900">{row.method}</td>
+                    <td className="p-3 text-gray-500 max-w-xs truncate">{row.desc}</td>
+                    <td className="p-3 text-right text-gray-400 whitespace-nowrap">{row.date}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

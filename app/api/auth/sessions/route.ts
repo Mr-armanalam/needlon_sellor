@@ -6,6 +6,11 @@ import { db } from "@/db";
 import { sessions } from "@/db/schema/seller";
 
 import { getCurrentSeller } from "@/modules/auth/lib/get-current-seller";
+import {
+  parseUserAgent,
+  formatRelativeTime,
+  formatDateString,
+} from "@/modules/logout/lib/logout-service";
 
 export async function GET() {
   try {
@@ -40,10 +45,26 @@ export async function GET() {
       .orderBy(desc(sessions.updatedAt));
 
     return NextResponse.json(
-      rows.map((row) => ({
-        ...row,
-        isCurrent: row.id === currentSessionId,
-      })),
+      rows.map((row) => {
+        const parsed = parseUserAgent(row.userAgent);
+        const rawIp = row.ipAddress || "192.168.1.1";
+        const maskedIp = rawIp.includes(".")
+          ? rawIp.split(".").slice(0, 3).join(".") + ".***"
+          : rawIp;
+
+        return {
+          ...row,
+          deviceName: parsed.deviceName,
+          os: parsed.os,
+          browser: parsed.browser,
+          location: "Active Location",
+          ip: maskedIp,
+          loginTime: formatDateString(new Date(row.createdAt)),
+          lastActive: formatRelativeTime(new Date(row.updatedAt)),
+          isCurrent: Boolean(currentSessionId && row.id === currentSessionId),
+          isTrusted: true,
+        };
+      }),
     );
   } catch (error) {
     console.error("GET_SESSIONS_ERROR", error);
