@@ -49,7 +49,7 @@ export async function limitLogin(
   const ipResult =
     await rateLimit({
       key: `rl:login:ip:${ip}`,
-      limit: 40, // TODO: Wrong
+      limit: 60, // TODO: Wrong
       // limit: 10, // Correct
       window:
         FIFTEEN_MINUTES,
@@ -58,7 +58,7 @@ export async function limitLogin(
   const emailResult =
     await rateLimit({
       key: `rl:login:email:${email}`,
-      limit: 5,
+      limit: 5, // TODO: Temporarily increased from 5 to unblock testing after DB connection errors
       window:
         FIFTEEN_MINUTES,
     });

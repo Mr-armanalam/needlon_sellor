@@ -9,10 +9,10 @@ import {
   pgEnum,
 } from "drizzle-orm/pg-core";
 import { returnRequests } from "./return-request";
-import { product_orders } from "../orders/orders";
+import { orders } from "../orders/table";
 import { usersTable } from "../users";
 import { seller } from "../seller";
-import { orderItems } from "../order-items";
+import { orderItems } from "../orders/order-items/table";
 import { productVariantsTable as productVariants } from "../catalog/products/product-variants/table";
 import { shipmentOrders } from "../delivery/shipping-orders";
 import { productsTable as products } from "../catalog/products/table";
@@ -53,7 +53,7 @@ export const exchangeRequests = pgTable("exchange_requests", {
 
   orderId: uuid("order_id")
     .notNull()
-    .references(() => product_orders.id, { onDelete: "restrict" }),
+    .references(() => orders.id, { onDelete: "restrict" }),
 
   buyerId: uuid("buyer_id")
     .notNull()

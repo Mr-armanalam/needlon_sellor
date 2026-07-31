@@ -8,7 +8,7 @@ import {
   pgEnum,
   index,
 } from "drizzle-orm/pg-core";
-import { product_orders } from "./orders"; // Importing your custom table name reference
+import { orders } from "./table"; // Importing your custom table name reference
 
 // Address Type Enum for future-proofing checkout workflows
 export const addressTypeEnum = pgEnum("order_address_type", [
@@ -21,7 +21,7 @@ export const orderAddresses = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     orderId: uuid("order_id")
-      .references(() => product_orders.id, { onDelete: "cascade" })
+      .references(() => orders.id, { onDelete: "cascade" })
       .notNull(),
 
     addressType: addressTypeEnum("address_type").default("DELIVERY").notNull(),

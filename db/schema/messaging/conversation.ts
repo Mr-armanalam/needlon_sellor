@@ -6,7 +6,7 @@ import {
   pgEnum,
   index,
 } from "drizzle-orm/pg-core";
-import { product_orders } from "../orders/orders";
+import { orders } from "../orders/table";
 import { productsTable as products } from "../catalog/products/table";
 import { isNotNull } from "drizzle-orm";
 
@@ -33,7 +33,7 @@ export const conversations = pgTable(
     sellerId: uuid("seller_id"),
 
     // Contextual Dynamic Hooks (Mutually Exclusive based on conversation type)
-    orderId: uuid("order_id").references(() => product_orders.id, {
+    orderId: uuid("order_id").references(() => orders.id, {
       onDelete: "set null",
     }),
     productId: uuid("product_id").references(() => products.id, {

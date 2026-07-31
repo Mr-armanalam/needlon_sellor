@@ -73,21 +73,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  //Seller-protected routes
+  // Seller-protected routes
   if (isProtectedRoute(pathname) && !authenticated) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  /**
-   * Guest -> Protected Route
-   */
-  if (isProtectedRoute(pathname) && !authenticated) {
-    const loginUrl = new URL("/login", request.url);
-
-    loginUrl.searchParams.set("callbackUrl", pathname);
-
     return NextResponse.redirect(loginUrl);
   }
 

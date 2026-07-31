@@ -10,7 +10,7 @@ import {
   pgEnum,
 } from "drizzle-orm/pg-core";
 import { returnRequests } from "./return-request";
-import { orderItems } from "../order-items";
+import { orderItems } from "../orders/order-items/table";
 import { productsTable as products } from "../catalog/products/table";
 import { productVariantsTable as productVariants } from "../catalog/products/product-variants/table";
 

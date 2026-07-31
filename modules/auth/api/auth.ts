@@ -84,4 +84,22 @@ export const authApi = {
     request("/sessions/logout-all", {
       method: "POST",
     }),
+
+  logoutOthers: () =>
+    request("/sessions/logout-others", {
+      method: "POST",
+    }),
+
+  getSecurityAlerts: () => request("/security/alerts"),
+
+  getAuditLogs: () => request("/security/audit-logs"),
+
+  getSecurityPreferences: () => request("/security/preferences"),
+
+  updateSecurityPreferences: (inactivityTimeout: string) =>
+    request("/security/preferences", {
+      method: "PUT",
+      body: JSON.stringify({ inactivityTimeout }),
+    }),
 };
+

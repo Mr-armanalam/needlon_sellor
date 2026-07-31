@@ -7,7 +7,7 @@ import {
   timestamp,
   pgEnum,
 } from "drizzle-orm/pg-core";
-import { product_orders } from "../orders/orders";
+import { orders } from "../orders/table";
 import { usersTable } from "../users";
 import { seller } from "../seller";
 import { pickupRequests } from "../delivery/pickup-lifecycle";
@@ -54,7 +54,7 @@ export const returnRequests = pgTable("return_requests", {
 
   orderId: uuid("order_id")
     .notNull()
-    .references(() => product_orders.id, { onDelete: "restrict" }),
+    .references(() => orders.id, { onDelete: "restrict" }),
 
   buyerId: uuid("buyer_id")
     .notNull()

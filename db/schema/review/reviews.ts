@@ -11,8 +11,8 @@ import {
   uniqueIndex,
   index,
 } from "drizzle-orm/pg-core";
-import { orderedItems } from "../orders/order-items";
-import { product_orders } from "../orders/orders";
+import { orderItems } from "../orders/order-items/table";
+import { orders } from "../orders/table";
 import { productsTable as products } from "../catalog/products/table";
 import { productVariantsTable as productVariants } from "../catalog/products/product-variants/table";
 
@@ -32,10 +32,10 @@ export const reviews = pgTable(
 
     // High-Trust Relational Mapping
     orderItemId: uuid("order_item_id")
-      .references(() => orderedItems.id, { onDelete: "restrict" })
+      .references(() => orderItems.id, { onDelete: "restrict" })
       .notNull(),
     orderId: uuid("order_id")
-      .references(() => product_orders.id, { onDelete: "restrict" })
+      .references(() => orders.id, { onDelete: "restrict" })
       .notNull(),
     productId: uuid("product_id")
       .references(() => products.id, { onDelete: "restrict" })

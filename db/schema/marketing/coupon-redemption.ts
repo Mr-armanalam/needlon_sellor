@@ -7,7 +7,7 @@ import {
   pgEnum,
 } from "drizzle-orm/pg-core";
 import { usersTable } from "../users";
-import { product_orders } from "../orders/orders";
+import { orders } from "../orders/table";
 import { promotions } from "./promotion";
 
 // Enums
@@ -29,7 +29,7 @@ export const couponRedemptions = pgTable("coupon_redemptions", {
     .notNull()
     .references(() => usersTable.id, { onDelete: "restrict" }),
 
-  orderId: uuid("order_id").references(() => product_orders.id, {
+  orderId: uuid("order_id").references(() => orders.id, {
     onDelete: "set null",
   }),
 
