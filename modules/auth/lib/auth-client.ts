@@ -1,21 +1,27 @@
 import { emitAuthFailure } from "./auth-events";
 
-let refreshPromise: Promise<boolean> | null = null;
+let refreshPromise: Promise<{ success: boolean; status?: number }> | null = null;
 
-async function performRefresh(): Promise<boolean> {
+async function performRefresh(): Promise<{ success: boolean; status?: number }> {
   try {
     const response = await fetch("/api/auth/refresh", {
       method: "POST",
       credentials: "include",
     });
 
-    return response.ok;
+    return {
+      success: response.ok,
+      status: response.status,
+    };
   } catch {
-    return false;
+    return {
+      success: false,
+      status: 0,
+    };
   }
 }
 
-export async function refreshSession(): Promise<boolean> {
+export async function refreshSession(): Promise<{ success: boolean; status?: number }> {
   if (!refreshPromise) {
     refreshPromise = performRefresh().finally(() => {
       refreshPromise = null;
@@ -38,10 +44,14 @@ export async function apiFetch(
     return response;
   }
 
-  const refreshed = await refreshSession();
+  const refreshResult = await refreshSession();
 
-  if (!refreshed) {
-    emitAuthFailure();
+  if (!refreshResult.success) {
+    // Only emit auth failure (which triggers logout) on explicit 401/403 errors.
+    // Avoid logging out on temporary network (0) or server (500) compilation errors.
+    if (refreshResult.status === 401 || refreshResult.status === 403) {
+      emitAuthFailure();
+    }
 
     return response;
   }
