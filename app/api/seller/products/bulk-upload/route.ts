@@ -13,6 +13,6 @@ export async function POST(request: NextRequest) {
     const seller = await getCurrentSellerOrThrow();
     const uploaded = await bulkProductsUploadServices(seller, items);
 
-    return successResponse({ success: true, count: uploaded.length, items: uploaded }, 201);
+    return successResponse({ count: uploaded.length, items: uploaded }, 201);
   });
 }
