@@ -1,7 +1,7 @@
 'use client'
 import React, { useState } from "react";
-import OrdersCanvas from "../view/orders-canva";
-import OrderInspector from "../view/orders-inspector";
+import OrdersCanvas from "../ui/orders-canva";
+import OrderInspector from "../ui/orders-inspector";
 
 export default function OrdersPage() {
   // View mode switcher state: 'queue' (main grid) or 'inspect' (individual detail timeline)
@@ -22,11 +22,11 @@ export default function OrdersPage() {
     <div className="w-full min-h-full bg-[#FAFAFA]">
       {/* CORE WRAPPER BOUNDING BOX CONTAINER */}
       {viewMode === "queue" ? (
-        <div className="p-6 md:p-8 max-w-[1600px] mx-auto w-full flex flex-col gap-6">
+        <div className="p-6 md:p-8 max-w-400 mx-auto w-full flex flex-col gap-6">
           <OrdersCanvas onInspectOrder={handleInspectOrder} />
         </div>
       ) : (
-        <div className="p-6 md:p-8 max-w-[1400px] mx-auto w-full flex flex-col gap-6 animate-fade-in">
+        <div className="p-6 md:p-8 max-w-350 mx-auto w-full flex flex-col gap-6 animate-fade-in">
           <OrderInspector orderId={selectedOrderId!} onBack={handleBackToQueue} />
         </div>
       )}

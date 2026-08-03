@@ -9,7 +9,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { getOrderDetailsClient, updateOrderStatusClient } from "../api/order-client";
-import { DocumentPreviewModal } from "../components/document-preview-modal";
+import { DocumentPreviewModal } from "../section/document-preview-modal";
 
 interface OrderInspectorProps {
   orderId: string;

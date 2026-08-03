@@ -7,8 +7,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { DocumentPreviewModal } from "../components/document-preview-modal";
-import { BulkManifestModal } from "../components/bulk-manifest-modal";
+import { DocumentPreviewModal } from "../section/document-preview-modal";
+import { BulkManifestModal } from "../section/bulk-manifest-modal";
+import {DATE_RANGES, DELIVERY_MODES, VALUE_TIERS} from "@/modules/orders/constants";
 
 interface OrdersCanvasProps {
   onInspectOrder: (orderId: string) => void;
@@ -136,27 +137,6 @@ export default function OrdersCanvas({ onInspectOrder }: OrdersCanvasProps) {
     }).format(num);
   }
 
-  const deliveryModes = [
-    { label: 'All Modes', value: 'ALL' },
-    { label: 'Standard', value: 'STANDARD' },
-    { label: 'Express', value: 'EXPRESS' },
-    { label: 'Next Day', value: 'NEXT_DAY' },
-    { label: 'Same Day', value: 'SAME_DAY' },
-  ];
-
-  const valueTiers = [
-    { label: 'All Tiers', value: 'ALL' },
-    { label: 'Low (< ₹1,000)', value: 'LOW' },
-    { label: 'Medium (₹1k - ₹3k)', value: 'MEDIUM' },
-    { label: 'High (> ₹3,000)', value: 'HIGH' },
-  ];
-
-  const dateRanges = [
-    { label: 'All Time', value: 'ALL' },
-    { label: 'Last 24 Hours', value: 'TODAY' },
-    { label: 'Last 7 Days', value: 'WEEK' },
-    { label: 'Last 30 Days', value: 'MONTH' },
-  ];
 
   return (
     <div className="w-full flex flex-col gap-6 animate-fade-in">
@@ -230,11 +210,11 @@ export default function OrdersCanvas({ onInspectOrder }: OrdersCanvasProps) {
                     : 'bg-white border-neutral-200/60 hover:border-neutral-400 text-neutral-600 hover:text-neutral-900'
                 }`}
               >
-                <span>{deliveryMode === 'ALL' ? 'Delivery Mode' : deliveryModes.find(m => m.value === deliveryMode)?.label}</span>
+                <span>{deliveryMode === 'ALL' ? 'Delivery Mode' : DELIVERY_MODES.find(m => m.value === deliveryMode)?.label}</span>
                 <ChevronDown size={12} className={deliveryMode !== 'ALL' ? 'text-neutral-300' : 'text-neutral-400'} />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-44 bg-white border border-neutral-200/80 rounded-xl shadow-lg p-1 z-50">
-                {deliveryModes.map((mode) => (
+                {DELIVERY_MODES.map((mode) => (
                   <DropdownMenuItem
                     key={mode.value}
                     onClick={() => setDeliveryMode(mode.value)}
@@ -259,11 +239,11 @@ export default function OrdersCanvas({ onInspectOrder }: OrdersCanvasProps) {
                     : 'bg-white border-neutral-200/60 hover:border-neutral-400 text-neutral-600 hover:text-neutral-900'
                 }`}
               >
-                <span>{valueTier === 'ALL' ? 'Value Tier' : valueTiers.find(t => t.value === valueTier)?.label}</span>
+                <span>{valueTier === 'ALL' ? 'Value Tier' : VALUE_TIERS.find(t => t.value === valueTier)?.label}</span>
                 <ChevronDown size={12} className={valueTier !== 'ALL' ? 'text-neutral-300' : 'text-neutral-400'} />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48 bg-white border border-neutral-200/80 rounded-xl shadow-lg p-1 z-50">
-                {valueTiers.map((tier) => (
+                {VALUE_TIERS.map((tier) => (
                   <DropdownMenuItem
                     key={tier.value}
                     onClick={() => setValueTier(tier.value)}
@@ -288,11 +268,11 @@ export default function OrdersCanvas({ onInspectOrder }: OrdersCanvasProps) {
                     : 'bg-white border-neutral-200/60 hover:border-neutral-400 text-neutral-600 hover:text-neutral-900'
                 }`}
               >
-                <span>{dateRange === 'ALL' ? 'Date Range' : dateRanges.find(r => r.value === dateRange)?.label}</span>
+                <span>{dateRange === 'ALL' ? 'Date Range' : DATE_RANGES.find(r => r.value === dateRange)?.label}</span>
                 <ChevronDown size={12} className={dateRange !== 'ALL' ? 'text-neutral-300' : 'text-neutral-400'} />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-44 bg-white border border-neutral-200/80 rounded-xl shadow-lg p-1 z-50">
-                {dateRanges.map((range) => (
+                {DATE_RANGES.map((range) => (
                   <DropdownMenuItem
                     key={range.value}
                     onClick={() => setDateRange(range.value)}
