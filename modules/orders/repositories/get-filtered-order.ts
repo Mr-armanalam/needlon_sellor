@@ -2,13 +2,14 @@ import { db } from "@/db";
 import { orders } from "@/db/schema/orders/table";
 import { orderItems } from "@/db/schema/orders/order-items/table";
 import { and, eq, ilike, isNull, or, sql } from "drizzle-orm";
+import { GetFilteredOrdersRequestDto } from "../dto";
 
-export const getFilteredOrder = async (searchParams: URLSearchParams, sellerId: string) => {
-    const activeTab = (searchParams.get("status") || "NEW").toUpperCase();
-    const search = searchParams.get("search");
-    const deliveryMode = searchParams.get("deliveryMode");
-    const valueTier = searchParams.get("valueTier");
-    const dateRange = searchParams.get("dateRange");
+export const getFilteredOrder = async (dto: GetFilteredOrdersRequestDto, sellerId: string) => {
+    const activeTab = (dto.status || "NEW").toUpperCase();
+    const search = dto.search;
+    const deliveryMode = dto.deliveryMode;
+    const valueTier = dto.valueTier;
+    const dateRange = dto.dateRange;
 
     const conditions: any[] = [];
     conditions.push(eq(orders.sellerId, sellerId));
