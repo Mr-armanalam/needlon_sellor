@@ -19,3 +19,4 @@ export const DATE_RANGES = [
     { label: 'Last 7 Days', value: 'WEEK' },
     { label: 'Last 30 Days', value: 'MONTH' },
 ];
+
