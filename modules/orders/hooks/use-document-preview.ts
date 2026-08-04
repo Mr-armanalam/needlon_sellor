@@ -60,8 +60,6 @@ export const useDocumentPreview = (
         fetchDocument();
     }, [isOpen, orderId, activeTab]);
 
-    if (!isOpen) return null;
-
     const handlePrint = () => {
         const printWindow = window.open("", "_blank");
         if (printWindow) {

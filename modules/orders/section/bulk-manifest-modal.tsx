@@ -10,16 +10,17 @@ import BulkManifestDocFooterAction from "@/modules/orders/components/bulk-manife
 interface BulkManifestModalProps {
   isOpen: boolean;
   onClose: () => void;
+  ordersList: any[];
 }
 
 export function BulkManifestModal({
   isOpen,
   onClose,
+  ordersList,
 }: BulkManifestModalProps) {
   const {
     manifestNumber,
       manifestHtml,
-      ordersList,
       setManifestHtml,
       selectedOrderIds,
       courierName,
@@ -32,7 +33,7 @@ export function BulkManifestModal({
       toggleSelectOrder,
       handleGenerateManifest,
       handlePrintManifest
-  } = useManifest();
+  } = useManifest(ordersList);
   if (!isOpen) return null;
 
 

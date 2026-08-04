@@ -1,9 +1,7 @@
 import { useState } from "react";
-import {useOrderCanva} from "@/modules/orders/hooks/use-order-canva";
 
-export const useManifest = () => {
+export const useManifest = (ordersList: any[] = []) => {
 
-    const {orders: ordersList = []} = useOrderCanva();
     const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>(
         ordersList.map((o) => o.id)
     );

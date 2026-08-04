@@ -1,22 +1,34 @@
 import React from 'react';
 import OrderStages from "@/modules/orders/components/order-stages";
 import SearchNFilters from "@/modules/orders/components/search-n-filters";
-import {useOrderCanva} from "@/modules/orders/hooks/use-order-canva";
 
-const OrderStagesHorizontalTab = () => {
-    const {
-        orderTabs,
-        setActiveTab,
-        activeTab,
-        searchQuery,
-        setSearchQuery,
-        deliveryMode,
-        setDeliveryMode,
-        valueTier,
-        setValueTier,
-        dateRange,
-        setDateRange
-    } = useOrderCanva();
+interface OrderStagesHorizontalTabProps {
+    orderTabs: any[];
+    setActiveTab: (tab: string) => void;
+    activeTab: string;
+    searchQuery: string;
+    setSearchQuery: (query: string) => void;
+    deliveryMode: string;
+    setDeliveryMode: (mode: string) => void;
+    valueTier: string;
+    setValueTier: (tier: string) => void;
+    dateRange: string;
+    setDateRange: (range: string) => void;
+}
+
+const OrderStagesHorizontalTab = ({
+    orderTabs,
+    setActiveTab,
+    activeTab,
+    searchQuery,
+    setSearchQuery,
+    deliveryMode,
+    setDeliveryMode,
+    valueTier,
+    setValueTier,
+    dateRange,
+    setDateRange
+}: OrderStagesHorizontalTabProps) => {
     return (
         <div className="flex flex-col gap-4 border-b border-neutral-200/60 pb-2 mt-2">
             <OrderStages

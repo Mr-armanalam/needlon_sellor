@@ -1,15 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Search, SlidersHorizontal, ChevronDown, MessageSquare, ArrowRight, Printer } from 'lucide-react';
-import { fetchOrdersClient } from '../api/order-client';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
+import React, { useState } from 'react';
+import { useOrderCanva } from "@/modules/orders/hooks/use-order-canva";
 import { DocumentPreviewModal } from "../section/document-preview-modal";
 import { BulkManifestModal } from "../section/bulk-manifest-modal";
-import {DATE_RANGES, DELIVERY_MODES, VALUE_TIERS} from "@/modules/orders/constants";
 import HeaderControls from "@/modules/orders/components/header-controls";
 import OrderStagesHorizontalTab from "@/modules/orders/section/order-stages-horizontal-tab";
 import OrderQueueList from "@/modules/orders/section/order-queue-list";
@@ -19,13 +11,27 @@ interface OrdersCanvasProps {
 }
 
 export default function OrdersCanvas({ onInspectOrder }: OrdersCanvasProps) {
+  const {
+    activeTab,
+    setActiveTab,
+    searchQuery,
+    setSearchQuery,
+    orders,
+    orderTabs,
+    loading,
+    error,
+    deliveryMode,
+    setDeliveryMode,
+    valueTier,
+    setValueTier,
+    dateRange,
+    setDateRange,
+  } = useOrderCanva();
 
   // Document Modals state
   const [isManifestModalOpen, setIsManifestModalOpen] = useState(false);
   const [selectedPreviewOrder, setSelectedPreviewOrder] = useState<any | null>(null);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
-
-
 
   return (
     <div className="w-full flex flex-col gap-6 animate-fade-in">
@@ -34,14 +40,29 @@ export default function OrdersCanvas({ onInspectOrder }: OrdersCanvasProps) {
       <HeaderControls setIsManifestModalOpen={setIsManifestModalOpen} />
 
       {/* 2. ORDER STAGES HORIZONTAL TAB TRACK */}
-      <OrderStagesHorizontalTab />
+      <OrderStagesHorizontalTab
+        orderTabs={orderTabs}
+        setActiveTab={setActiveTab}
+        activeTab={activeTab}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        deliveryMode={deliveryMode}
+        setDeliveryMode={setDeliveryMode}
+        valueTier={valueTier}
+        setValueTier={setValueTier}
+        dateRange={dateRange}
+        setDateRange={setDateRange}
+      />
 
       {/* 4. ORDERS QUEUE LIST LAYOUT */}
-     <OrderQueueList
+      <OrderQueueList
         onInspectOrder={onInspectOrder}
         setSelectedPreviewOrder={setSelectedPreviewOrder}
         setIsPreviewModalOpen={setIsPreviewModalOpen}
-     />
+        loading={loading}
+        error={error}
+        orders={orders}
+      />
 
       {/* Document Preview Modal */}
       {selectedPreviewOrder && (
@@ -55,10 +76,13 @@ export default function OrdersCanvas({ onInspectOrder }: OrdersCanvasProps) {
       )}
 
       {/* Bulk Manifest Generator Modal */}
-      <BulkManifestModal
-        isOpen={isManifestModalOpen}
-        onClose={() => setIsManifestModalOpen(false)}
-      />
+      {isManifestModalOpen && (
+        <BulkManifestModal
+          isOpen={isManifestModalOpen}
+          onClose={() => setIsManifestModalOpen(false)}
+          ordersList={orders}
+        />
+      )}
 
     </div>
   );

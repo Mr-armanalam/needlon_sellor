@@ -1,20 +1,23 @@
 import React from 'react';
 import OrderQueue from "@/modules/orders/components/order-queue";
-import {useOrderCanva} from "@/modules/orders/hooks/use-order-canva";
 
 const OrderQueueList = (
     {
         onInspectOrder,
         setSelectedPreviewOrder,
-        setIsPreviewModalOpen
+        setIsPreviewModalOpen,
+        loading,
+        error,
+        orders,
     } : {
         onInspectOrder: (order: string) => void;
         setSelectedPreviewOrder:  React.Dispatch<React.SetStateAction<any | null>>;
         setIsPreviewModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
+        loading: boolean;
+        error: string | null;
+        orders: any[];
     }
 ) => {
-
-    const {loading, error, orders} = useOrderCanva();
     return (
         <div className="flex flex-col gap-3.5 mt-1 min-h-37.5">
             {loading ? (

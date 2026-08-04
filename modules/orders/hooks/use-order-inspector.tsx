@@ -55,11 +55,11 @@ export const useOrderInspector = (orderId: string) => {
         }
     }
 
-    const { items = [], addresses = [], history = [] } = data;
+    const { items = [], addresses = [], history = [] } = data || {};
     const deliveryAddress = addresses.find((a: any) => a.addressType === "DELIVERY") || addresses[0];
 
     // Calculate current pipeline step index
-    const currentStatus = data.status;
+    const currentStatus = data?.status;
     let currentStepIdx = PIPELINE_STEPS.indexOf(currentStatus);
     if (currentStepIdx === -1) {
         if (currentStatus === "DELIVERED") currentStepIdx = 5;
@@ -79,7 +79,7 @@ export const useOrderInspector = (orderId: string) => {
             time = new Date(historyItem.changedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             description = historyItem.remarks || "";
         } else if (isCompleted && idx === 0) {
-            time = new Date(data.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            time = new Date(data?.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             description = "Order placed by buyer.";
         } else {
             if (stepKey === "CONFIRMED") description = "Awaiting boutique acceptance.";
@@ -106,7 +106,7 @@ export const useOrderInspector = (orderId: string) => {
     };
 
     const isFinalState = currentStatus === "COMPLETED" || currentStatus === "CANCELLED" || currentStatus === "RETURNED" || currentStatus === "RETURN_REJECTED";
-    const buyerFirstName = data.buyerName ? data.buyerName.trim().split(/\s+/)[0] : "Customer";
+    const buyerFirstName = data?.buyerName ? data.buyerName.trim().split(/\s+/)[0] : "Customer";
 
     return {
         buyerFirstName,
