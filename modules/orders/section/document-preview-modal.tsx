@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { X, Printer, Download, ZoomIn, ZoomOut, RotateCcw, FileText, PackageCheck, Tag } from "lucide-react";
 import {useDocumentPreview} from "@/modules/orders/hooks/use-document-preview";
 import {initial_tab} from "@/modules/orders/types";
 import OrderRecieptPreviewHeaderToolbar from "@/modules/orders/components/order-reciept-preview-header-toolbar";
