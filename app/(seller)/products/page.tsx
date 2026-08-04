@@ -1,4 +1,4 @@
-import { ProductsShelf } from '@/modules/products/components/products-shelf'
+import { ProductsShelf } from '@/modules/products/view/products-shelf'
 import React from 'react'
 
 const page = () => {

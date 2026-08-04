@@ -1,4 +1,4 @@
-import OrdersPage from "@/modules/orders/section/orderSection";
+import OrdersPage from "@/modules/orders/view/orderPage";
 import React from "react";
 
 const page = () => {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, Sparkles, LayoutGrid, Type, CircleDollarSign, Compass } from 'lucide-react';
+import { ChevronDown, LayoutGrid, Type, CircleDollarSign, Compass } from 'lucide-react';
 
 export default function ProductDetailsForm() {
   // Track open states for our thematic metadata accordions

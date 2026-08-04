@@ -1,94 +1,35 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getCurrentSeller } from "@/modules/auth/lib/get-current-seller";
-import { errorResponse } from "@/modules/shared/api/error-response";
-import { db } from "@/db";
-import { orders } from "@/db/schema/orders/table";
-import { orderItems } from "@/db/schema/orders/order-items/table";
-import { orderAddresses } from "@/db/schema/orders/order-address";
-import { orderStatusHistory } from "@/db/schema/orders/order-status-history/table";
-import { orderPayments } from "@/db/schema/orders/order-payments/table";
-import { and, eq, isNull } from "drizzle-orm";
+import { NextRequest } from "next/server";
+import { routeHandler } from "@/modules/shared/api/route-handler";
+import { getCurrentSellerOrThrow } from "@/modules/seller-profile/services";
+import { getOrderByIdService } from "@/modules/orders/services/get-order-by-id.service";
+import { successResponse } from "@/modules/shared/api/success-response";
+import { getOrderByIdParamsSchema } from "@/modules/orders/validations";
+import { OrderTransformer } from "@/modules/orders/transformers/order.transformer";
+
+interface RouteContext {
+  params: Promise<{
+    orderId: string;
+  }>;
+}
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ orderId: string }> }
+  { params }: RouteContext
 ) {
-  try {
-    const seller = await getCurrentSeller();
-    if (!seller || !seller.id) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "UNAUTHORIZED",
-            message: "Unauthorized: Only authenticated sellers can view order details.",
-          },
-        },
-        { status: 401 }
-      );
-    }
+  return routeHandler(async () =>  {
+    const seller = await getCurrentSellerOrThrow();
     const sellerId = seller.id;
-    const { orderId } = await params;
+    const rawParams = await params;
+    
+    // Validate path parameters (orderId)
+    const validatedParams = getOrderByIdParamsSchema.parse(rawParams);
+    
+    // Call service to get domain model
+    const domainOrder = await getOrderByIdService(validatedParams, sellerId);
+    
+    // Transform domain model to detailed response DTO
+    const responseDto = OrderTransformer.toDetailResponse(domainOrder);
 
-    // Fetch order header
-    const orderList = await db
-      .select()
-      .from(orders)
-      .where(and(eq(orders.id, orderId), eq(orders.sellerId, sellerId), isNull(orders.deletedAt)))
-      .limit(1);
-
-    if (orderList.length === 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "NOT_FOUND",
-            message: "Order not found.",
-          },
-        },
-        { status: 404 }
-      );
-    }
-
-    const order = orderList[0];
-
-    // Fetch order items
-    const items = await db
-      .select()
-      .from(orderItems)
-      .where(eq(orderItems.orderId, orderId));
-
-    // Fetch order address snapshots
-    const addresses = await db
-      .select()
-      .from(orderAddresses)
-      .where(eq(orderAddresses.orderId, orderId));
-
-    // Fetch order status history
-    const history = await db
-      .select()
-      .from(orderStatusHistory)
-      .where(eq(orderStatusHistory.orderId, orderId))
-      .orderBy(orderStatusHistory.changedAt);
-
-    // Fetch order payments
-    const payments = await db
-      .select()
-      .from(orderPayments)
-      .where(eq(orderPayments.orderId, orderId))
-      .orderBy(orderPayments.createdAt);
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        ...order,
-        items,
-        addresses,
-        history,
-        payments,
-      },
-    });
-  } catch (error) {
-    return errorResponse(error);
-  }
+    return successResponse(responseDto);
+  });
 }
