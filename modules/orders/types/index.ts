@@ -164,3 +164,5 @@ export interface OrderDomain {
     history?: OrderStatusHistoryDomain[];
     payments?: OrderPaymentDomain[];
 }
+
+export type initial_tab = "INVOICE" | "PACKING_SLIP" | "SHIPPING_LABEL";

@@ -19,3 +19,21 @@ export const DATE_RANGES = [
     { label: 'Last 7 Days', value: 'WEEK' },
     { label: 'Last 30 Days', value: 'MONTH' },
 ];
+
+export const PIPELINE_STEPS = ["PENDING", "CONFIRMED", "PROCESSING", "READY_TO_SHIP", "OUT_FOR_DELIVERY", "COMPLETED"];
+
+export const STATUS_LABELS: Record<string, string> = {
+    PENDING: "Order Placed",
+    CONFIRMED: "Accepted",
+    PROCESSING: "Packed",
+    READY_TO_SHIP: "Ready for Shipment",
+    SHIPPED: "Shipped",
+    OUT_FOR_DELIVERY: "Out for Delivery",
+    DELIVERED: "Delivered",
+    COMPLETED: "Completed",
+    CANCELLED: "Cancelled",
+    RETURN_REQUESTED: "Return Requested",
+    RETURN_APPROVED: "Return Approved",
+    RETURN_REJECTED: "Return Rejected",
+    RETURNED: "Returned",
+};
