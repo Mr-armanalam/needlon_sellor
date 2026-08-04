@@ -2,18 +2,18 @@
 
 import React, { useState } from "react";
 import { X, Printer, CheckSquare, Square, Truck, Calendar, ArrowRight } from "lucide-react";
+import {useOrderCanva} from "@/modules/orders/hooks/use-order-canva";
 
 interface BulkManifestModalProps {
   isOpen: boolean;
   onClose: () => void;
-  ordersList: any[];
 }
 
 export function BulkManifestModal({
   isOpen,
   onClose,
-  ordersList = [],
 }: BulkManifestModalProps) {
+  const {orders: ordersList = []} = useOrderCanva();
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>(
     ordersList.map((o) => o.id)
   );
