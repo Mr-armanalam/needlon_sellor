@@ -1,6 +1,6 @@
 import { orders } from "@/db/schema/orders/table";
 import { orderItems } from "@/db/schema/orders/order-items/table";
-import { and, eq, ilike, isNull, or, sql } from "drizzle-orm";
+import { and, eq, ilike, isNull, or, sql, inArray } from "drizzle-orm";
 import { GetFilteredOrdersRequestDto } from "../dto";
 import { DbTransaction } from "@/db/transactions";
 import { getDatabase } from "@/db/database";
@@ -88,19 +88,29 @@ export const findFilteredOrders = async ({
         .where(and(...conditions))
         .orderBy(sql`${orders.createdAt} DESC`);
 
-    // Load the order items for each fetched order
-    const items = [];
-    for (const order of fetchedOrders) {
-        const orderLines = await database
+    // Load all the order items in a single query
+    const orderIds = fetchedOrders.map(o => o.id);
+    let orderLines: any[] = [];
+    if (orderIds.length > 0) {
+        orderLines = await database
             .select()
             .from(orderItems)
-            .where(eq(orderItems.orderId, order.id));
-
-        items.push({
-            ...order,
-            items: orderLines,
-        });
+            .where(inArray(orderItems.orderId, orderIds));
     }
+
+    // Group items by orderId
+    const itemsByOrderId = new Map<string, any[]>();
+    for (const line of orderLines) {
+        if (!itemsByOrderId.has(line.orderId)) {
+            itemsByOrderId.set(line.orderId, []);
+        }
+        itemsByOrderId.get(line.orderId)!.push(line);
+    }
+
+    const items = fetchedOrders.map(order => ({
+        ...order,
+        items: itemsByOrderId.get(order.id) || [],
+    }));
 
     // Calculate tab counts
     const countRows = await database

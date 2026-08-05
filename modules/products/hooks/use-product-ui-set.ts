@@ -15,7 +15,7 @@ function useProductUiSetInternal() {
     const [stockStatus, setStockStatus] = useState('Stock Status');
     const [sortOrder, setSortOrder] = useState<'newest' | 'price_asc' | 'price_desc'>('newest');
 
-    const { products, refetch, removeProduct, duplicateProduct } = useProducts(
+    const { products, isLoading, refetch, removeProduct, duplicateProduct } = useProducts(
         activeTab,
         searchQuery,
         category,
@@ -99,6 +99,7 @@ function useProductUiSetInternal() {
 
     return {
         products,
+        isLoading,
         viewMode,
         setViewMode,
         draftProductId,

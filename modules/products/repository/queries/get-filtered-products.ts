@@ -6,7 +6,7 @@ import { inventoryTable } from "@/db/schema/catalog/products/inventory/table";
 import { pricingTable } from "@/db/schema/catalog/products/pricing/table";
 import { categoriesTable } from "@/db/schema/catalog/categories/table";
 import { productImagesTable } from "@/db/schema/catalog/products/product-images/table";
-import { and, eq, ilike, isNull, isNotNull, or, gte, lte, sql } from "drizzle-orm";
+import { and, eq, ilike, isNull, isNotNull, or, gte, lte, sql, inArray } from "drizzle-orm";
 
 export const getFilteredProducts = async (searchParams: URLSearchParams, sellerId: string) => {
 
@@ -108,95 +108,276 @@ export const getFilteredProducts = async (searchParams: URLSearchParams, sellerI
         orderByClause = sql`${numPrice} DESC`;
     }
 
-    // Fetch products joining categories, variants, inventory, and pricing
-    const rows = await db
-        .select({
-            product: {
-                id: productsTable.id,
-                name: productsTable.name,
-                slug: productsTable.slug,
-                status: productsTable.status,
-                visibility: productsTable.visibility,
-                isFeatured: productsTable.isFeatured,
-                createdAt: productsTable.createdAt,
-                updatedAt: productsTable.updatedAt,
-                shortDescription: productsTable.shortDescription,
-            },
-            category: {
-                name: categoriesTable.name,
-            },
-            variant: {
-                id: productVariantsTable.id,
-                sku: productVariantsTable.sku,
-                price: productVariantsTable.price,
-                compareAtPrice: productVariantsTable.compareAtPrice,
-                weightGrams: productVariantsTable.weightGrams,
-            },
-            inventory: {
-                quantity: inventoryTable.quantity,
-                lowStockThreshold: inventoryTable.lowStockThreshold,
-            },
-            pricing: {
-                price: pricingTable.price,
-                compareAtPrice: pricingTable.compareAtPrice,
-            },
-        })
-        .from(productsTable)
-        .leftJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id))
-        .leftJoin(productVariantsTable, eq(productVariantsTable.productId, productsTable.id))
-        .leftJoin(inventoryTable, eq(inventoryTable.variantId, productVariantsTable.id))
-        .leftJoin(pricingTable, eq(pricingTable.variantId, productVariantsTable.id))
-        .where(and(...conditions))
-        .orderBy(orderByClause);
+    // Fetch products joining categories, and variant/pricing/inventory conditionally to optimize performance
+    let rows: any[] = [];
+    console.time("  -> [getFilteredProducts] DB SELECT products");
+
+    const needsVariants = (search && search.trim() !== "") || (size && size !== "Size") || (priceRange && priceRange !== "Price Range") || (sort === "price_asc" || sort === "price_desc");
+    const needsInventory = (statusTab === "ACTIVE" || statusTab === "OUT_OF_STOCK" || statusTab.includes("OUT")) || (stockStatus && stockStatus !== "Stock Status");
+    const needsPricing = (priceRange && priceRange !== "Price Range") || (sort === "price_asc" || sort === "price_desc");
+
+    if (needsVariants || needsInventory || needsPricing) {
+        rows = await db
+            .select({
+                product: {
+                    id: productsTable.id,
+                    name: productsTable.name,
+                    slug: productsTable.slug,
+                    status: productsTable.status,
+                    visibility: productsTable.visibility,
+                    isFeatured: productsTable.isFeatured,
+                    createdAt: productsTable.createdAt,
+                    updatedAt: productsTable.updatedAt,
+                    shortDescription: productsTable.shortDescription,
+                },
+                category: {
+                    name: categoriesTable.name,
+                },
+                variant: {
+                    id: productVariantsTable.id,
+                    sku: productVariantsTable.sku,
+                    price: productVariantsTable.price,
+                    compareAtPrice: productVariantsTable.compareAtPrice,
+                    weightGrams: productVariantsTable.weightGrams,
+                },
+                inventory: {
+                    quantity: inventoryTable.quantity,
+                    lowStockThreshold: inventoryTable.lowStockThreshold,
+                },
+                pricing: {
+                    price: pricingTable.price,
+                    compareAtPrice: pricingTable.compareAtPrice,
+                },
+            })
+            .from(productsTable)
+            .leftJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id))
+            .leftJoin(productVariantsTable, eq(productVariantsTable.productId, productsTable.id))
+            .leftJoin(inventoryTable, eq(inventoryTable.variantId, productVariantsTable.id))
+            .leftJoin(pricingTable, eq(pricingTable.variantId, productVariantsTable.id))
+            .where(and(...conditions))
+            .orderBy(orderByClause);
+    } else {
+        rows = await db
+            .select({
+                product: {
+                    id: productsTable.id,
+                    name: productsTable.name,
+                    slug: productsTable.slug,
+                    status: productsTable.status,
+                    visibility: productsTable.visibility,
+                    isFeatured: productsTable.isFeatured,
+                    createdAt: productsTable.createdAt,
+                    updatedAt: productsTable.updatedAt,
+                    shortDescription: productsTable.shortDescription,
+                },
+                category: {
+                    name: categoriesTable.name,
+                },
+            })
+            .from(productsTable)
+            .leftJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id))
+            .where(and(...conditions))
+            .orderBy(orderByClause);
+    }
+    console.timeEnd("  -> [getFilteredProducts] DB SELECT products");
+
+    if (rows.length === 0) {
+        return new Map<string, any>();
+    }
+
+    const productIds = Array.from(new Set(rows.map(row => row.product.id)));
+
+    // Check which metric tables exist in public schema first to prevent PgBouncer connection hangs on missing relations
+    const checkTables = await db.execute(sql`
+        SELECT table_name 
+        FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+          AND table_name IN ('user_view_history', 'wishlist_items', 'order_items', 'product_media')
+    `).catch(() => []);
+    const checkRows = ((checkTables as any)?.rows || checkTables || []) as Array<{ table_name: string }>;
+    const existingTables = new Set(checkRows.map(r => r.table_name));
+
+    // Fetch all bulk data concurrently to save time on network latency
+    const randId = Math.floor(Math.random() * 1000);
+    const [
+        variantsList,
+        imagesList,
+        viewsResult,
+        likesResult,
+        ordersResult
+    ] = await Promise.all([
+        (async () => {
+            const label = `    -> [Bulk Fetch #${randId}] variants`;
+            console.time(label);
+            const res = await db
+                .select()
+                .from(productVariantsTable)
+                .where(inArray(productVariantsTable.productId, productIds))
+                .catch(() => []);
+            console.timeEnd(label);
+            return res;
+        })(),
+        (async () => {
+            if (!existingTables.has("product_media")) return [];
+            const label = `    -> [Bulk Fetch #${randId}] images`;
+            console.time(label);
+            const res = await db
+                .select({
+                    productId: productImagesTable.productId,
+                    imageUrl: productImagesTable.imageUrl
+                })
+                .from(productImagesTable)
+                .where(inArray(productImagesTable.productId, productIds))
+                .catch(() => []);
+            console.timeEnd(label);
+            return res;
+        })(),
+        (async () => {
+            if (!existingTables.has("user_view_history")) return [];
+            const label = `    -> [Bulk Fetch #${randId}] views`;
+            console.time(label);
+            const res = await db.execute(
+                sql`SELECT product_id, COUNT(*)::int as count FROM user_view_history WHERE product_id IN (${sql.join(productIds, sql`, `)}) GROUP BY product_id`
+            ).catch(() => []);
+            console.timeEnd(label);
+            return res;
+        })(),
+        (async () => {
+            if (!existingTables.has("wishlist_items")) return [];
+            const label = `    -> [Bulk Fetch #${randId}] likes`;
+            console.time(label);
+            const res = await db.execute(
+                sql`SELECT product_id, COUNT(*)::int as count FROM wishlist_items WHERE product_id IN (${sql.join(productIds, sql`, `)}) GROUP BY product_id`
+            ).catch(() => []);
+            console.timeEnd(label);
+            return res;
+        })(),
+        (async () => {
+            if (!existingTables.has("order_items")) return [];
+            const label = `    -> [Bulk Fetch #${randId}] orders`;
+            console.time(label);
+            const res = await db.execute(
+                sql`SELECT product_id, COALESCE(SUM(quantity), 0)::int as count FROM order_items WHERE product_id IN (${sql.join(productIds, sql`, `)}) GROUP BY product_id`
+            ).catch(() => []);
+            console.timeEnd(label);
+            return res;
+        })()
+    ]);
+
+    // Fetch inventory and pricing in bulk for the variants found
+    console.time("  -> [getFilteredProducts] Variant Metrics Bulk Fetch");
+    const variantIds = (variantsList || []).map(v => v.id);
+    let inventoryList: any[] = [];
+    let pricingList: any[] = [];
+
+    if (variantIds.length > 0) {
+        const [invRes, prRes] = await Promise.all([
+            db
+                .select()
+                .from(inventoryTable)
+                .where(inArray(inventoryTable.variantId, variantIds))
+                .catch(() => []),
+            db
+                .select()
+                .from(pricingTable)
+                .where(inArray(pricingTable.variantId, variantIds))
+                .catch(() => [])
+        ]);
+        inventoryList = invRes;
+        pricingList = prRes;
+    }
+    console.timeEnd("  -> [getFilteredProducts] Variant Metrics Bulk Fetch");
+
+    // Map images
+    const imageMap = new Map<string, string>();
+    for (const img of (imagesList || [])) {
+        if (img && !imageMap.has(img.productId)) {
+            let primaryImage = img.imageUrl || undefined;
+            if (primaryImage && primaryImage.startsWith("blob:")) {
+                primaryImage = "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=600";
+            }
+            if (primaryImage) {
+                imageMap.set(img.productId, primaryImage);
+            }
+        }
+    }
+
+    // Map views
+    const viewsMap = new Map<string, number>();
+    const viewsRows = ((viewsResult as any)?.rows || viewsResult || []) as unknown as Array<{ product_id: string; count: number }>;
+    for (const r of viewsRows) {
+        if (r && r.product_id) viewsMap.set(r.product_id, r.count);
+    }
+
+    // Map likes
+    const likesMap = new Map<string, number>();
+    const likesRows = ((likesResult as any)?.rows || likesResult || []) as unknown as Array<{ product_id: string; count: number }>;
+    for (const r of likesRows) {
+        if (r && r.product_id) likesMap.set(r.product_id, r.count);
+    }
+
+    // Map orders
+    const ordersMap = new Map<string, number>();
+    const ordersRows = ((ordersResult as any)?.rows || ordersResult || []) as unknown as Array<{ product_id: string; count: number }>;
+    for (const r of ordersRows) {
+        if (r && r.product_id) ordersMap.set(r.product_id, r.count);
+    }
+
+    // Map variants, inventory, and pricing in memory
+    const variantsByProductId = new Map<string, any[]>();
+    for (const v of (variantsList || [])) {
+        if (v && v.productId) {
+            if (!variantsByProductId.has(v.productId)) {
+                variantsByProductId.set(v.productId, []);
+            }
+            variantsByProductId.get(v.productId)!.push(v);
+        }
+    }
+
+    const inventoryByVariantId = new Map<string, any>();
+    for (const inv of (inventoryList || [])) {
+        if (inv && inv.variantId) {
+            inventoryByVariantId.set(inv.variantId, inv);
+        }
+    }
+
+    const pricingByVariantId = new Map<string, any>();
+    for (const pr of (pricingList || [])) {
+        if (pr && pr.variantId) {
+            pricingByVariantId.set(pr.variantId, pr);
+        }
+    }
 
     // Group and deduplicate products by ID
     const productMap = new Map<string, any>();
 
     for (const row of rows) {
         if (!productMap.has(row.product.id)) {
-            // Fetch primary image
-            const images = await db
-                .select({ imageUrl: productImagesTable.imageUrl })
-                .from(productImagesTable)
-                .where(eq(productImagesTable.productId, row.product.id))
-                .limit(1);
+            const primaryImage = imageMap.get(row.product.id);
+            const views = viewsMap.get(row.product.id) ?? 0;
+            const likes = likesMap.get(row.product.id) ?? 0;
+            const orders = ordersMap.get(row.product.id) ?? 0;
 
-            let primaryImage = images[0]?.imageUrl || undefined;
-            if (primaryImage && primaryImage.startsWith("blob:")) {
-                primaryImage = "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=600";
-            }
+            const productVariants = variantsByProductId.get(row.product.id) || [];
+            
+            // Map the variants with their pricing
+            const variants = productVariants.map(v => {
+                const pr = pricingByVariantId.get(v.id);
+                return {
+                    id: v.id,
+                    sku: v.sku,
+                    price: pr?.price || v.price || "0.00",
+                    compareAtPrice: pr?.compareAtPrice || v.compareAtPrice || null,
+                    weightGrams: v.weightGrams,
+                };
+            });
 
-            // Fetch DB metrics
-            let views = 0;
-            let likes = 0;
-            let orders = 0;
-
-            try {
-                const viewsRows: any = await db.execute(
-                    sql`SELECT COUNT(*)::int as count FROM user_view_history WHERE product_id = ${row.product.id}`
-                );
-                views = viewsRows?.[0]?.count ?? 0;
-            } catch (err) {
-                // Gracefully fallback to 0 if user_view_history table is missing
-            }
-
-            try {
-                const likesRows: any = await db.execute(
-                    sql`SELECT COUNT(*)::int as count FROM wishlist_items WHERE product_id = ${row.product.id}`
-                );
-                likes = likesRows?.[0]?.count ?? 0;
-            } catch (err) {
-                // Gracefully fallback to 0 if wishlist_items table is missing
-            }
-
-            try {
-                const ordersRows: any = await db.execute(
-                    sql`SELECT COALESCE(SUM(quantity), 0)::int as count FROM order_items WHERE product_id = ${row.product.id}`
-                );
-                orders = ordersRows?.[0]?.count ?? 0;
-            } catch (err) {
-                // Gracefully fallback to 0 if order_items table is missing
-            }
+            // Get inventory of the first variant or general inventory
+            const firstVariantId = productVariants[0]?.id;
+            const inv = firstVariantId ? inventoryByVariantId.get(firstVariantId) : null;
+            const inventory = inv 
+                ? { quantity: inv.quantity, lowStockThreshold: inv.lowStockThreshold }
+                : { quantity: 0 };
 
             productMap.set(row.product.id, {
                 id: row.product.id,
@@ -213,23 +394,8 @@ export const getFilteredProducts = async (searchParams: URLSearchParams, sellerI
                 views,
                 likes,
                 orders,
-                variants: row.variant
-                    ? [
-                        {
-                            id: row.variant.id,
-                            sku: row.variant.sku,
-                            price: row.pricing?.price || row.variant.price || "0.00",
-                            compareAtPrice: row.pricing?.compareAtPrice || row.variant.compareAtPrice || null,
-                            weightGrams: row.variant.weightGrams,
-                        },
-                    ]
-                    : [],
-                inventory: row.inventory
-                    ? {
-                        quantity: row.inventory.quantity,
-                        lowStockThreshold: row.inventory.lowStockThreshold,
-                    }
-                    : { quantity: 0 },
+                variants,
+                inventory,
             });
         }
     }

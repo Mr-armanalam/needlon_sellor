@@ -77,6 +77,7 @@ export default function ProductManagement() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState(DEFAULT_FORM_DATA);
+  const [isLoading, setIsLoading] = useState(true);
 
   // 8-Step Blueprint Stepper
   const wizardSteps = [
@@ -92,15 +93,16 @@ export default function ProductManagement() {
 
   // Fetch real products from API
   const fetchProducts = useCallback(async () => {
+    setIsLoading(true);
     try {
       const params = new URLSearchParams();
       if (activeTab !== 'All') params.append('status', activeTab.toUpperCase().replace(' ', '_'));
       if (searchQuery) params.append('search', searchQuery);
 
-      const res = await fetch(`/api/products?${params.toString()}`);
+      const res = await fetch(`/api/seller/products?${params.toString()}`);
       if (res.ok) {
         const json = await res.json();
-        if (json.data?.items && json.data.items.length > 0) {
+        if (json.data?.items) {
           const mapped = json.data.items.map((item: any) => {
             const primaryVariant = item.variants?.[0];
             const priceVal = primaryVariant?.price ? `₹${Number(primaryVariant.price).toLocaleString()}` : '₹0';
@@ -124,10 +126,17 @@ export default function ProductManagement() {
             };
           });
           setProducts(mapped);
+        } else {
+          setProducts([]);
         }
+      } else {
+        setProducts([]);
       }
     } catch (err) {
       console.error('Failed to fetch products:', err);
+      setProducts([]);
+    } finally {
+      setIsLoading(false);
     }
   }, [activeTab, searchQuery]);
 
@@ -278,8 +287,42 @@ export default function ProductManagement() {
 
           </div>
 
-          {/* Product Empty State Controller */}
-          {products.length === 0 ? (
+          {/* Product Loading & Empty State Controller */}
+          {isLoading ? (
+            /* LOADING SKELETON GRID STAGE */
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-2">
+              {Array.from({ length: 4 }).map((_, idx) => (
+                <div key={idx} className="bg-white border border-neutral-100 rounded-2xl p-4 flex flex-col justify-between gap-4 animate-pulse">
+                  {/* Aspect Square Placeholder */}
+                  <div className="relative w-full aspect-square rounded-xl bg-neutral-100/70 overflow-hidden flex items-center justify-center" />
+                  
+                  {/* Details Placeholders */}
+                  <div className="flex flex-col gap-2 px-0.5 mt-2">
+                    <div className="h-3 w-2/3 bg-neutral-100 rounded" />
+                    <div className="h-4 w-5/6 bg-neutral-100 rounded mt-1" />
+                    <div className="h-4 w-1/3 bg-neutral-100 rounded mt-1" />
+                    <div className="h-3 w-1/2 bg-neutral-100 rounded mt-2" />
+                  </div>
+                  
+                  {/* Micro-Analytics Placeholders */}
+                  <div className="grid grid-cols-3 gap-1 border-t border-neutral-100 pt-3 text-center">
+                    <div className="flex flex-col items-center justify-center gap-1">
+                      <div className="w-3.5 h-3.5 rounded-full bg-neutral-100" />
+                      <div className="h-3 w-6 bg-neutral-100 rounded" />
+                    </div>
+                    <div className="flex flex-col items-center justify-center gap-1">
+                      <div className="w-3.5 h-3.5 rounded-full bg-neutral-100" />
+                      <div className="h-3 w-6 bg-neutral-100 rounded" />
+                    </div>
+                    <div className="flex flex-col items-center justify-center gap-1">
+                      <div className="w-3.5 h-3.5 rounded-full bg-neutral-100" />
+                      <div className="h-3 w-6 bg-neutral-100 rounded" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : products.length === 0 ? (
             <div className="w-full py-20 flex flex-col items-center justify-center text-center gap-3 border border-dashed border-neutral-200 rounded-3xl bg-white max-w-xl mx-auto mt-8 animate-fade-in">
               <div className="w-12 h-12 rounded-2xl bg-neutral-50 flex items-center justify-center text-neutral-400 border border-neutral-100"><Layers size={20} /></div>
               <div className="flex flex-col gap-0.5">
