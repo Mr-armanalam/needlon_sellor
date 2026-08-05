@@ -1,10 +1,22 @@
-import { db } from "@/db";
 import { orders } from "@/db/schema/orders/table";
 import { orderItems } from "@/db/schema/orders/order-items/table";
 import { and, eq, ilike, isNull, or, sql } from "drizzle-orm";
 import { GetFilteredOrdersRequestDto } from "../dto";
+import { DbTransaction } from "@/db/transactions";
+import { getDatabase } from "@/db/database";
 
-export const getFilteredOrder = async (dto: GetFilteredOrdersRequestDto, sellerId: string) => {
+interface FindFilteredOrdersParams {
+    dto: GetFilteredOrdersRequestDto;
+    sellerId: string;
+    tx?: DbTransaction;
+}
+
+export const findFilteredOrders = async ({
+    dto,
+    sellerId,
+    tx,
+}: FindFilteredOrdersParams) => {
+    const database = getDatabase(tx);
     const activeTab = (dto.status || "NEW").toUpperCase();
     const search = dto.search;
     const deliveryMode = dto.deliveryMode;
@@ -16,7 +28,6 @@ export const getFilteredOrder = async (dto: GetFilteredOrdersRequestDto, sellerI
     conditions.push(isNull(orders.deletedAt));
 
     // Status Tab Filtering
-    // UI tabs: New, Accepted, Packed, Ready, Out for Delivery, Completed, Cancelled, Returned, Rejected
     if (activeTab === "NEW") {
         conditions.push(eq(orders.status, "PENDING"));
     } else if (activeTab === "ACCEPTED") {
@@ -71,7 +82,7 @@ export const getFilteredOrder = async (dto: GetFilteredOrdersRequestDto, sellerI
     }
 
     // Fetch order headers
-    const fetchedOrders = await db
+    const fetchedOrders = await database
         .select()
         .from(orders)
         .where(and(...conditions))
@@ -80,7 +91,7 @@ export const getFilteredOrder = async (dto: GetFilteredOrdersRequestDto, sellerI
     // Load the order items for each fetched order
     const items = [];
     for (const order of fetchedOrders) {
-        const orderLines = await db
+        const orderLines = await database
             .select()
             .from(orderItems)
             .where(eq(orderItems.orderId, order.id));
@@ -92,7 +103,7 @@ export const getFilteredOrder = async (dto: GetFilteredOrdersRequestDto, sellerI
     }
 
     // Calculate tab counts
-    const countRows = await db
+    const countRows = await database
         .select({
             status: orders.status,
             count: sql<number>`count(*)::int`,
@@ -126,5 +137,5 @@ export const getFilteredOrder = async (dto: GetFilteredOrdersRequestDto, sellerI
         else if (s === "RETURN_REJECTED") counts.REJECTED += row.count;
     }
 
-    return {items, counts};
-}
+    return { items, counts };
+};

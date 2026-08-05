@@ -80,7 +80,9 @@ export default function CustomerList({ onSelectCustomer, activeId }) {
                 <h2 className="text-sm font-semibold text-gray-900 truncate flex items-center gap-1">
                   {customer.name}
                   {customer.isRepeat && (
-                    <Award className="w-3.5 h-3.5 text-amber-500" title="Repeat Buyer" />
+                    <span title="Repeat Buyer">
+                      <Award className="w-3.5 h-3.5 text-amber-500" />
+                    </span>
                   )}
                 </h2>
                 <span className="text-xs font-bold text-gray-900">{customer.clv}</span>

@@ -1,3 +1,4 @@
+import "reflect-metadata";
 import { routeHandler } from "@/modules/shared/api/route-handler";
 import { successResponse } from "@/modules/shared/api/success-response";
 import { ProductImageService } from "@/modules/products/services/product-image.service";

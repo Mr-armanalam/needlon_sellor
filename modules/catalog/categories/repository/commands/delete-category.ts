@@ -5,7 +5,7 @@ import {
 } from "drizzle-orm";
 
 import { db } from "@/db";
-import { categories } from "@/db/schema/catalog/categories/table";
+import { categoriesTable as categories } from "@/db/schema/catalog/categories/table";
 
 export async function deleteCategory(
     id: string,

@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { routeHandler } from "@/modules/shared/api/route-handler";
-import { getCurrentSellerOrThrow } from "@/modules/seller-profile/services";
-import { updateOrderStatusService } from "@/modules/orders/services/update-order-status.service";
+import { parseBody } from "@/modules/shared/api/parse-body";
+import { updateOrderStatusService } from "@/modules/orders/services";
 import { successResponse } from "@/modules/shared/api/success-response";
 import { getOrderByIdParamsSchema, updateOrderStatusBodySchema } from "@/modules/orders/validations";
 
@@ -16,19 +16,16 @@ export async function POST(
   { params }: RouteContext
 ) {
   return routeHandler(async () =>  {
-    const seller = await getCurrentSellerOrThrow();
-    const sellerId = seller.id;
     const rawParams = await params;
     
     // Validate path parameter (orderId)
     const { orderId } = getOrderByIdParamsSchema.parse(rawParams);
 
-    // Validate request body
-    const body = await req.json();
-    const { action, remarks } = updateOrderStatusBodySchema.parse(body);
+    // Validate request body using parseBody helper
+    const { action, remarks } = await parseBody(req, updateOrderStatusBodySchema);
     
-    // Call service to update status
-    const result = await updateOrderStatusService({ orderId, action, remarks }, sellerId);
+    // Call service to update status (internally resolves current seller)
+    const result = await updateOrderStatusService({ orderId, action, remarks });
 
     return successResponse({
       orderId: result.orderId,

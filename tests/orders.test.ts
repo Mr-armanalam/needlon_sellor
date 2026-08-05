@@ -1,7 +1,6 @@
 import assert from "node:assert";
 import { getFilteredOrdersQuerySchema, getOrderByIdParamsSchema, updateOrderStatusBodySchema } from "../modules/orders/validations";
-import { OrderMapper } from "../modules/orders/mapper/order.mapper";
-import { OrderTransformer } from "../modules/orders/transformers/order.transformer";
+import { toOrderDomain, toOrderListItemDto, toOrderDetailResponse } from "../modules/orders/mapper";
 
 function testValidationSchemas() {
   console.log("--> Testing Zod validations for orders...");
@@ -28,7 +27,7 @@ function testValidationSchemas() {
   const parsedBody = updateOrderStatusBodySchema.parse(validBody);
   assert.strictEqual(parsedBody.action, "ADVANCE");
   assert.strictEqual(parsedBody.remarks, "Accepting order");
-
+  
   assert.throws(() => {
     updateOrderStatusBodySchema.parse({ action: "INVALID", remarks: "" });
   });
@@ -91,7 +90,7 @@ function testOrderMapper() {
     }
   ];
 
-  const domainOrder = OrderMapper.toOrderDomain(mockDbOrder, mockDbItems);
+  const domainOrder = toOrderDomain(mockDbOrder, mockDbItems);
   
   assert.strictEqual(domainOrder.id, mockDbOrder.id);
   assert.strictEqual(domainOrder.subtotal, 1200);
@@ -195,13 +194,13 @@ function testOrderTransformer() {
     payments: []
   };
 
-  const responseDto = OrderTransformer.toListItemDto(mockDomainOrder);
+  const responseDto = toOrderListItemDto(mockDomainOrder);
   assert.strictEqual(responseDto.subtotal, "1200.00");
   assert.strictEqual(responseDto.grandTotal, "1230.00");
   assert.strictEqual(responseDto.items[0].unitPrice, "600.00");
   assert.strictEqual(responseDto.items[0].total, "1200.00");
 
-  const detailResponseDto = OrderTransformer.toDetailResponse(mockDomainOrder);
+  const detailResponseDto = toOrderDetailResponse(mockDomainOrder);
   assert.ok(Array.isArray(detailResponseDto.addresses));
   assert.ok(Array.isArray(detailResponseDto.history));
   assert.ok(Array.isArray(detailResponseDto.payments));
@@ -218,3 +217,4 @@ function runAllTests() {
 }
 
 runAllTests();
+

@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
 
     const result = await verifyOtp(email, code, type);
 
-    if (!result.valid) {
+    if (result.valid === false) {
       return NextResponse.json(
         {
           error: result.error,

@@ -54,6 +54,7 @@ export default function HelpCenterPage() {
         {activeTab === 'dashboard' && (
           <HelpDashboard 
             onNavigateToSection={(target) => setActiveTab(target)} 
+            onCreateTicketClick={() => {}}
           />
         )}
 

@@ -46,7 +46,7 @@ async function request<T>(
 
     if (!response.ok || !payload.success) {
         const error =
-            payload && !payload.success
+            payload && "error" in payload
                 ? payload.error
                 : {
                     code: "UNKNOWN_ERROR",

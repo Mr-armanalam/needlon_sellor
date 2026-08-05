@@ -333,3 +333,5 @@ export const categoriesTable = pgTable(
         ),
     }),
 );
+
+export { categoriesTable as categories };

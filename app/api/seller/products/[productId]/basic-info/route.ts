@@ -1,3 +1,4 @@
+import "reflect-metadata";
 import { NextRequest } from "next/server";
 import { routeHandler } from "@/modules/shared/api/route-handler";
 import { successResponse } from "@/modules/shared/api/success-response";

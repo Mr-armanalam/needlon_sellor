@@ -1,15 +1,12 @@
 import { NextRequest } from "next/server";
-import { getCurrentSellerOrThrow } from "@/modules/seller-profile/services";
 import { routeHandler } from "@/modules/shared/api/route-handler";
-import { getFilteredOrderService } from "@/modules/orders/services/get-filtered-order.service";
+import { getFilteredOrdersService } from "@/modules/orders/services";
 import { successResponse } from "@/modules/shared/api/success-response";
 import { getFilteredOrdersQuerySchema } from "@/modules/orders/validations";
-import { OrderTransformer } from "@/modules/orders/transformers/order.transformer";
+import { toOrderListItemDto } from "@/modules/orders/mapper";
 
 export async function GET(req: NextRequest) {
-  return routeHandler(async () =>  {
-    const seller = await getCurrentSellerOrThrow();
-    const sellerId = seller.id;
+  return routeHandler(async () => {
     const { searchParams } = new URL(req.url);
     
     // Convert searchParams to a simple object
@@ -18,11 +15,11 @@ export async function GET(req: NextRequest) {
     // Validate request query parameters using Zod
     const validatedDto = getFilteredOrdersQuerySchema.parse(queryObj);
     
-    // Call service to get domain models
-    const { items, counts } = await getFilteredOrderService(validatedDto, sellerId);
+    // Call service to get domain models (internally resolves current seller)
+    const { items, counts } = await getFilteredOrdersService(validatedDto);
     
-    // Transform domain models to response DTOs
-    const transformedItems = items.map(OrderTransformer.toListItemDto);
+    // Transform domain models to response DTOs using flat mapper function
+    const transformedItems = items.map(toOrderListItemDto);
     
     return successResponse({ 
       items: transformedItems, 

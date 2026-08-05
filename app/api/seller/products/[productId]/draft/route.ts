@@ -1,11 +1,12 @@
+import "reflect-metadata";
 import { routeHandler } from "@/modules/shared/api/route-handler";
 import { successResponse } from "@/modules/shared/api/success-response";
 import {DraftProductService} from "@/modules/products/services/draft-product.service";
+import { DrizzleProductRepository } from "@/modules/products/repositories/repository/product.repository";
 import { NextRequest } from "next/server";
 
 import { parseBody } from "@/modules/shared/api/parse-body";
 import {updateDraftSchema} from "@/modules/products/validations/draft-product.schema";
-import {container} from "tsyringe";
 
 
 interface RouteContext {
@@ -20,7 +21,7 @@ interface RouteContext {
 //     new DraftProductService();
 
 const draftProductService =
-    container.resolve(DraftProductService);
+    new DraftProductService(new DrizzleProductRepository());
 
 interface RouteContext {
     params: Promise<{

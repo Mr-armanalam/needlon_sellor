@@ -1,7 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 
 import { db } from "@/db";
-import { categories } from "@/db/schema/catalog/categories";
+import { categoriesTable as categories } from "@/db/schema/catalog/categories";
 
 interface MoveCategoryParams {
     categoryId: string;

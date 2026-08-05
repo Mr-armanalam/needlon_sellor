@@ -1,10 +1,12 @@
-import { NextRequest } from "next/server";
+import {NextRequest} from "next/server";
 import {getCurrentSellerOrThrow, getSellerAddressesService} from "@/modules/seller-profile/services";
 import {routeHandler} from "@/modules/shared/api/route-handler";
 import {successResponse} from "@/modules/shared/api/success-response";
 import {createSellerAddressSchema} from "@/modules/seller-profile/validations/create-seller-address-schema";
 import {createSellerAddressService} from "@/modules/seller-profile/services/create-seller-address.services";
 import {parseBody} from "@/modules/shared/api/parse-body";
+import {CreateSellerAddressDto} from "@/modules/seller-profile/dto";
+
 
 
 export async function GET() {
@@ -33,7 +35,7 @@ export async function POST(
         const address =
             await createSellerAddressService({
                 sellerId: seller.id,
-                data: body,
+                data: body as CreateSellerAddressDto,
             });
 
         return successResponse(address, 201);

@@ -1,3 +1,6 @@
+import { apiClient } from "@/modules/shared/api";
+import { OrderListItemDto, OrderDetailResponseDto } from "../dto";
+
 export async function fetchOrdersClient(
   activeTab?: string,
   searchQuery?: string,
@@ -26,19 +29,17 @@ export async function fetchOrdersClient(
     }
   }
 
-  const res = await fetch(`/api/seller/orders?${params.toString()}`);
-  if (!res.ok) {
-    throw new Error("Failed to fetch orders");
-  }
-  return res.json();
+  const data = await apiClient.get<{ items: OrderListItemDto[]; counts: Record<string, number> }>(
+    `/api/seller/orders?${params.toString()}`
+  );
+  return { success: true, data };
 }
 
 export async function getOrderDetailsClient(orderId: string) {
-  const res = await fetch(`/api/seller/orders/${orderId}`);
-  if (!res.ok) {
-    throw new Error("Failed to fetch order details");
-  }
-  return res.json();
+  const data = await apiClient.get<OrderDetailResponseDto>(
+    `/api/seller/orders/${orderId}`
+  );
+  return { success: true, data };
 }
 
 export async function updateOrderStatusClient(
@@ -46,15 +47,9 @@ export async function updateOrderStatusClient(
   action: "ADVANCE" | "CANCEL",
   remarks?: string
 ) {
-  const res = await fetch(`/api/seller/orders/${orderId}/action`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action, remarks }),
-  });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message || "Failed to update order status");
-  }
-  return res.json();
+  const data = await apiClient.post<
+    { orderId: string; fromStatus: string; toStatus: string },
+    { action: "ADVANCE" | "CANCEL"; remarks?: string }
+  >(`/api/seller/orders/${orderId}/action`, { action, remarks });
+  return { success: true, data };
 }

@@ -47,6 +47,7 @@ export const schema = {
   sellerBankAccounts: sellerBankAccounts,
   sellerVerification: sellerVerification,
   categoriesTable: categoriesTable,
+  categories: categoriesTable,
   categoryRelations: categoriesRelations,
   productsTable: productsTable,
   productsRelations: productsRelations,
