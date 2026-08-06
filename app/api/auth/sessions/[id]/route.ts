@@ -1,11 +1,9 @@
-import { and, eq } from "drizzle-orm";
-import { NextResponse } from "next/server";
-
-import { db } from "@/db";
-import { sessions } from "@/db/schema/seller";
-
+import { routeHandler } from "@/modules/shared/api/route-handler";
+import { successResponse } from "@/modules/shared/api/success-response";
 import { cookies } from "next/headers";
 import { getCurrentSeller } from "@/modules/auth/lib/get-current-seller";
+import { revokeSessionById } from "@/modules/logout/repository";
+import { UnauthorizedError, BadRequestError, NotFoundError } from "@/modules/shared/errors";
 
 type Params = {
   params: Promise<{
@@ -14,65 +12,27 @@ type Params = {
 };
 
 export async function DELETE(req: Request, { params }: Params) {
-  try {
+  return routeHandler(async () => {
     const seller = await getCurrentSeller();
 
     if (!seller) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      throw new UnauthorizedError();
     }
 
     const { id } = await params;
-
     const cookieStore = await cookies();
-
     const currentSessionId = cookieStore.get("session_id")?.value;
 
     if (id === currentSessionId) {
-      return NextResponse.json(
-        {
-          error: "Use logout instead",
-        },
-        {
-          status: 400,
-        },
-      );
+      throw new BadRequestError("Use logout instead");
     }
 
-    const result = await db
-      .update(sessions)
-      .set({
-        revokedAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(and(eq(sessions.id, id), eq(sessions.sellerId, seller.id)))
-      .returning({
-        id: sessions.id,
-      });
+    const result = await revokeSessionById(id, seller.id);
 
     if (result.length === 0) {
-      return NextResponse.json(
-        {
-          error: "Session not found",
-        },
-        {
-          status: 404,
-        },
-      );
+      throw new NotFoundError("Session not found");
     }
 
-    return NextResponse.json({
-      success: true,
-    });
-  } catch (error) {
-    console.error("DELETE_SESSION_ERROR", error);
-
-    return NextResponse.json(
-      {
-        error: "Internal server error",
-      },
-      {
-        status: 500,
-      },
-    );
-  }
+    return successResponse({ success: true });
+  });
 }

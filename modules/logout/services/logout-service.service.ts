@@ -1,43 +1,15 @@
-import { and, desc, eq, gt, isNull, ne } from "drizzle-orm";
-import { db } from "@/db";
-import { sessions } from "@/db/schema/seller";
-import { auditLogs } from "@/db/schema/autd_activity/audit-log";
-import { activityLogs } from "@/db/schema/autd_activity/activity-log";
-
-export type DeviceInfo = {
-  deviceName: string;
-  os: string;
-  browser: string;
-};
-
-export type FormattedSession = {
-  id: string;
-  deviceName: string;
-  os: string;
-  browser: string;
-  location: string;
-  ip: string;
-  loginTime: string;
-  lastActive: string;
-  isCurrent: boolean;
-  isTrusted: boolean;
-};
-
-export type SecurityAlertItem = {
-  id: string;
-  type: string;
-  text: string;
-  date: string;
-  severity: "low" | "medium" | "high";
-};
-
-export type AuditLogItem = {
-  id: string;
-  type: "Success" | "Failed" | "Update";
-  method: string;
-  desc: string;
-  date: string;
-};
+import {
+  findActiveSessionsForSeller,
+  revokeSessionsExcept,
+  findSecurityAlertsForSeller,
+  findAuditLogsForSeller,
+} from "../repository";
+import type {
+  DeviceInfo,
+  FormattedSession,
+  SecurityAlertItem,
+  AuditLogItem,
+} from "../dto";
 
 /**
  * Parses user-agent strings to extract device name, OS, and browser.
@@ -118,34 +90,16 @@ export function formatDateString(date: Date): string {
 /**
  * Fetches and formats all active sessions for a seller.
  */
-export async function getActiveSessionsForSeller(
+export async function getActiveSessionsForSellerService(
   sellerId: string,
   currentSessionId?: string
 ): Promise<FormattedSession[]> {
-  const rows = await db
-    .select({
-      id: sessions.id,
-      userAgent: sessions.userAgent,
-      ipAddress: sessions.ipAddress,
-      createdAt: sessions.createdAt,
-      updatedAt: sessions.updatedAt,
-      expiresAt: sessions.expiresAt,
-    })
-    .from(sessions)
-    .where(
-      and(
-        eq(sessions.sellerId, sellerId),
-        isNull(sessions.revokedAt),
-        gt(sessions.expiresAt, new Date())
-      )
-    )
-    .orderBy(desc(sessions.updatedAt));
+  const rows = await findActiveSessionsForSeller(sellerId);
 
   return rows.map((row) => {
     const parsed = parseUserAgent(row.userAgent);
     const isCurrent = Boolean(currentSessionId && row.id === currentSessionId);
     
-    // Mask IP address if needed or format
     const rawIp = row.ipAddress || "192.168.1.1";
     const maskedIp = rawIp.includes(".") 
       ? rawIp.split(".").slice(0, 3).join(".") + ".***"
@@ -169,49 +123,22 @@ export async function getActiveSessionsForSeller(
 /**
  * Revokes all sessions for a seller except the active session ID.
  */
-export async function revokeOtherSessionsForSeller(
+export async function revokeOtherSessionsForSellerService(
   sellerId: string,
   currentSessionId?: string
 ): Promise<number> {
-  const conditions = [
-    eq(sessions.sellerId, sellerId),
-    isNull(sessions.revokedAt),
-  ];
-  
-  if (currentSessionId) {
-    conditions.push(ne(sessions.id, currentSessionId));
-  }
-
-  const result = await db
-    .update(sessions)
-    .set({
-      revokedAt: new Date(),
-      updatedAt: new Date(),
-    })
-    .where(and(...conditions))
-    .returning({ id: sessions.id });
-
+  const result = await revokeSessionsExcept(sellerId, currentSessionId);
   return result.length;
 }
 
 /**
  * Fetches recent security alerts for a seller.
  */
-export async function getSecurityAlertsForSeller(
+export async function getSecurityAlertsForSellerService(
   sellerId: string
 ): Promise<SecurityAlertItem[]> {
   try {
-    const logs = await db
-      .select({
-        id: auditLogs.id,
-        action: auditLogs.action,
-        userAgent: auditLogs.userAgent,
-        createdAt: auditLogs.createdAt,
-      })
-      .from(auditLogs)
-      .where(eq(auditLogs.actorId, sellerId))
-      .orderBy(desc(auditLogs.createdAt))
-      .limit(5);
+    const logs = await findSecurityAlertsForSeller(sellerId, 5);
 
     if (logs.length > 0) {
       return logs.map((log) => {
@@ -239,8 +166,8 @@ export async function getSecurityAlertsForSeller(
         };
       });
     }
-  } catch {
-    // Return fallback structured alerts matching user interface defaults if DB table is empty
+  } catch (err) {
+    // Fall back to default logs if DB query fails or tables are empty
   }
 
   return [
@@ -264,21 +191,11 @@ export async function getSecurityAlertsForSeller(
 /**
  * Fetches audit trail logs for a seller.
  */
-export async function getAuditTrailForSeller(
+export async function getAuditTrailForSellerService(
   sellerId: string
 ): Promise<AuditLogItem[]> {
   try {
-    const logs = await db
-      .select({
-        id: auditLogs.id,
-        action: auditLogs.action,
-        changeReason: auditLogs.changeReason,
-        createdAt: auditLogs.createdAt,
-      })
-      .from(auditLogs)
-      .where(eq(auditLogs.actorId, sellerId))
-      .orderBy(desc(auditLogs.createdAt))
-      .limit(10);
+    const logs = await findAuditLogsForSeller(sellerId, 10);
 
     if (logs.length > 0) {
       return logs.map((log) => {
@@ -305,8 +222,8 @@ export async function getAuditTrailForSeller(
         };
       });
     }
-  } catch {
-    // Return default structured history if DB logs not present
+  } catch (err) {
+    // Fall back to default logs if DB query fails or tables are empty
   }
 
   return [
