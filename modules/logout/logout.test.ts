@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { parseUserAgent, formatRelativeTime, formatDateString } from "./lib/logout-service";
+import { parseUserAgent, formatRelativeTime, formatDateString } from "./services";
 
 async function runLogoutServiceTests() {
   console.log("🚀 Running Logout Service Unit Tests...");

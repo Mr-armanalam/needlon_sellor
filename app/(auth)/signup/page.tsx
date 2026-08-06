@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -16,7 +15,7 @@ import { AuthShell } from "@/modules/auth/components/auth-shell";
 import { PasswordInput } from "@/modules/auth/components/password-input";
 import { PasswordStrength } from "@/modules/auth/components/password-strength";
 
-import { authApi } from "@/modules/auth/api/auth";
+import { useSignupMutation } from "@/modules/auth/hooks";
 import {
   SignupFormValues,
   signupSchema,
@@ -27,8 +26,7 @@ import { Field, FieldError } from "@/components/ui/field";
 
 export default function SignupPage() {
   const router = useRouter();
-
-  const [loading, setLoading] = useState(false);
+  const signupMutation = useSignupMutation();
 
   const {
     setError,
@@ -55,14 +53,11 @@ export default function SignupPage() {
     defaultValue: "",
   });
 
-  // Track state for the select element
   const currentRole = watch("role");
 
   const onSubmit = async (values: SignupFormValues) => {
     try {
-      setLoading(true);
-
-      const response = await authApi.signup({
+      await signupMutation.mutateAsync({
         name: values.name,
         email: values.email,
         password: values.password,
@@ -70,32 +65,22 @@ export default function SignupPage() {
         role: values.role,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError("email", {
-          type: "server",
-          message: "something went wrong",
-        });
-        console.log(data);
-
-        toast.error(JSON.stringify(data.errors));
-        throw new Error(JSON.stringify(data.error));
-      }
-
       toast.success("Verification code sent to your email");
 
       router.push(
         `/verify-otp?email=${encodeURIComponent(values.email)}&type=signup`,
       );
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to create account",
-      );
-    } finally {
-      setLoading(false);
+    } catch (error: any) {
+      const errMsg = error?.message || "Failed to create account";
+      setError("email", {
+        type: "server",
+        message: errMsg,
+      });
+      toast.error(errMsg);
     }
   };
+
+  const loading = signupMutation.isPending;
 
   return (
     <AuthShell

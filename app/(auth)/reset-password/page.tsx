@@ -1,39 +1,26 @@
 "use client";
 
-import { Suspense, useState } from "react";
-
+import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-
 import { useForm } from "react-hook-form";
-
 import { zodResolver } from "@hookform/resolvers/zod";
-
 import { Loader2 } from "lucide-react";
-
 import { toast } from "sonner";
-
 import { Button } from "@/components/ui/button";
-
 import { AuthShell } from "@/modules/auth/components/auth-shell";
-
 import { PasswordInput } from "@/modules/auth/components/password-input";
-
 import { PasswordStrength } from "@/modules/auth/components/password-strength";
-
-import { authApi } from "@/modules/auth/api/auth";
+import { useResetPasswordMutation } from "@/modules/auth/hooks";
 import {
   ResetPasswordFormValues,
   resetPasswordSchema,
 } from "@/modules/auth/validations/reset-password-request-schema";
 
- function ResetPasswordForm() {
+function ResetPasswordForm() {
   const router = useRouter();
-
   const searchParams = useSearchParams();
-
   const token = searchParams.get("token");
-
-  const [loading, setLoading] = useState(false);
+  const resetPasswordMutation = useResetPasswordMutation();
 
   const form = useForm<ResetPasswordFormValues>({
     resolver: zodResolver(resetPasswordSchema),
@@ -48,30 +35,19 @@ import {
     }
 
     try {
-      setLoading(true);
-
-      const response = await authApi.resetPassword({
+      await resetPasswordMutation.mutateAsync({
         token,
         password: values.password,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error);
-      }
-
       toast.success("Password updated successfully");
-
       router.replace("/login");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Unable to reset password",
-      );
-    } finally {
-      setLoading(false);
+    } catch (error: any) {
+      toast.error(error?.message || "Unable to reset password");
     }
   };
+
+  const loading = resetPasswordMutation.isPending;
 
   return (
     <AuthShell title="Reset Password" description="Create a new password">
@@ -102,7 +78,6 @@ import {
     </AuthShell>
   );
 }
-
 
 export default function ResetPasswordPage() {
   return (

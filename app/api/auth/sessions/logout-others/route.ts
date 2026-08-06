@@ -1,38 +1,29 @@
 import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+import { routeHandler } from "@/modules/shared/api/route-handler";
+import { successResponse } from "@/modules/shared/api/success-response";
 import { getCurrentSeller } from "@/modules/auth/lib/get-current-seller";
-import { revokeOtherSessionsForSeller } from "@/modules/logout/lib/logout-service";
+import { revokeOtherSessionsForSellerService } from "@/modules/logout/services";
+import { UnauthorizedError } from "@/modules/shared/errors";
 
 export async function POST() {
-  try {
+  return routeHandler(async () => {
     const seller = await getCurrentSeller();
 
     if (!seller) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      throw new UnauthorizedError();
     }
 
     const cookieStore = await cookies();
     const currentSessionId = cookieStore.get("session_id")?.value;
 
-    const revokedCount = await revokeOtherSessionsForSeller(
+    const revokedCount = await revokeOtherSessionsForSellerService(
       seller.id,
       currentSessionId
     );
 
-    return NextResponse.json({
+    return successResponse({
       success: true,
       revokedCount,
     });
-  } catch (error) {
-    console.error("LOGOUT_OTHERS_ERROR", error);
-
-    return NextResponse.json(
-      {
-        error: "Internal server error",
-      },
-      {
-        status: 500,
-      }
-    );
-  }
+  });
 }

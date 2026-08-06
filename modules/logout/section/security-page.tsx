@@ -1,10 +1,10 @@
 'use client'
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Key, ShieldAlert, LogOut, X } from 'lucide-react';
-import ActiveSessions, { SessionItem } from '../view/active-sessions';
-import SecurityLogs, { AlertLogItem, AuditLogItem } from '../view/security-log';
-import { authApi } from '@/modules/auth/api/auth';
+import ActiveSessions from '../view/active-sessions';
+import SecurityLogs from '../view/security-log';
 import { toast } from 'sonner';
+import { useSessions, useSecurityLogs } from '../hooks';
 
 export default function SecurityPage() {
   const [modalState, setModalState] = useState<{
@@ -14,60 +14,32 @@ export default function SecurityPage() {
   }>({ show: false, mode: '' });
 
   const [sessionTimeout, setSessionTimeout] = useState('30');
-  const [sessions, setSessions] = useState<SessionItem[]>([]);
-  const [securityAlerts, setSecurityAlerts] = useState<AlertLogItem[]>([]);
-  const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+
+  const {
+    sessions,
+    isLoadingSessions,
+    preferences,
+    updatePreferences,
+    logoutSession,
+    logoutOthers,
+    logoutAll,
+    logoutCurrent,
+  } = useSessions();
+
+  const {
+    alerts,
+    auditLogs,
+    isLoading: isLoadingLogs,
+  } = useSecurityLogs();
+
+  const isLoading = isLoadingSessions || isLoadingLogs;
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchSecurityData = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      // Fetch Active Sessions
-      const resSessions = await authApi.getSessions();
-      if (resSessions.ok) {
-        const data = await resSessions.json();
-        if (Array.isArray(data)) {
-          setSessions(data);
-        }
-      }
-
-      // Fetch Security Alerts
-      const resAlerts = await authApi.getSecurityAlerts();
-      if (resAlerts.ok) {
-        const alertsData = await resAlerts.json();
-        if (Array.isArray(alertsData)) {
-          setSecurityAlerts(alertsData);
-        }
-      }
-
-      // Fetch Security Audit Logs
-      const resAudit = await authApi.getAuditLogs();
-      if (resAudit.ok) {
-        const auditData = await resAudit.json();
-        if (Array.isArray(auditData)) {
-          setAuditLogs(auditData);
-        }
-      }
-
-      // Fetch Security Preferences
-      const resPref = await authApi.getSecurityPreferences();
-      if (resPref.ok) {
-        const prefData = await resPref.json();
-        if (prefData.inactivityTimeout) {
-          setSessionTimeout(String(prefData.inactivityTimeout));
-        }
-      }
-    } catch (err) {
-      console.error("Failed to load security data:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    fetchSecurityData();
-  }, [fetchSecurityData]);
+    if (preferences?.inactivityTimeout) {
+      setSessionTimeout(String(preferences.inactivityTimeout));
+    }
+  }, [preferences]);
 
   const openConfirmationModal = (modeString: string, targetSessionId?: string) => {
     setModalState({ show: true, mode: modeString, targetSessionId });
@@ -80,37 +52,19 @@ export default function SecurityPage() {
 
     try {
       if (mode === 'current') {
-        const res = await authApi.logout();
-        if (res.ok) {
-          toast.success("Successfully logged out");
-          window.location.href = '/login';
-        } else {
-          toast.error("Failed to log out");
-        }
+        await logoutCurrent();
+        toast.success("Successfully logged out");
+        window.location.href = '/login';
       } else if (mode === 'others') {
-        const res = await authApi.logoutOthers();
-        if (res.ok) {
-          toast.success("All other device sessions have been revoked");
-          await fetchSecurityData();
-        } else {
-          toast.error("Failed to revoke other sessions");
-        }
+        await logoutOthers();
+        toast.success("All other device sessions have been revoked");
       } else if (mode === 'all') {
-        const res = await authApi.logoutAllSessions();
-        if (res.ok) {
-          toast.success("All active sessions terminated");
-          window.location.href = '/login';
-        } else {
-          toast.error("Failed to terminate all sessions");
-        }
+        await logoutAll();
+        toast.success("All active sessions terminated");
+        window.location.href = '/login';
       } else if (mode === 'revoke' && targetSessionId) {
-        const res = await authApi.logoutSession(targetSessionId);
-        if (res.ok) {
-          toast.success("Device access revoked");
-          await fetchSecurityData();
-        } else {
-          toast.error("Failed to revoke device session");
-        }
+        await logoutSession(targetSessionId);
+        toast.success("Device access revoked");
       }
     } catch (err) {
       console.error("Logout action error:", err);
@@ -123,10 +77,8 @@ export default function SecurityPage() {
   const handleTimeoutChange = async (newTimeout: string) => {
     setSessionTimeout(newTimeout);
     try {
-      const res = await authApi.updateSecurityPreferences(newTimeout);
-      if (res.ok) {
-        toast.success(`Inactivity timeout updated to ${newTimeout} minutes`);
-      }
+      await updatePreferences(newTimeout);
+      toast.success(`Inactivity timeout updated to ${newTimeout} minutes`);
     } catch (err) {
       console.error("Failed to update security preferences:", err);
     }
@@ -211,7 +163,7 @@ export default function SecurityPage() {
 
       {/* 3. MID PANEL: AUDIT HISTORY TRAIL */}
       <SecurityLogs 
-        alerts={securityAlerts}
+        alerts={alerts}
         auditLogs={auditLogs}
         isLoading={isLoading}
       />

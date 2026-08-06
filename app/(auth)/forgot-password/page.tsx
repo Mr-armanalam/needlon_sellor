@@ -1,24 +1,16 @@
 "use client";
 
-import { useState } from "react";
-
 import { useRouter } from "next/navigation";
-
 import { useForm } from "react-hook-form";
-
 import { zodResolver } from "@hookform/resolvers/zod";
-
 import { Loader2 } from "lucide-react";
-
 import { toast } from "sonner";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 import { AuthShell } from "@/modules/auth/components/auth-shell";
-
-import { authApi } from "@/modules/auth/api/auth";
-
+import { useForgotPasswordMutation } from "@/modules/auth/hooks";
 import {
   forgotPasswordSchema,
   type ForgotPasswordForm,
@@ -26,8 +18,7 @@ import {
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
-
-  const [loading, setLoading] = useState(false);
+  const forgotPasswordMutation = useForgotPasswordMutation();
 
   const form = useForm<ForgotPasswordForm>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -36,13 +27,9 @@ export default function ForgotPasswordPage() {
     },
   });
 
-  const onSubmit = async (
-    values: ForgotPasswordForm
-  ) => {
+  const onSubmit = async (values: ForgotPasswordForm) => {
     try {
-      setLoading(true);
-
-      await authApi.forgotPassword(values);
+      await forgotPasswordMutation.mutateAsync(values);
 
       toast.success(
         "If an account exists, a reset code has been sent."
@@ -53,16 +40,15 @@ export default function ForgotPasswordPage() {
           values.email
         )}&type=reset`
       );
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-
       toast.error(
-        "Unable to send reset code. Please try again."
+        error?.message || "Unable to send reset code. Please try again."
       );
-    } finally {
-      setLoading(false);
     }
   };
+
+  const loading = forgotPasswordMutation.isPending;
 
   return (
     <AuthShell

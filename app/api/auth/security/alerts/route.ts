@@ -1,28 +1,19 @@
-import { NextResponse } from "next/server";
+import { routeHandler } from "@/modules/shared/api/route-handler";
+import { successResponse } from "@/modules/shared/api/success-response";
 import { getCurrentSeller } from "@/modules/auth/lib/get-current-seller";
-import { getSecurityAlertsForSeller } from "@/modules/logout/lib/logout-service";
+import { getSecurityAlertsForSellerService } from "@/modules/logout/services";
+import { UnauthorizedError } from "@/modules/shared/errors";
 
 export async function GET() {
-  try {
+  return routeHandler(async () => {
     const seller = await getCurrentSeller();
 
     if (!seller) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      throw new UnauthorizedError();
     }
 
-    const alerts = await getSecurityAlertsForSeller(seller.id);
+    const alerts = await getSecurityAlertsForSellerService(seller.id);
 
-    return NextResponse.json(alerts);
-  } catch (error) {
-    console.error("GET_SECURITY_ALERTS_ERROR", error);
-
-    return NextResponse.json(
-      {
-        error: "Internal server error",
-      },
-      {
-        status: 500,
-      }
-    );
-  }
+    return successResponse(alerts);
+  });
 }
