@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -19,7 +18,7 @@ import {
 
 import { PasswordInput } from "@/modules/auth/components/password-input";
 import { AuthShell } from "@/modules/auth/components/auth-shell";
-import { authApi } from "@/modules/auth/api/auth";
+import { useLoginMutation } from "@/modules/auth/hooks";
 import {
   LoginRequestInput,
   loginRequestSchema,
@@ -27,7 +26,7 @@ import {
 
 export default function LoginPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const loginMutation = useLoginMutation();
 
   const form = useForm<LoginRequestInput>({
     resolver: zodResolver(loginRequestSchema),
@@ -36,34 +35,25 @@ export default function LoginPage() {
 
   const onSubmit = async (values: LoginRequestInput) => {
     try {
-      setLoading(true);
-
-      const response = await authApi.login({
+      const data = await loginMutation.mutateAsync({
         email: values.email ?? "",
         password: values.password,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        form.setError("email", {
-          type: "server",
-          message: data.error || "Something went wrong",
-        });
-        toast.error(data.error || "Something went wrong");
-        throw new Error(data.error || "Something went wrong");
-      }
-
       toast.success("Login successful");
-
       const destination = data.user.role === "admin" ? "/admin" : "/dashboard";
       router.push(destination);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Login failed");
-    } finally {
-      setLoading(false);
+    } catch (error: any) {
+      const errMsg = error?.message || "Login failed";
+      form.setError("email", {
+        type: "server",
+        message: errMsg,
+      });
+      toast.error(errMsg);
     }
   };
+
+  const loading = loginMutation.isPending;
 
   return (
     <AuthShell title="Login" description="Welcome back">

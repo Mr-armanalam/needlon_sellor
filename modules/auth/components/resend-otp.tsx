@@ -1,8 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useCountdown } from "../hooks/use-countdown";
-import { authApi } from "../api/auth";
+import { useCountdown, useSendOtpMutation } from "../hooks";
 import { toast } from "sonner";
 import { useState } from "react";
 
@@ -14,28 +13,32 @@ type ResendOtpInputProps = {
 export function ResendOtp({ email, type }: ResendOtpInputProps) {
   const [error, setError] = useState("");
   const { completed, seconds, restart } = useCountdown(30);
+  const sendOtpMutation = useSendOtpMutation();
 
   const handleResend = async () => {
-    const response = await authApi.resendOtp({
-      email,
-      type,
-    });
+    try {
+      setError("");
+      const data = await sendOtpMutation.mutateAsync({
+        email,
+        type,
+      });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      setError(data.error);
-      throw new Error(data.error);
+      restart();
+      toast.success(data?.message || "OTP sent successfully");
+    } catch (err: any) {
+      setError(err?.message || "Failed to resend OTP");
+      toast.error(err?.message || "Failed to resend OTP");
     }
-
-    restart();
-
-    toast.success(data.message);
   };
 
   return (
     <div>
-      <Button variant="link" className={`cursor-pointer`} disabled={!completed} onClick={handleResend}>
+      <Button
+        variant="link"
+        className={`cursor-pointer`}
+        disabled={!completed || sendOtpMutation.isPending}
+        onClick={handleResend}
+      >
         {completed ? "Resend OTP" : `Resend in ${seconds}s`}
       </Button>
       {error && <p className="text-red-500">{error}</p>}
