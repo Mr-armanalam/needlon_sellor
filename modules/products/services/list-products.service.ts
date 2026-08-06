@@ -1,4 +1,4 @@
-import { listProducts, ListProductsOptions } from "../repository/queries/list-products";
+import { listProducts, ListProductsOptions } from "../repository";
 
 export async function listProductsService(options: ListProductsOptions) {
   if (!options.sellerId) {

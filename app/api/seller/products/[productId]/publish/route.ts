@@ -1,19 +1,15 @@
-import "reflect-metadata";
 import { NextRequest } from "next/server";
 import { routeHandler } from "@/modules/shared/api/route-handler";
 import { successResponse } from "@/modules/shared/api/success-response";
 import { parseBody } from "@/modules/shared/api/parse-body";
-import { DraftProductService } from "@/modules/products/services/draft-product.service";
+import { publishDraftProductService } from "@/modules/products/services";
 import { publishProductSchema } from "@/modules/products/validations/publish.schema";
-import { DrizzleProductRepository } from "@/modules/products/repositories/repository/product.repository";
 
 interface RouteContext {
   params: Promise<{
     productId: string;
   }>;
 }
-
-const draftProductService = new DraftProductService(new DrizzleProductRepository());
 
 export async function POST(
   request: NextRequest,
@@ -22,7 +18,7 @@ export async function POST(
   return routeHandler(async () => {
     const { productId } = await params;
     const body = await parseBody(request, publishProductSchema);
-    const published = await draftProductService.publishProduct(productId, body);
+    const published = await publishDraftProductService(productId, body);
     return successResponse(published);
   });
 }

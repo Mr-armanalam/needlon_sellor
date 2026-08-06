@@ -1,4 +1,4 @@
-import { getProduct } from "../repository/queries/get-product";
+import { getProduct } from "../repository";
 
 export async function getProductService(productId: string) {
   if (!productId) {

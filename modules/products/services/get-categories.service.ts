@@ -1,4 +1,4 @@
-import {getProductCategories} from "@/modules/products/repository/queries/get-product-categories";
+import {getProductCategories} from "@/modules/products/repository";
 
 export async function getCategoriesService() {
     const categories = await getProductCategories();

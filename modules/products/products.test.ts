@@ -292,8 +292,7 @@ async function runProductsModuleTests() {
     // 8. Test DraftProductService createDraft
     console.log("\n8. Testing DraftProductService...");
     const { DraftProductService } = await import("./services/draft-product.service");
-    const { DrizzleProductRepository } = await import("./repositories/repository/product.repository");
-    const draftService = new DraftProductService(new DrizzleProductRepository());
+    const draftService = new DraftProductService();
 
     createdDraft = await draftService.createDraft({
       sellerId: DEFAULT_SELLER_ID,
@@ -309,8 +308,7 @@ async function runProductsModuleTests() {
     // 9. Test ProductImageService
     console.log("\n9. Testing ProductImageService...");
     const { ProductImageService } = await import("./services/product-image.service");
-    const { DrizzleProductImageRepository } = await import("./repositories/repository/product-image.repository");
-    const imageService = new ProductImageService(new DrizzleProductImageRepository());
+    const imageService = new ProductImageService();
 
     const img1 = await imageService.addImage({
       productId: createdDraft.id,

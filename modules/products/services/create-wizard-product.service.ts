@@ -3,10 +3,7 @@ import { categoriesTable as categories } from "@/db/schema/catalog/categories/ta
 import { inventoryTable } from "@/db/schema/catalog/products/inventory/table";
 import { productImagesTable } from "@/db/schema/catalog/products/product-images/table";
 import { generateUniqueSlug } from "@/modules/shared/slug/generate-unique-slug";
-import { createProduct } from "../repository/commands/create-product";
-import { createProductVariant } from "../repository/commands/create-product-variant";
-import { existsProductSlug } from "../repository/queries/exists-product-slug";
-import { getProductVariantBySku } from "../repository/queries/get-product-variant";
+import { createProduct, createProductVariant, existsProductSlug, getProductVariantBySku } from "../repository";
 import { ProductWizardInput } from "../validations/product-wizard-schema";
 import { sql } from "drizzle-orm";
 

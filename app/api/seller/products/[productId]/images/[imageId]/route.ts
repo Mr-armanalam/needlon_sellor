@@ -1,8 +1,6 @@
-import "reflect-metadata";
 import { routeHandler } from "@/modules/shared/api/route-handler";
 import { successResponse } from "@/modules/shared/api/success-response";
-import { ProductImageService } from "@/modules/products/services/product-image.service";
-import { DrizzleProductImageRepository } from "@/modules/products/repositories/repository/product-image.repository";
+import { deleteProductImageService } from "@/modules/products/services";
 
 interface RouteContext {
   params: Promise<{
@@ -11,15 +9,13 @@ interface RouteContext {
   }>;
 }
 
-const productImageService = new ProductImageService(new DrizzleProductImageRepository());
-
 export async function DELETE(
   request: Request,
   { params }: RouteContext
 ) {
   return routeHandler(async () => {
     const { imageId } = await params;
-    await productImageService.deleteImage(imageId);
+    await deleteProductImageService(imageId);
     return successResponse({ deleted: true });
   });
 }

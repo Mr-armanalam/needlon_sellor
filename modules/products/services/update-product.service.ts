@@ -1,7 +1,5 @@
 import { generateUniqueSlug } from "@/modules/shared/slug/generate-unique-slug";
-import { updateProduct } from "../repository/commands/update-product";
-import { getProduct } from "../repository/queries/get-product";
-import { existsProductSlug } from "../repository/queries/exists-product-slug";
+import { updateProduct, getProduct, existsProductSlug } from "../repository";
 import { ProductStatus, ProductVisibility } from "../types";
 
 export interface UpdateProductServiceInput {

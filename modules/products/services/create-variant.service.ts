@@ -1,6 +1,4 @@
-import { createProductVariant } from "../repository/commands/create-product-variant";
-import { getProductVariantBySku } from "../repository/queries/get-product-variant";
-import { getProduct } from "../repository/queries/get-product";
+import { createProductVariant, getProductVariantBySku, getProduct } from "../repository";
 
 export interface CreateVariantInput {
   productId: string;

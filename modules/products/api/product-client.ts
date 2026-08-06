@@ -1,3 +1,5 @@
+import { apiClient } from "@/modules/shared/api/api-client";
+
 export async function fetchProductsClient(
   activeTab?: string,
   searchQuery?: string,
@@ -30,245 +32,81 @@ export async function fetchProductsClient(
     params.append("sort", sort);
   }
 
-  const res = await fetch(`/api/seller/products?${params.toString()}`);
-  if (!res.ok) {
-    throw new Error("Failed to fetch products");
-  }
-  return res.json();
+  return apiClient.get<any>(`/api/seller/products?${params.toString()}`);
 }
 
 export async function createProductClient(payload: any) {
-  const res = await fetch("/api/products", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error?.message || "Failed to create product");
-  }
-  return res.json();
+  return apiClient.post<any>("/api/products", payload);
 }
 
 export async function deleteProductClient(id: string) {
-  const res = await fetch(`/api/seller/products/${id}`, {
-    method: "DELETE",
-  });
-
-  if (!res.ok) {
-    throw new Error("Failed to delete product");
-  }
-  return res.json();
+  return apiClient.delete<any>(`/api/seller/products/${id}`);
 }
 
 export async function createDraftProductClient() {
-  const res = await fetch("/api/seller/products/draft", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-  });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message || "Failed to create draft product");
-  }
-  return res.json();
+  return apiClient.post<any>("/api/seller/products/draft", {});
 }
 
 export async function fetchProductImagesClient(productId: string) {
-  const res = await fetch(`/api/seller/products/${productId}/images`);
-  if (!res.ok) {
-    throw new Error("Failed to fetch product images");
-  }
-  return res.json();
+  return apiClient.get<any>(`/api/seller/products/${productId}/images`);
 }
 
 export async function uploadProductImageClient(productId: string, payload: any) {
-  const res = await fetch(`/api/seller/products/${productId}/images`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message || "Failed to upload product image");
-  }
-  return res.json();
+  return apiClient.post<any>(`/api/seller/products/${productId}/images`, payload);
 }
 
 export async function deleteProductImageClient(productId: string, imageId: string) {
-  const res = await fetch(`/api/seller/products/${productId}/images/${imageId}`, {
-    method: "DELETE",
-  });
-  if (!res.ok) {
-    throw new Error("Failed to delete product image");
-  }
-  return res.json();
+  return apiClient.delete<any>(`/api/seller/products/${productId}/images/${imageId}`);
 }
 
 export async function reorderProductImagesClient(productId: string, imageIds: string[]) {
-  const res = await fetch(`/api/seller/products/${productId}/images/order`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ imageIds }),
-  });
-  if (!res.ok) {
-    throw new Error("Failed to reorder product images");
-  }
-  return res.json();
+  return apiClient.patch<any>(`/api/seller/products/${productId}/images/order`, { imageIds });
 }
 
 export async function setPrimaryThumbnailClient(productId: string, imageId: string) {
-  const res = await fetch(`/api/seller/products/${productId}/images/thumbnail`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ imageId }),
-  });
-  if (!res.ok) {
-    throw new Error("Failed to set cover thumbnail");
-  }
-  return res.json();
+  return apiClient.patch<any>(`/api/seller/products/${productId}/images/thumbnail`, { imageId });
 }
 
 export async function updateProductBasicInfoClient(productId: string, payload: any) {
-  const res = await fetch(`/api/seller/products/${productId}/basic-info`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message || "Failed to update basic information");
-  }
-  return res.json();
+  return apiClient.patch<any>(`/api/seller/products/${productId}/basic-info`, payload);
 }
 
 export async function updateProductPricingClient(productId: string, payload: any) {
-  const res = await fetch(`/api/seller/products/${productId}/pricing`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message || "Failed to update pricing");
-  }
-  return res.json();
+  return apiClient.patch<any>(`/api/seller/products/${productId}/pricing`, payload);
 }
 
 export async function updateProductVariantsClient(productId: string, payload: any) {
-  const res = await fetch(`/api/seller/products/${productId}/variants`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message || "Failed to update variants");
-  }
-  return res.json();
+  return apiClient.patch<any>(`/api/seller/products/${productId}/variants`, payload);
 }
 
 export async function updateProductInventoryClient(productId: string, payload: any) {
-  const res = await fetch(`/api/seller/products/${productId}/inventory`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message || "Failed to update inventory");
-  }
-  return res.json();
+  return apiClient.patch<any>(`/api/seller/products/${productId}/inventory`, payload);
 }
 
 export async function updateProductDeliveryClient(productId: string, payload: any) {
-  const res = await fetch(`/api/seller/products/${productId}/delivery`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message || "Failed to update delivery logistics");
-  }
-  return res.json();
+  return apiClient.patch<any>(`/api/seller/products/${productId}/delivery`, payload);
 }
 
 export async function updateProductSeoClient(productId: string, payload: any) {
-  const res = await fetch(`/api/seller/products/${productId}/seo`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message || "Failed to update SEO tags");
-  }
-  return res.json();
+  return apiClient.patch<any>(`/api/seller/products/${productId}/seo`, payload);
 }
 
 export async function getProductClient(productId: string) {
-  const res = await fetch(`/api/seller/products/${productId}`);
-  if (!res.ok) {
-    throw new Error("Failed to fetch product details");
-  }
-  const body = await res.json();
-  return body.data;
+  return apiClient.get<any>(`/api/seller/products/${productId}`);
 }
 
 export async function duplicateProductClient(productId: string) {
-  const res = await fetch(`/api/seller/products/${productId}/duplicate`, {
-    method: "POST",
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message || "Failed to duplicate product");
-  }
-  return res.json();
+  return apiClient.post<any>(`/api/seller/products/${productId}/duplicate`, {});
 }
 
 export async function bulkUploadProductsClient(products: any[]) {
-  const res = await fetch("/api/seller/products/bulk-upload", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ products }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message || "Failed bulk product upload");
-  }
-  return res.json();
+  return apiClient.post<any>("/api/seller/products/bulk-upload", { products });
 }
 
 export async function fetchCategoriesClient() {
-  const res = await fetch("/api/seller/products/categories");
-  if (!res.ok) {
-    throw new Error("Failed to fetch categories list");
-  }
-  const body = await res.json();
-  return body.data;
+  return apiClient.get<any>("/api/seller/products/categories");
 }
-
 
 export async function publishProductClient(productId: string, status: 'DRAFT' | 'PUBLISHED' = 'PUBLISHED') {
-  const res = await fetch(`/api/seller/products/${productId}/publish`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message || "Failed to publish product");
-  }
-  return res.json();
+  return apiClient.post<any>(`/api/seller/products/${productId}/publish`, { status });
 }
-
-
-
-
-
-
-
-
-

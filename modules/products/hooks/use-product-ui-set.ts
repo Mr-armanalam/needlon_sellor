@@ -1,8 +1,11 @@
 import React, {useState, createContext, useContext} from "react";
 import {useProducts} from "./use-products";
 import {createDraftProductClient} from "../api/product-client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { productKeys } from "../keys";
 
 function useProductUiSetInternal() {
+    const queryClient = useQueryClient();
     const [viewMode, setViewMode] = useState<'shelf' | 'wizard'>('shelf');
     const [draftProductId, setDraftProductId] = useState<string | null>(null);
     const [isCreatingDraft, setIsCreatingDraft] = useState(false);
@@ -25,10 +28,17 @@ function useProductUiSetInternal() {
         sortOrder
     );
 
+    const createDraftMutation = useMutation({
+        mutationFn: createDraftProductClient,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: productKeys.all });
+        }
+    });
+
     const handleStartWizard = async () => {
         try {
             setIsCreatingDraft(true);
-            const res = await createDraftProductClient();
+            const res = await createDraftMutation.mutateAsync();
             const newProductId = res?.data?.id || res?.id;
             setDraftProductId(newProductId || null);
             setViewMode('wizard');

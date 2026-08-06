@@ -1,22 +1,19 @@
-import "reflect-metadata";
 import { NextRequest } from "next/server";
 import { routeHandler } from "@/modules/shared/api/route-handler";
 import { successResponse } from "@/modules/shared/api/success-response";
-import { DraftProductService } from "@/modules/products/services/draft-product.service";
-import { DrizzleProductRepository } from "@/modules/products/repositories/repository/product.repository";
+import { createDraftProductService } from "@/modules/products/services";
 import { getCurrentSeller } from "@/modules/auth/lib/get-current-seller";
-
-const draftProductService = new DraftProductService(new DrizzleProductRepository());
+import { UnauthorizedError } from "@/modules/shared/errors";
 
 export async function POST(request: NextRequest) {
     return routeHandler(async () => {
         const seller = await getCurrentSeller();
         if (!seller || !seller.id) {
-          throw new Error("Unauthorized: Only authenticated sellers can create draft products.");
+          throw new UnauthorizedError();
         }
         const sellerId = seller.id;
 
-        const draft = await draftProductService.createDraft({
+        const draft = await createDraftProductService({
             sellerId,
             storeId: sellerId,
         });

@@ -1,5 +1,5 @@
 import {UnauthorizedError} from "@/modules/shared/errors";
-import {getFilteredProducts} from "@/modules/products/repository/queries/get-filtered-products";
+import {getFilteredProducts} from "@/modules/products/repository";
 
 export const getFilteredProductsService = async (searchParams: URLSearchParams, sellerId: string) => {
     if (!sellerId) {
