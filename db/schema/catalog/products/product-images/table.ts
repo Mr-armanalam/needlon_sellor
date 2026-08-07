@@ -1,4 +1,3 @@
-import { sql } from "drizzle-orm";
 import {
     AnyPgColumn,
     bigint, boolean,
@@ -6,6 +5,7 @@ import {
     index, integer,
     jsonb,
     pgTable,
+    text,
     timestamp, uniqueIndex,
     uuid,
     varchar,
@@ -88,9 +88,7 @@ export const productImagesTable = pgTable(
         /**
          * Public or signed CDN URL.
          */
-        imageUrl: varchar("cdn_url", {
-            length: PRODUCT_IMAGE_URL_MAX_LENGTH,
-        }).notNull(),
+        imageUrl: text("cdn_url").notNull(),
 
         mediaType: varchar("media_type").default("IMAGE"),
 

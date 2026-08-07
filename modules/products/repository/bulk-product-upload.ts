@@ -43,11 +43,7 @@ export const bulkProductUpload = async ( seller: AuthSeller, items: any) => {
             if (existingCatRes?.[0]?.id) {
                 categoryId = existingCatRes[0].id;
             } else {
-                const catSlug = await generateUniqueSlug(catName, async () => false);
-                const newCatRes: any = await tx.execute(
-                    sql`INSERT INTO categories (name, slug) VALUES (${catName}, ${catSlug}) RETURNING id`
-                );
-                categoryId = newCatRes?.[0]?.id;
+                throw new Error(`Category "${catName}" does not exist. Only administrators can create new categories.`);
             }
 
             // Generate slug

@@ -176,29 +176,68 @@ async function runProductsModuleTests() {
   }
   console.log("✅ Missing tables ensured in database.");
 
+  // Ensure test sellers and seller stores exist in DB to satisfy foreign key constraints
+  const testSellers = [
+    { id: "00000000-0000-0000-0000-000000000001", name: "Default Test Seller", email: "default-seller@test.com" },
+    { id: "e98e4537-b11e-4f04-9c68-06dcfcfdd691", name: "Main Test Seller", email: "main-seller@test.com" }
+  ];
+
+  const { seller: sellerTable } = await import("../../db/schema/seller");
+  const { sellerStore: sellerStoreTable } = await import("../../db/schema/seller/seller-store");
+
+  for (const s of testSellers) {
+    const [existingSeller] = await db.select().from(sellerTable).where(eq(sellerTable.id, s.id)).limit(1);
+    if (!existingSeller) {
+      await db.insert(sellerTable).values({
+        id: s.id,
+        name: s.name,
+        email: s.email,
+        role: "seller",
+      });
+    }
+
+    const [existingStore] = await db.select().from(sellerStoreTable).where(eq(sellerStoreTable.sellerId, s.id)).limit(1);
+    if (!existingStore) {
+      await db.insert(sellerStoreTable).values({
+        sellerId: s.id,
+        storeName: `${s.name} Store`,
+        storeSlug: `${s.name.toLowerCase().replace(/ /g, "-")}-store`,
+        status: "ACTIVE",
+        visibility: "PUBLIC",
+      });
+    }
+  }
+  console.log("✅ Test sellers and stores resolved.");
+
   const DEFAULT_SELLER_ID = "00000000-0000-0000-0000-000000000001";
   const timestamp = Date.now();
 
   // 1. Resolve or seed a test categories
   console.log("\n1. Resolving test categories...");
-  let [testCategory] = await db
+  const requiredCategories = ["Ethnic Wear", "Western Wear", "Dupattas"];
+  for (const catName of requiredCategories) {
+    const [existing] = await db
+      .select()
+      .from(categories)
+      .where(eq(categories.name, catName))
+      .limit(1);
+    if (!existing) {
+      const catSlug = catName.toLowerCase().replace(" ", "-");
+      await db.insert(categories).values({
+        name: catName,
+        slug: catSlug,
+        code: `CAT-${catSlug.replace(/-/g, '_').toUpperCase()}`,
+        path: `/${catSlug}`,
+        level: 0,
+      });
+    }
+  }
+
+  const [testCategory] = await db
     .select({ id: categories.id })
     .from(categories)
+    .where(eq(categories.name, "Ethnic Wear"))
     .limit(1);
-
-  if (!testCategory) {
-    const [newCat] = await db
-      .insert(categories)
-      .values({
-        name: "Ethnic Apparel",
-        slug: `ethnic-apparel-${timestamp}`,
-        code: `CAT-${timestamp}`,
-        path: `/ethnic-apparel-${timestamp}`,
-        level: 0,
-      })
-      .returning();
-    testCategory = newCat;
-  }
   console.log(`✅ Test category resolved (ID: ${testCategory.id})`);
 
   let createdProduct1: any = null;

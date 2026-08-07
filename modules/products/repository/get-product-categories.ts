@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import { categoriesTable } from "@/db/schema/catalog/categories/table";
-import { categoryAttributes } from "@/db/schema/catalog/categories/category_attributes";
-import { categoryAttributeOptions } from "@/db/schema/catalog/categories/category_attribute_options";
+import { categoryAttributesTable } from "@/db/schema/catalog/category-attributes";
+import { categoryAttributeOptionsTable } from "@/db/schema/catalog/category-attribute-options";
 
 export const getProductCategories = async () => {
     // 1. Fetch categories
@@ -11,7 +11,7 @@ export const getProductCategories = async () => {
     if (categories.length === 0) {
         console.log(" Database categories empty. Starting seeding catalog data...");
 
-        // Seed main category: Ethnic Wear
+        // Seed 1. Ethnic Wear
         const [ethnicWear] = await db
             .insert(categoriesTable)
             .values({
@@ -23,14 +23,71 @@ export const getProductCategories = async () => {
             })
             .returning();
 
+        // Seed 2. Western Wear
+        await db
+            .insert(categoriesTable)
+            .values({
+                name: "Western Wear",
+                slug: "western-wear",
+                code: "CAT-WESTERN",
+                path: "/western-wear",
+                level: 0,
+            });
+
+        // Seed 3. Dupattas
+        await db
+            .insert(categoriesTable)
+            .values({
+                name: "Dupattas",
+                slug: "dupattas",
+                code: "CAT-DUPATTAS",
+                path: "/dupattas",
+                level: 0,
+            });
+
+        // Seed 4. Jewelry
+        await db
+            .insert(categoriesTable)
+            .values({
+                name: "Jewelry",
+                slug: "jewelry",
+                code: "CAT-JEWELRY",
+                path: "/jewelry",
+                level: 0,
+            });
+
+        // Seed 5. Footwear
+        await db
+            .insert(categoriesTable)
+            .values({
+                name: "Footwear",
+                slug: "footwear",
+                code: "CAT-FOOTWEAR",
+                path: "/footwear",
+                level: 0,
+            });
+
+        // Seed 6. Cosmetics
+        await db
+            .insert(categoriesTable)
+            .values({
+                name: "Cosmetics",
+                slug: "cosmetics",
+                code: "CAT-COSMETICS",
+                path: "/cosmetics",
+                level: 0,
+            });
+
         // Seed Category Attributes (Size, Color, Fabric) for Ethnic Wear
         const [sizeAttr] = await db
-            .insert(categoryAttributes)
+            .insert(categoryAttributesTable)
             .values({
                 categoryId: ethnicWear.id,
+                attributeKey: "size",
                 name: "Size",
                 slug: "size",
                 inputType: "SELECT",
+                dataType: "STRING",
                 isRequired: false,
                 isFilterable: true,
                 isVariantAttribute: true,
@@ -38,12 +95,14 @@ export const getProductCategories = async () => {
             .returning();
 
         const [colorAttr] = await db
-            .insert(categoryAttributes)
+            .insert(categoryAttributesTable)
             .values({
                 categoryId: ethnicWear.id,
+                attributeKey: "color",
                 name: "Color",
                 slug: "color",
                 inputType: "SELECT",
+                dataType: "STRING",
                 isRequired: false,
                 isFilterable: true,
                 isVariantAttribute: true,
@@ -51,12 +110,14 @@ export const getProductCategories = async () => {
             .returning();
 
         const [fabricAttr] = await db
-            .insert(categoryAttributes)
+            .insert(categoryAttributesTable)
             .values({
                 categoryId: ethnicWear.id,
+                attributeKey: "fabric",
                 name: "Fabric Material",
                 slug: "fabric",
                 inputType: "SELECT",
+                dataType: "STRING",
                 isRequired: false,
                 isFilterable: true,
                 isVariantAttribute: false,
@@ -66,7 +127,7 @@ export const getProductCategories = async () => {
         // Seed Size Options
         const sizes = ["S", "M", "L", "XL", "XXL", "Free Size"];
         for (let i = 0; i < sizes.length; i++) {
-            await db.insert(categoryAttributeOptions).values({
+            await db.insert(categoryAttributeOptionsTable).values({
                 attributeId: sizeAttr.id,
                 label: sizes[i],
                 value: sizes[i].toLowerCase().replace(" ", "_"),
@@ -84,7 +145,7 @@ export const getProductCategories = async () => {
             { label: "White", val: "white", hex: "#FFFFFF" },
         ];
         for (let i = 0; i < colors.length; i++) {
-            await db.insert(categoryAttributeOptions).values({
+            await db.insert(categoryAttributeOptionsTable).values({
                 attributeId: colorAttr.id,
                 label: colors[i].label,
                 value: colors[i].val,
@@ -96,7 +157,7 @@ export const getProductCategories = async () => {
         // Seed Fabric Options
         const fabrics = ["Cotton", "Silk", "Banarasi Silk", "Georgette", "Chiffon", "Linen"];
         for (let i = 0; i < fabrics.length; i++) {
-            await db.insert(categoryAttributeOptions).values({
+            await db.insert(categoryAttributeOptionsTable).values({
                 attributeId: fabricAttr.id,
                 label: fabrics[i],
                 value: fabrics[i].toLowerCase().replace(" ", "_"),
@@ -110,8 +171,8 @@ export const getProductCategories = async () => {
     }
 
     // Load category attributes and options associated
-    const attributes = await db.select().from(categoryAttributes);
-    const options = await db.select().from(categoryAttributeOptions);
+    const attributes = await db.select().from(categoryAttributesTable);
+    const options = await db.select().from(categoryAttributeOptionsTable);
 
     return {
         categories,

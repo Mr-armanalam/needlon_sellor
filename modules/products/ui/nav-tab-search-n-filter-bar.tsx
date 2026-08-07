@@ -1,6 +1,9 @@
 import React, {Dispatch, SetStateAction} from 'react';
 import {ArrowUpDown, Search} from "lucide-react";
 import {useProductUiSet} from "@/modules/products/hooks/use-product-ui-set";
+import {useQuery} from "@tanstack/react-query";
+import {productKeys} from "@/modules/products/keys";
+import {fetchCategoriesClient} from "@/modules/products/api/product-client";
 
 const NavTabSearchNFilterBar = () => {
 
@@ -20,6 +23,13 @@ const NavTabSearchNFilterBar = () => {
         activeTab,
         setActiveTab,
     } = useProductUiSet()
+
+    const { data: categoriesData } = useQuery({
+        queryKey: productKeys.categories(),
+        queryFn: fetchCategoriesClient,
+    });
+
+    const categoriesList = categoriesData?.categories || [];
 
     const handleToggleSort = () => {
         if (sortOrder === 'newest') setSortOrder('price_asc');
@@ -69,9 +79,9 @@ const NavTabSearchNFilterBar = () => {
                         className="px-3 py-2 bg-white border border-neutral-200/60 hover:border-neutral-400 text-neutral-600 hover:text-neutral-900 text-[12px] font-medium rounded-xl transition-all duration-200 outline-none cursor-pointer"
                     >
                         <option value="Category">Category</option>
-                        <option value="Ethnic Wear">Ethnic Wear</option>
-                        <option value="Western Wear">Western Wear</option>
-                        <option value="Dupattas">Dupattas</option>
+                        {categoriesList.map((cat: any) => (
+                            <option key={cat.id} value={cat.name}>{cat.name}</option>
+                        ))}
                     </select>
 
                     <select

@@ -38,9 +38,10 @@ function useAddProductWizardInternal() {
 
     useEffect(() => {
         fetchCategoriesClient()
-            .then((cats: any[]) => {
+            .then((res: any) => {
+                const cats = res?.categories;
                 if (Array.isArray(cats) && cats.length > 0) {
-                    const names = Array.from(new Set([...Object.keys(CATEGORY_SUBCATEGORY_MAP), ...cats.map(c => c.name || c)]));
+                    const names = cats.map((c: any) => c.name).filter(Boolean);
                     setAvailableCategories(names);
                 }
             })

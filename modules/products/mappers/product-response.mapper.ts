@@ -45,15 +45,14 @@ export function toProductDtos(products: Product[]): ProductDto[] {
 export function toProductListItemDto(product: Product): ProductListItemDto {
     return {
         id: product.id,
+        storeId: product.storeId || "",
+        categoryId: product.categoryId || "",
         name: product.name,
         slug: product.slug,
-        sku: null,
-        brand: null,
-        status: product.status,
-        visibility: product.visibility,
-        isAvailable: product.status === "PUBLISHED",
-        isFeatured: product.isFeatured ?? false,
-        updatedAt: product.updatedAt,
+        shortDescription: product.shortDescription || null,
+        price: null,
+        status: product.status || "DRAFT",
+        createdAt: product.createdAt,
     };
 }
 
