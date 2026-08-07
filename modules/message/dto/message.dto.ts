@@ -173,4 +173,42 @@ export interface MessageDto {
      * Delete timestamp.
      */
     deletedAt: string | null;
+
+    /**
+     * Shared product details.
+     */
+    sharedProduct: SharedProductDto | null;
+
+    /**
+     * Shared order details.
+     */
+    sharedOrder: SharedOrderDto | null;
 }
+
+export interface SharedProductDto {
+    id: string;
+    productId: string | null;
+    productName: string;
+    slug: string;
+    sku: string | null;
+    brand: string | null;
+    thumbnailUrl: string | null;
+    currency: string;
+    sellingPrice: number;
+    mrp: number | null;
+}
+
+export interface SharedOrderDto {
+    id: string;
+    orderId: string | null;
+    orderNumber: string;
+    buyerName: string | null;
+    sellerName: string | null;
+    currency: string;
+    totalAmount: number;
+    status: string;
+    deliveryStatus: string;
+    paymentStatus: string;
+    trackingNumber: string | null;
+    courierName: string | null;
+}

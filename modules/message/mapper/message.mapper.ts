@@ -68,6 +68,10 @@ interface MessageEntity {
     editedAt: Date | null;
 
     deletedAt: Date | null;
+
+    sharedProduct: any | null;
+
+    sharedOrder: any | null;
 }
 
 function toMessageSenderDto(
@@ -171,5 +175,11 @@ export function toMessageDto(
         deletedAt:
             message.deletedAt?.toISOString() ??
             null,
+
+        sharedProduct:
+        message.sharedProduct,
+
+        sharedOrder:
+        message.sharedOrder,
     };
 }

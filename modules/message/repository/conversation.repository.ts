@@ -27,6 +27,10 @@ import {
     conversationsTable as conversations,
 } from "@/db/schema/messages";
 
+import { seller } from "@/db/schema/seller";
+import { sellerProfiles } from "@/db/schema/seller/seller-profile";
+import { alias } from "drizzle-orm/pg-core";
+
 import {
     CreateConversationDto,
     UpdateConversationDto,
@@ -154,14 +158,13 @@ export class ConversationRepository {
         sellerId: string,
         query: string,
     ) {
+        const otherMembers = alias(conversationMembers, "other_members");
+
         return db
-            .select({
-                conversation:
-                conversations,
+            .selectDistinct({
+                conversation: conversations,
             })
-            .from(
-                conversationMembers,
-            )
+            .from(conversationMembers)
             .innerJoin(
                 conversations,
                 eq(
@@ -169,22 +172,34 @@ export class ConversationRepository {
                     conversations.id,
                 ),
             )
+            .leftJoin(
+                otherMembers,
+                and(
+                    eq(conversations.id, otherMembers.conversationId),
+                    ne(otherMembers.sellerId, sellerId)
+                )
+            )
+            .leftJoin(
+                seller,
+                eq(otherMembers.sellerId, seller.id)
+            )
+            .leftJoin(
+                sellerProfiles,
+                eq(seller.id, sellerProfiles.sellerId)
+            )
             .where(
                 and(
-                    eq(
-                        conversationMembers.sellerId,
-                        sellerId,
-                    ),
-                    ilike(
-                        conversations.title,
-                        `%${query}%`,
-                    ),
-                ),
+                    eq(conversationMembers.sellerId, sellerId),
+                    isNull(conversationMembers.leftAt),
+                    or(
+                        ilike(conversations.title, `%${query}%`),
+                        ilike(seller.name, `%${query}%`),
+                        ilike(sellerProfiles.displayName, `%${query}%`)
+                    )
+                )
             )
             .orderBy(
-                asc(
-                    conversations.title,
-                ),
+                asc(conversations.title),
             );
     }
 

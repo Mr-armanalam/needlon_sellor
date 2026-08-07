@@ -12,6 +12,7 @@ import React from "react";
 
 import {
   Check,
+  CheckCheck,
   Search,
 } from "lucide-react";
 
@@ -47,15 +48,15 @@ export default function ConversationList({
                                            isLoading,
                                          }: ConversationListProps) {
   return (
-      <div className="w-[380px] flex-shrink-0 flex flex-col border-r border-gray-100 min-h-0">
+      <div className="w-full md:w-80 h-full border-r border-gray-200 bg-white flex flex-col">
         {/* Header & Search */}
-        <div className="p-5 border-b border-gray-100">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-4">
+        <div className="p-4 border-b border-gray-100">
+          <h1 className="text-xl font-bold text-gray-800 mb-3">
             Messages
           </h1>
 
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
 
             <input
                 type="text"
@@ -232,7 +233,7 @@ function ConversationListItem({
                         </span>
             ) : (
                 isOwnLastMessage && (
-                    <Check className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+                    <CheckCheck className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
                 )
             )}
           </div>

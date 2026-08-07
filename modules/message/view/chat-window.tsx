@@ -31,12 +31,16 @@ interface ChatWindowProps {
 
   isLoading:
       boolean;
+
+  isTyping?:
+      boolean;
 }
 
 export default function ChatWindow({
                                      conversation,
                                      messages,
                                      isLoading,
+                                     isTyping,
                                    }: ChatWindowProps) {
   if (!conversation) {
     return (
@@ -94,12 +98,8 @@ export default function ChatWindow({
               {displayName}
             </h2>
 
-            <p className="text-xs text-gray-500">
-              {isConversationOnline(
-                  conversation,
-              )
-                  ? "Online"
-                  : "Offline"}
+            <p className="text-xs text-gray-400">
+              {conversation?.members?.find(m => m.sellerId !== conversation.currentSellerId)?.role === 'BUYER' ? 'Customer' : 'Seller'}
             </p>
           </div>
         </div>
@@ -111,18 +111,38 @@ export default function ChatWindow({
           ) : messages.length === 0 ? (
               <MessageEmptyState />
           ) : (
-              messages.map(
-                  (message) => (
-                      <MessageItem
-                          key={
-                            message.id
-                          }
-                          message={
-                            message
-                          }
-                      />
-                  ),
-              )
+              <>
+                {messages.map(
+                    (message) => (
+                        <MessageItem
+                            key={
+                              message.id
+                            }
+                            message={
+                              message
+                            }
+                        />
+                    ),
+                )}
+                {isTyping && (
+                  <div className="flex gap-3 max-w-[85%] md:max-w-[70%]">
+                    <div className="flex-shrink-0">
+                      {avatarUrl ? (
+                        <img src={avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-semibold text-gray-500">
+                          {getInitials(displayName)}
+                        </div>
+                      )}
+                    </div>
+                    <div className="bg-white border border-gray-100 px-4 py-3 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                  </div>
+                )}
+              </>
           )}
         </div>
       </div>
@@ -200,7 +220,8 @@ function MessageItem({
 
                 {message.messageType ===
                     "PRODUCT" && (
-                        <ProductMessagePlaceholder
+                        <ProductMessage
+                            message={message}
                             isOwnMessage={
                               isMe
                             }
@@ -209,7 +230,8 @@ function MessageItem({
 
                 {message.messageType ===
                     "ORDER" && (
-                        <OrderMessagePlaceholder
+                        <OrderMessage
+                            message={message}
                             isOwnMessage={
                               isMe
                             }
@@ -311,6 +333,60 @@ function DeletedMessage({
       >
         Message deleted
       </div>
+  );
+}
+
+interface ProductMessageProps {
+  message: MessageDto;
+  isOwnMessage: boolean;
+}
+
+function ProductMessage({ message, isOwnMessage }: ProductMessageProps) {
+  const prod = message.sharedProduct;
+  if (!prod) {
+    return <ProductMessagePlaceholder isOwnMessage={isOwnMessage} />;
+  }
+
+  return (
+    <div className={`bg-white rounded-2xl border border-gray-100 p-3 shadow-sm flex gap-3 max-w-sm ${isOwnMessage ? 'ml-auto' : ''}`}>
+      <img src={prod.thumbnailUrl || "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=150"} alt="" className="w-20 h-20 rounded-xl object-cover bg-gray-50 flex-shrink-0" />
+      <div className="flex-1 min-w-0 flex flex-col justify-between">
+        <div>
+          <h4 className="text-sm font-medium text-gray-900 truncate">{prod.productName}</h4>
+          <p className="text-xs text-gray-500 mt-0.5">{prod.currency} {prod.sellingPrice}</p>
+        </div>
+        <button className="text-xs font-semibold text-blue-600 flex items-center gap-1 hover:text-blue-700 transition-colors">
+          <ShoppingBag className="w-3.5 h-3.5" /> View Product
+        </button>
+      </div>
+    </div>
+  );
+}
+
+interface OrderMessageProps {
+  message: MessageDto;
+  isOwnMessage: boolean;
+}
+
+function OrderMessage({ message, isOwnMessage }: OrderMessageProps) {
+  const ord = message.sharedOrder;
+  if (!ord) {
+    return <OrderMessagePlaceholder isOwnMessage={isOwnMessage} />;
+  }
+
+  return (
+    <div className={`bg-white rounded-2xl border border-gray-100 p-4 shadow-sm max-w-sm ${isOwnMessage ? 'ml-auto' : ''}`}>
+      <div className="flex items-center justify-between border-b border-gray-50 pb-2.5 mb-2.5">
+        <div className="flex items-center gap-2">
+          <Package className="w-4 h-4 text-blue-600" />
+          <span className="text-xs font-semibold text-gray-900">{ord.orderNumber}</span>
+        </div>
+        <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-100">
+          {ord.deliveryStatus === "SHIPPED" ? "In Transit" : ord.deliveryStatus}
+        </span>
+      </div>
+      <p className="text-xs text-gray-500">Total: <span className="font-medium text-gray-800">{ord.currency} {ord.totalAmount}</span></p>
+    </div>
   );
 }
 

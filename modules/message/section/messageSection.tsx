@@ -49,6 +49,11 @@ export default function MessagePage() {
     setNotificationVisible,
   ] = useState(true);
 
+  const [
+    isTyping,
+    setIsTyping,
+  ] = useState(false);
+
   const conversationsQuery =
       useConversationsQuery();
 
@@ -193,6 +198,12 @@ export default function MessagePage() {
         await sendMessageMutation.mutateAsync(
             payload,
         );
+
+        // Simulate typing animation from other participant
+        setIsTyping(true);
+        setTimeout(() => {
+            setIsTyping(false);
+        }, 2000);
       };
 
   const handleQuickReply =
@@ -242,7 +253,7 @@ export default function MessagePage() {
       );
 
   return (
-      <div className="flex flex-1 min-h-0 relative">
+      <div className="flex flex-1 h-[calc(100vh-64px)] w-full overflow-hidden font-sans antialiased relative p-4 bg-slate-50">
         {notificationState.show && (
             <div className="absolute top-6 right-6 z-50 bg-white border border-gray-100 rounded-2xl shadow-xl p-4 max-w-sm flex items-start gap-3">
               <div className="flex-1 min-w-0">
@@ -302,6 +313,7 @@ export default function MessagePage() {
                 isLoading={
                   messagesQuery.isLoading
                 }
+                isTyping={isTyping}
             />
 
             <MessageInput
