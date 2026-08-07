@@ -1,1 +1,0 @@
-ALTER TABLE "product_items" ADD COLUMN "mrp_price" numeric(10, 2);

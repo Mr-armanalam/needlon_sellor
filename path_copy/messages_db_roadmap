@@ -1,0 +1,196 @@
+db/schema/messages/
+│
+├── conversations/
+│   ├── table.ts
+│   ├── relations.ts
+│   ├── metadata.ts
+│   ├── constants.ts
+│   ├── types.ts
+│   └── index.ts
+│
+├── conversation-members/
+│   ├── table.ts
+│   ├── relations.ts
+│   ├── metadata.ts
+│   ├── constants.ts
+│   ├── types.ts
+│   └── index.ts
+│
+├── messages/
+│   ├── table.ts
+│   ├── relations.ts
+│   ├── metadata.ts
+│   ├── constants.ts
+│   ├── types.ts
+│   └── index.ts
+│
+├── message-attachments/
+├── message-reads/
+├── message-reactions/
+├── shared-products/
+├── shared-orders/
+├── notifications/
+│
+└── index.ts
+
+
+Messages Module Implementation Roadmap (Frozen)
+Phase 1 — Conversations
+1.1 Database
+✅ 1.1.1 conversations/constants.ts
+⬜ 1.1.2 conversations/types.ts
+⬜ 1.1.3 conversations/metadata.ts
+⬜ 1.1.4 conversations/table.ts
+⬜ 1.1.5 conversations/relations.ts
+⬜ 1.1.6 conversations/index.ts
+1.2 Repository
+Commands
+⬜ 1.2.1 Create Conversation
+⬜ 1.2.2 Update Last Message
+⬜ 1.2.3 Archive Conversation
+⬜ 1.2.4 Pin Conversation
+⬜ 1.2.5 Mute Conversation
+Queries
+⬜ 1.2.6 Get Conversation
+⬜ 1.2.7 Get Conversation By Participants
+⬜ 1.2.8 Get Seller Conversations
+⬜ 1.2.9 Search Conversations
+⬜ 1.2.10 Count Unread Conversations
+Repository Export
+⬜ 1.2.11 repository/index.ts
+1.3 DTO
+⬜ 1.3.1 Conversation DTO
+⬜ 1.3.2 Conversation Summary DTO
+⬜ 1.3.3 Create Conversation DTO
+⬜ 1.3.4 Update Conversation DTO
+1.4 Validation
+⬜ 1.4.1 Create Conversation Schema
+⬜ 1.4.2 Update Conversation Schema
+1.5 Services
+⬜ 1.5.1 Create Conversation
+⬜ 1.5.2 Get Conversation
+⬜ 1.5.3 List Conversations
+⬜ 1.5.4 Search Conversations
+⬜ 1.5.5 Archive Conversation
+⬜ 1.5.6 Pin Conversation
+⬜ 1.5.7 Mute Conversation
+1.6 API
+⬜ 1.6.1 GET Conversations
+⬜ 1.6.2 GET Conversation
+⬜ 1.6.3 POST Conversation
+⬜ 1.6.4 PATCH Conversation
+⬜ 1.6.5 Archive Route
+⬜ 1.6.6 Pin Route
+⬜ 1.6.7 Mute Route
+1.7 Frontend
+API
+⬜ 1.7.1 Get Conversations API
+⬜ 1.7.2 Get Conversation API
+⬜ 1.7.3 Create Conversation API
+⬜ 1.7.4 Update Conversation API
+Hooks
+⬜ 1.7.5 useConversations
+⬜ 1.7.6 useConversation
+⬜ 1.7.7 useCreateConversation
+⬜ 1.7.8 useUpdateConversation
+UI
+⬜ 1.7.9 Conversation Sidebar
+⬜ 1.7.10 Conversation Search
+⬜ 1.7.11 Conversation List
+⬜ 1.7.12 Sidebar Integration
+Phase 2 — Conversation Members
+2.1 Database
+⬜ 2.1.1 constants.ts
+⬜ 2.1.2 types.ts
+⬜ 2.1.3 metadata.ts
+⬜ 2.1.4 table.ts
+⬜ 2.1.5 relations.ts
+⬜ 2.1.6 index.ts
+2.2 Repository
+⬜ 2.2.1 Commands
+⬜ 2.2.2 Queries
+⬜ 2.2.3 index.ts
+2.3 DTO
+⬜ 2.3.1 DTOs
+2.4 Validation
+⬜ 2.4.1 Schemas
+2.5 Services
+⬜ 2.5.1 Services
+2.6 API
+⬜ 2.6.1 Routes
+2.7 Frontend
+⬜ 2.7.1 APIs
+⬜ 2.7.2 Hooks
+⬜ 2.7.3 UI Integration
+Phase 3 — Messages
+3.1 Database
+⬜ 3.1.1 constants.ts
+⬜ 3.1.2 types.ts
+⬜ 3.1.3 metadata.ts
+⬜ 3.1.4 table.ts
+⬜ 3.1.5 relations.ts
+⬜ 3.1.6 index.ts
+3.2 Repository
+⬜ 3.2.1 Commands
+⬜ 3.2.2 Queries
+⬜ 3.2.3 index.ts
+3.3 DTO
+⬜ 3.3.1 DTOs
+3.4 Validation
+⬜ 3.4.1 Schemas
+3.5 Services
+⬜ 3.5.1 Services
+3.6 API
+⬜ 3.6.1 Routes
+3.7 Frontend
+⬜ 3.7.1 APIs
+⬜ 3.7.2 Hooks
+⬜ 3.7.3 Chat Window Integration
+Phase 4 — Message Attachments
+⬜ Database
+⬜ Repository
+⬜ DTO
+⬜ Validation
+⬜ Services
+⬜ API
+⬜ Frontend
+Phase 5 — Message Reads
+⬜ Database
+⬜ Repository
+⬜ DTO
+⬜ Validation
+⬜ Services
+⬜ API
+⬜ Frontend
+Phase 6 — Message Reactions
+⬜ Database
+⬜ Repository
+⬜ DTO
+⬜ Validation
+⬜ Services
+⬜ API
+⬜ Frontend
+Phase 7 — Shared Products
+⬜ Database
+⬜ Repository
+⬜ DTO
+⬜ Validation
+⬜ Services
+⬜ API
+⬜ Frontend
+Phase 8 — Shared Orders
+⬜ Database
+⬜ Repository
+⬜ DTO
+⬜ Validation
+⬜ Services
+⬜ API
+⬜ Frontend
+Phase 9 — Notifications
+⬜ Database
+⬜ Repository
+⬜ DTO
+⬜ Validation
+⬜ Services
+⬜ API
+⬜ Frontend

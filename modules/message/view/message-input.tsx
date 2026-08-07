@@ -7,12 +7,22 @@ const mockQuickReplies = [
   'Check delivery status'
 ];
 
-export default function MessageInput({ onSendMessage, onQuickReplyClick }) {
+interface MessageInputProps {
+  onSendMessage: (text: string) => void;
+  onQuickReplyClick: (reply: string) => void;
+  isSending?: boolean;
+}
+
+export default function MessageInput({
+  onSendMessage,
+  onQuickReplyClick,
+  isSending,
+}: MessageInputProps) {
   const [text, setText] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!text.trim()) return;
+    if (!text.trim() || isSending) return;
     onSendMessage(text);
     setText('');
   };
@@ -35,7 +45,7 @@ export default function MessageInput({ onSendMessage, onQuickReplyClick }) {
       {/* 2. Main Text Field Action Toolbar */}
       <form onSubmit={handleSubmit} className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
         {/* Attachment Options */}
-        <button type="button" className="text-gray-400 hover:text-gray-600 transition-colors">
+        <button type="button" disabled={isSending} className="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50">
           <Paperclip className="w-5 h-5" />
         </button>
         
@@ -45,18 +55,20 @@ export default function MessageInput({ onSendMessage, onQuickReplyClick }) {
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Type your message here..."
-          className="flex-1 bg-transparent border-0 text-sm focus:outline-none focus:ring-0 text-gray-800 placeholder-gray-400 p-0"
+          disabled={isSending}
+          className="flex-1 bg-transparent border-0 text-sm focus:outline-none focus:ring-0 text-gray-800 placeholder-gray-400 p-0 disabled:opacity-50"
         />
 
         {/* Emojis & Voice Placeholders */}
         <div className="flex items-center gap-2.5 border-r border-gray-200 pr-2.5 text-gray-400">
-          <button type="button" className="hover:text-gray-600 transition-colors">
+          <button type="button" disabled={isSending} className="hover:text-gray-600 transition-colors disabled:opacity-50">
             <Smile className="w-5 h-5" />
           </button>
           <button 
             type="button" 
             className="hover:text-gray-600 transition-colors"
             title="Voice Messaging (Coming Soon)"
+            disabled={true}
           >
             <Mic className="w-5 h-5 opacity-60 cursor-not-allowed" />
           </button>
@@ -65,9 +77,9 @@ export default function MessageInput({ onSendMessage, onQuickReplyClick }) {
         {/* Action Trigger Button */}
         <button
           type="submit"
-          disabled={!text.trim()}
+          disabled={!text.trim() || isSending}
           className={`p-2 rounded-xl transition-all ${
-            text.trim() 
+            text.trim() && !isSending
               ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/20 hover:bg-blue-700' 
               : 'bg-gray-200 text-gray-400 cursor-not-allowed'
           }`}
