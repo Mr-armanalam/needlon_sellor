@@ -22,6 +22,7 @@ import {
   useSendMessageMutation,
   useNotificationsQuery,
   useMarkNotificationReadMutation,
+  useDeleteConversationMutation,
 } from "@/modules/message/hooks";
 
 import {
@@ -54,6 +55,11 @@ export default function MessagePage() {
     setIsTyping,
   ] = useState(false);
 
+  const [
+    replyTarget,
+    setReplyTarget,
+  ] = useState<MessageDto | null>(null);
+
   const conversationsQuery =
       useConversationsQuery();
 
@@ -80,6 +86,9 @@ export default function MessagePage() {
 
   const markNotificationReadMutation =
       useMarkNotificationReadMutation();
+
+  const deleteConversationMutation =
+      useDeleteConversationMutation();
 
   const conversations =
       search.trim()
@@ -157,36 +166,47 @@ export default function MessagePage() {
       (
           conversationId: string,
       ) => {
+        setReplyTarget(null);
         setActiveConversationId(
             conversationId,
         );
       };
 
+  const handleDeleteConversation =
+      async (conversationId: string) => {
+        await deleteConversationMutation.mutateAsync(conversationId);
+        setActiveConversationId(null);
+        setReplyTarget(null);
+      };
+
   const handleSendMessage =
       async (
           text: string,
+          attachments: { attachmentId: string; sortOrder: number; }[] = [],
       ) => {
         if (
             !activeConversationId ||
-            !text.trim()
+            (!text.trim() && attachments.length === 0)
         ) {
           return;
         }
+
+        const isImage = attachments.some(a => a.attachmentId && (a as any).type === "IMAGE");
 
         const payload: SendMessageDto = {
           conversationId:
           activeConversationId,
 
           messageType:
-          MessageType.TEXT,
+          attachments.length > 0 ? (isImage ? MessageType.IMAGE : MessageType.DOCUMENT) : MessageType.TEXT,
 
           body:
-              text.trim(),
+              text.trim() || null,
 
           replyToMessageId:
-              null,
+              replyTarget?.id || null,
 
-          attachments: [],
+          attachments: attachments,
 
           sharedProduct:
               null,
@@ -194,6 +214,8 @@ export default function MessagePage() {
           sharedOrder:
               null,
         };
+
+        setReplyTarget(null);
 
         await sendMessageMutation.mutateAsync(
             payload,
@@ -212,6 +234,7 @@ export default function MessagePage() {
       ) => {
         void handleSendMessage(
             reply,
+            [],
         );
       };
 
@@ -314,6 +337,8 @@ export default function MessagePage() {
                   messagesQuery.isLoading
                 }
                 isTyping={isTyping}
+                onDeleteConversation={handleDeleteConversation}
+                onReply={setReplyTarget}
             />
 
             <MessageInput
@@ -326,6 +351,8 @@ export default function MessagePage() {
                 isSending={
                   sendMessageMutation.isPending
                 }
+                replyTarget={replyTarget}
+                onCancelReply={() => setReplyTarget(null)}
             />
           </div>
         </div>

@@ -28,6 +28,26 @@ const sendMessageAttachmentSchema =
             .number()
             .int()
             .min(0),
+
+        fileName: z
+            .string()
+            .optional(),
+
+        originalFileName: z
+            .string()
+            .optional(),
+
+        storagePath: z
+            .string()
+            .optional(),
+
+        contentType: z
+            .string()
+            .optional(),
+
+        fileSize: z
+            .number()
+            .optional(),
     });
 
 /**

@@ -18,6 +18,7 @@ import {
     sharedOrdersTable,
 } from "@/db/schema/messages";
 import { eq, inArray } from "drizzle-orm";
+import { supabaseServer } from "@/lib/supabase/server";
 
 import {
     toMessageDto,
@@ -131,13 +132,15 @@ export class MessageService {
                 attachmentType: att.type,
                 fileName: att.originalFileName || att.fileName,
                 mimeType: att.contentType,
-                url: `/api/storage/${att.storagePath}`,
+                url: att.storageProvider === "SUPABASE"
+                    ? supabaseServer.storage.from(att.bucket).getPublicUrl(att.storagePath).data.publicUrl
+                    : att.storageProvider === "LOCAL" ? `/uploads/${att.storagePath}` : `/api/storage/${att.storagePath}`,
                 thumbnailUrl: null,
                 fileSize: att.fileSize,
                 width: null,
                 height: null,
                 duration: null,
-                uploaded: att.status === "COMPLETED",
+                uploaded: att.status === "UPLOADED" || att.status === "READY",
                 uploadedAt: att.updatedAt?.toISOString() ?? null,
                 createdAt: att.createdAt.toISOString(),
             });
@@ -299,6 +302,41 @@ export class MessageService {
             createdAt: now,
             updatedAt: now,
         });
+
+        // Bind attachments to this message
+        if (input.attachments && input.attachments.length > 0) {
+            for (const att of input.attachments) {
+                let attachmentType = "OTHER";
+                const contentType = att.contentType || "";
+                if (contentType.startsWith("image/")) {
+                    attachmentType = "IMAGE";
+                } else if (contentType.startsWith("video/")) {
+                    attachmentType = "VIDEO";
+                } else if (contentType.startsWith("audio/")) {
+                    attachmentType = "AUDIO";
+                } else if (contentType === "application/pdf") {
+                    attachmentType = "PDF";
+                } else if (contentType.includes("spreadsheet") || contentType.includes("excel")) {
+                    attachmentType = "SPREADSHEET";
+                } else if (contentType.includes("word") || contentType.includes("text")) {
+                    attachmentType = "DOCUMENT";
+                }
+
+                await db.insert(messageAttachmentsTable).values({
+                    id: att.attachmentId,
+                    messageId: message.id,
+                    type: attachmentType as any,
+                    status: "READY",
+                    storageProvider: "SUPABASE",
+                    fileName: att.fileName || "file",
+                    originalFileName: att.originalFileName || "file",
+                    bucket: "chat-attachments",
+                    storagePath: att.storagePath || "file",
+                    contentType: contentType || "application/octet-stream",
+                    fileSize: att.fileSize || 0,
+                });
+            }
+        }
 
         const [hydrated] = await this.hydrateMessages([message], currentSellerId);
         return hydrated;

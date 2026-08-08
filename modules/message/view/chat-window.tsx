@@ -15,6 +15,10 @@ import {
   CheckCheck,
   Package,
   ShoppingBag,
+  Trash,
+  CornerUpLeft,
+  FileText,
+  Download,
 } from "lucide-react";
 
 import {
@@ -34,6 +38,12 @@ interface ChatWindowProps {
 
   isTyping?:
       boolean;
+
+  onDeleteConversation?:
+      (conversationId: string) => Promise<void>;
+
+  onReply:
+      (message: MessageDto) => void;
 }
 
 export default function ChatWindow({
@@ -41,6 +51,8 @@ export default function ChatWindow({
                                      messages,
                                      isLoading,
                                      isTyping,
+                                     onDeleteConversation,
+                                     onReply,
                                    }: ChatWindowProps) {
   if (!conversation) {
     return (
@@ -65,9 +77,9 @@ export default function ChatWindow({
       );
 
   return (
-      <div className="flex-1 flex flex-col min-h-0">
+      <div className="flex-1 bg-slate-50 flex flex-col min-h-0">
         {/* 1. Chat Header */}
-        <div className="flex items-center gap-3 p-5 border-b border-gray-100 flex-shrink-0">
+        <div className="flex items-center gap-3 p-5 border-b bg-white flex-shrink-0">
           <div className="relative flex-shrink-0">
             {avatarUrl ? (
                 <img
@@ -102,6 +114,22 @@ export default function ChatWindow({
               {conversation?.members?.find(m => m.sellerId !== conversation.currentSellerId)?.role === 'BUYER' ? 'Customer' : 'Seller'}
             </p>
           </div>
+
+          {onDeleteConversation && (
+            <div className="ml-auto">
+              <button
+                onClick={async () => {
+                  if (confirm("Are you sure you want to delete this conversation?")) {
+                    await onDeleteConversation(conversation.id);
+                  }
+                }}
+                aria-label="Delete Conversation"
+                className="p-2 text-gray-400 hover:text-red-500 hover:bg-gray-50 rounded-lg transition-colors"
+              >
+                <Trash className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* 2. Messages Stream */}
@@ -121,6 +149,7 @@ export default function ChatWindow({
                             message={
                               message
                             }
+                            onReply={onReply}
                         />
                     ),
                 )}
@@ -152,10 +181,13 @@ export default function ChatWindow({
 interface MessageItemProps {
   message:
       MessageDto;
+  onReply:
+      (message: MessageDto) => void;
 }
 
 function MessageItem({
                        message,
+                       onReply,
                      }: MessageItemProps) {
   const isMe =
       message.isOwnMessage;
@@ -165,7 +197,7 @@ function MessageItem({
 
   return (
       <div
-          className={`flex gap-3 max-w-[85%] md:max-w-[70%] ${
+          className={`group flex gap-3 max-w-[85%] md:max-w-[70%] relative ${
               isMe
                   ? "ml-auto flex-row-reverse"
                   : ""
@@ -255,6 +287,16 @@ function MessageItem({
                 message
               }
           />
+        </div>
+
+        <div className={`opacity-0 group-hover:opacity-100 transition-opacity flex items-center self-center flex-shrink-0 ${isMe ? 'flex-row-reverse' : ''}`}>
+          <button
+            onClick={() => onReply(message)}
+            title="Reply"
+            className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <CornerUpLeft className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
   );
@@ -347,13 +389,15 @@ function ProductMessage({ message, isOwnMessage }: ProductMessageProps) {
     return <ProductMessagePlaceholder isOwnMessage={isOwnMessage} />;
   }
 
+  const price = prod.variant ? `${prod.variant.currency} ${prod.variant.sellingPrice}` : "";
+
   return (
     <div className={`bg-white rounded-2xl border border-gray-100 p-3 shadow-sm flex gap-3 max-w-sm ${isOwnMessage ? 'ml-auto' : ''}`}>
       <img src={prod.thumbnailUrl || "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=150"} alt="" className="w-20 h-20 rounded-xl object-cover bg-gray-50 flex-shrink-0" />
       <div className="flex-1 min-w-0 flex flex-col justify-between">
         <div>
-          <h4 className="text-sm font-medium text-gray-900 truncate">{prod.productName}</h4>
-          <p className="text-xs text-gray-500 mt-0.5">{prod.currency} {prod.sellingPrice}</p>
+          <h4 className="text-sm font-medium text-gray-900 truncate">{prod.title}</h4>
+          <p className="text-xs text-gray-500 mt-0.5">{price}</p>
         </div>
         <button className="text-xs font-semibold text-blue-600 flex items-center gap-1 hover:text-blue-700 transition-colors">
           <ShoppingBag className="w-3.5 h-3.5" /> View Product
@@ -382,10 +426,10 @@ function OrderMessage({ message, isOwnMessage }: OrderMessageProps) {
           <span className="text-xs font-semibold text-gray-900">{ord.orderNumber}</span>
         </div>
         <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-100">
-          {ord.deliveryStatus === "SHIPPED" ? "In Transit" : ord.deliveryStatus}
+          {ord.fulfillmentStatus === "SHIPPED" ? "In Transit" : ord.fulfillmentStatus}
         </span>
       </div>
-      <p className="text-xs text-gray-500">Total: <span className="font-medium text-gray-800">{ord.currency} {ord.totalAmount}</span></p>
+      <p className="text-xs text-gray-500">Total: <span className="font-medium text-gray-800">{ord.currency} {ord.grandTotal}</span></p>
     </div>
   );
 }
@@ -474,15 +518,45 @@ interface AttachmentSummaryProps {
 function AttachmentSummary({
                              message,
                            }: AttachmentSummaryProps) {
+  const isMe = message.isOwnMessage;
   return (
-      <div className="bg-white rounded-2xl border border-gray-100 p-3 shadow-sm max-w-sm">
-        <p className="text-xs font-medium text-gray-700">
-          {message.attachmentCount}{" "}
-          {message.attachmentCount ===
-          1
-              ? "attachment"
-              : "attachments"}
-        </p>
+      <div className={`flex flex-col gap-2 max-w-sm ${isMe ? 'items-end' : 'items-start'}`}>
+        {message.attachments.map((att) => {
+          const isImage = att.attachmentType === "IMAGE" || att.mimeType?.startsWith("image/");
+          
+          if (isImage) {
+            return (
+              <a
+                key={att.id}
+                href={att.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:opacity-95 transition-opacity"
+              >
+                <img src={att.url} alt={att.fileName} className="max-w-[240px] max-h-[180px] object-cover bg-gray-50" />
+              </a>
+            );
+          }
+
+          return (
+            <div key={att.id} className="bg-white rounded-2xl border border-gray-100 p-3 shadow-sm flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+                <FileText className="w-5 h-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium text-gray-900 truncate max-w-[150px]">{att.fileName}</p>
+                <p className="text-[10px] text-gray-400">{(att.fileSize / 1024).toFixed(1)} KB</p>
+              </div>
+              <a
+                href={att.url}
+                download={att.fileName}
+                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors flex-shrink-0"
+              >
+                <Download className="w-4 h-4" />
+              </a>
+            </div>
+          );
+        })}
       </div>
   );
 }

@@ -26,6 +26,12 @@ export interface SendMessageAttachmentDto {
      * Display order.
      */
     sortOrder: number;
+
+    fileName?: string;
+    originalFileName?: string;
+    storagePath?: string;
+    contentType?: string;
+    fileSize?: number;
 }
 
 /**

@@ -13,6 +13,8 @@ import {
 
 import { MessageAttachmentDto } from "./message-attachment.dto";
 import { MessageReactionDto } from "./message-reaction.dto";
+import { SharedProductDto } from "./shared-product.dto";
+import { SharedOrderDto } from "./shared-order.dto";
 
 /**
  * ============================================================================
@@ -184,31 +186,3 @@ export interface MessageDto {
      */
     sharedOrder: SharedOrderDto | null;
 }
-
-export interface SharedProductDto {
-    id: string;
-    productId: string | null;
-    productName: string;
-    slug: string;
-    sku: string | null;
-    brand: string | null;
-    thumbnailUrl: string | null;
-    currency: string;
-    sellingPrice: number;
-    mrp: number | null;
-}
-
-export interface SharedOrderDto {
-    id: string;
-    orderId: string | null;
-    orderNumber: string;
-    buyerName: string | null;
-    sellerName: string | null;
-    currency: string;
-    totalAmount: number;
-    status: string;
-    deliveryStatus: string;
-    paymentStatus: string;
-    trackingNumber: string | null;
-    courierName: string | null;
-}
