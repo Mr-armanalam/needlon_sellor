@@ -1,4 +1,4 @@
-import MessagePage from '@/modules/message/section/messageSection'
+import MessagePage from '@/modules/message/view/messagePage'
 import React from 'react'
 
 const page = () => {
