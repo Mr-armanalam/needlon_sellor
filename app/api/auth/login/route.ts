@@ -18,6 +18,7 @@ import { ACCESS_TOKEN_TTL, REFRESH_TOKEN_TTL } from "@/modules/auth/lib/tokens";
 import { getClientIp } from "@/modules/auth/lib/request";
 
 import { limitLogin } from "@/modules/auth/lib/rate-limit";
+import { successResponse } from "@/modules/shared/api/success-response";
 
 const MAX_ACTIVE_SESSIONS = 2;
 
@@ -183,9 +184,7 @@ export async function POST(req: NextRequest) {
       maxAge: REFRESH_TOKEN_TTL,
     });
 
-    return NextResponse.json({
-      success: true,
-
+    return successResponse({
       user: {
         id: existingSeller.id,
         name: existingSeller.name,

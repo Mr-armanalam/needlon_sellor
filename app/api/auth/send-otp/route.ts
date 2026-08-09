@@ -4,6 +4,7 @@ import { sendOtpEmail, sendResetEmail } from "@/modules/auth/lib/email";
 import { createOtp } from "@/modules/auth/lib/otp";
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
+import { successResponse } from "@/modules/shared/api/success-response";
 
 import { z } from "zod";
 
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
     await sendOtpEmail(email, result.code);
   }
 
-  return NextResponse.json({
+  return successResponse({
     message: "If the request is valid, an OTP has been sent.",
   });
 }

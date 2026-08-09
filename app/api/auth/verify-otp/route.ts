@@ -9,6 +9,7 @@ import { verifyOtpSchema } from "@/modules/auth/validations/verify-otp-schema";
 import { createPasswordResetToken } from "@/modules/auth/lib/password-reset";
 
 import { limitVerifyOtp } from "@/modules/auth/lib/rate-limit";
+import { successResponse } from "@/modules/shared/api/success-response";
 
 export async function POST(req: NextRequest) {
   try {
@@ -100,15 +101,13 @@ export async function POST(req: NextRequest) {
 
       const resetToken = await createPasswordResetToken(existingSeller.id);
 
-      return NextResponse.json({
-        success: true,
+      return successResponse({
         type: "reset",
         resetToken,
       });
     }
 
-    return NextResponse.json({
-      success: true,
+    return successResponse({
       type,
       message:
         type === "signup"

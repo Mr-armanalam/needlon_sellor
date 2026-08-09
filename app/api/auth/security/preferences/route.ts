@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getCurrentSeller } from "@/modules/auth/lib/get-current-seller";
+import { successResponse } from "@/modules/shared/api/success-response";
 
 export async function GET() {
   try {
@@ -13,7 +14,7 @@ export async function GET() {
     const cookieStore = await cookies();
     const timeout = cookieStore.get("inactivity_timeout")?.value || "30";
 
-    return NextResponse.json({
+    return successResponse({
       inactivityTimeout: timeout,
     });
   } catch (error) {
@@ -47,8 +48,7 @@ export async function PUT(req: Request) {
       maxAge: 60 * 60 * 24 * 365,
     });
 
-    return NextResponse.json({
-      success: true,
+    return successResponse({
       inactivityTimeout: String(inactivityTimeout),
     });
   } catch (error) {
