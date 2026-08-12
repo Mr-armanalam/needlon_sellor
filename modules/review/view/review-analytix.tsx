@@ -2,7 +2,7 @@ import React from 'react';
 import { Star, ArrowUpRight, MessageSquare, AlertTriangle } from 'lucide-react';
 
 export default function ReviewAnalytics() {
-  // Mock aggregated metric analytics
+
   const metrics = {
     averageRating: 4.8,
     totalReviews: 1240,
