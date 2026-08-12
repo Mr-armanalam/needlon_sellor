@@ -12,7 +12,7 @@ import {
 
 import {
     toReviewDto,
-} from "../mapper/to-review-dto";
+} from "../dto/to-review.dto";
 
 import type {
     ReviewListDto,

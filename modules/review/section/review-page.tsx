@@ -3,46 +3,38 @@ import React, { useState } from 'react';
 import { SlidersHorizontal, Search } from 'lucide-react';
 import ReviewAnalytics from '../view/review-analytix';
 import ReviewRow from '../view/review-row';
-
-const mockReviews = [
-  {
-    id: 201,
-    customerName: 'Sarah Jenkins',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
-    date: 'June 12, 2026',
-    rating: 5,
-    productTitle: 'Minimalist Leather Sneakers',
-    title: 'Incredible Material Profile',
-    comment: 'Phenomenal material quality! The custom leather finish fits exactly as promised. Shipped quickly too.',
-    reply: null
-  },
-  {
-    id: 202,
-    customerName: 'Alex Rivera',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-    date: 'May 28, 2026',
-    rating: 2,
-    productTitle: 'Classic Canvas Tote',
-    title: 'Sizing discrepancy',
-    comment: 'The stitch profile is robust but it came smaller than the dimensions illustrated on the configuration menu.',
-    reply: 'Hello Alex, sorry to hear about the layout variance. Please contact support so we can send a replacement!'
-  }
-];
+import { useSellerReviews } from '../hooks/use-seller-reviews';
+import { useReportReview } from '../hooks/use-report-review';
 
 export default function ReviewsPage() {
   const [search, setSearch] = useState('');
   const [ratingFilter, setRatingFilter] = useState('all');
 
-  const handleReportAction = (id: number) => {
-    alert(`Review #${id} flagged for content moderation review.`);
-  };
-
-  const filteredReviews = mockReviews.filter(rev => {
-    const matchesSearch = rev.comment.toLowerCase().includes(search.toLowerCase()) || 
-                          rev.customerName.toLowerCase().includes(search.toLowerCase());
-    const matchesRating = ratingFilter === 'all' ? true : rev.rating === parseInt(ratingFilter);
-    return matchesSearch && matchesRating;
+  const { data, isLoading, isError, error } = useSellerReviews({
+    page: 1,
+    limit: 20,
+    search: search.trim() || undefined,
+    rating: ratingFilter === 'all' ? undefined : parseInt(ratingFilter)
   });
+
+  const reportReviewMutation = useReportReview();
+
+  const handleReportAction = (id: string) => {
+    const reason = prompt("Please enter the reason for flagging this review:");
+    if (!reason || !reason.trim()) return;
+
+    reportReviewMutation.mutate({
+      reviewId: id,
+      reason: reason.trim()
+    }, {
+      onSuccess: () => {
+        alert("Review reported successfully.");
+      },
+      onError: (err) => {
+        alert(err instanceof Error ? err.message : "Failed to report review");
+      }
+    });
+  };
 
   return (
     /* Constrained height layout to integrate seamlessly inside your SellerLayout dimensions */
@@ -91,14 +83,60 @@ export default function ReviewsPage() {
 
       {/* 4. Independent Scrollable Reviews Feed List */}
       <div className="flex-1 overflow-y-auto space-y-4 pr-1 min-h-0">
-        {filteredReviews.length > 0 ? (
-          filteredReviews.map((review) => (
-            <ReviewRow 
-              key={review.id} 
-              review={review} 
-              onReport={handleReportAction} 
-            />
+        {isLoading ? (
+          /* Pulsing skeleton loaders */
+          [...Array(3)].map((_, index) => (
+            <div key={index} className="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm space-y-4 animate-pulse">
+              <div className="flex items-center justify-between border-b border-gray-50 pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gray-150" />
+                  <div className="space-y-1.5">
+                    <div className="h-3 w-32 bg-gray-150 rounded" />
+                    <div className="h-2 bg-gray-100 rounded w-24" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-20 bg-gray-100 rounded" />
+                  <div className="h-4 w-28 bg-gray-100 rounded-lg" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="h-3 bg-gray-150 rounded w-1/4" />
+                <div className="h-3 bg-gray-100 rounded w-3/4" />
+                <div className="h-3 bg-gray-100 rounded w-1/2" />
+              </div>
+            </div>
           ))
+        ) : isError ? (
+          <div className="bg-red-50 rounded-2xl border border-red-100 p-12 text-center text-xs text-red-600 shadow-sm">
+            {error instanceof Error ? error.message : "Unable to load customer reviews."}
+          </div>
+        ) : data?.items && data.items.length > 0 ? (
+          data.items.map((review) => {
+            const mappedReview = {
+              id: review.id,
+              customerName: review.buyer.name,
+              avatar: review.buyer.imageUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
+              date: new Date(review.createdAt).toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric'
+              }),
+              rating: review.rating,
+              productTitle: review.product.name,
+              title: review.title || '',
+              comment: review.content || '',
+              reply: review.reply || null
+            };
+
+            return (
+              <ReviewRow 
+                key={review.id} 
+                review={mappedReview} 
+                onReport={handleReportAction} 
+              />
+            );
+          })
         ) : (
           <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center text-xs text-gray-400">
             No active customer reviews match your filter parameters.

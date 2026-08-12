@@ -1,6 +1,6 @@
 import type {
     ReviewReportStatus,
-} from "@/db/schema/reviews/report-types";
+} from "@/db/schema/reviews/review-reports/type";
 
 export interface ReportReviewDto {
     reviewId: string;

@@ -15,6 +15,7 @@ import type { DbTransaction } from "@/db/transactions";
 import { reviewsTable } from "@/db/schema/reviews";
 import { usersTable } from "@/db/schema/users";
 import { productsTable } from "@/db/schema/catalog/products/table";
+import { sellerReviewResponsesTable } from "@/db/schema/reviews/review-response/table";
 
 interface ListSellerReviewsParams {
     sellerId: string;
@@ -188,6 +189,9 @@ export async function listSellerReviews({
                 updatedAt:
                 reviewsTable.updatedAt,
 
+                reply:
+                sellerReviewResponsesTable.content,
+
                 /**
                  * ------------------------------------------------------------
                  * Buyer
@@ -246,6 +250,17 @@ export async function listSellerReviews({
                 eq(
                     reviewsTable.productId,
                     productsTable.id,
+                ),
+            )
+
+            /**
+             * Response relationship.
+             */
+            .leftJoin(
+                sellerReviewResponsesTable,
+                eq(
+                    reviewsTable.id,
+                    sellerReviewResponsesTable.reviewId,
                 ),
             )
 

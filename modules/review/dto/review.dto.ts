@@ -52,6 +52,8 @@ export interface ReviewDto {
     buyer: ReviewBuyerDto;
 
     product: ReviewProductDto;
+
+    reply: string | null;
 }
 
 export interface ReviewPaginationDto {

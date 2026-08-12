@@ -15,7 +15,7 @@ import {
 
 import {
     REVIEW_RESPONSE_MAX_LENGTH,
-} from "@/db/schema/reviews/response-constants";
+} from "@/db/schema/reviews/review-response/constants";
 
 interface ReviewResponseFormProps {
     reviewId: string;

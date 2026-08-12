@@ -18,7 +18,7 @@ import {
 
 import {
     reviewReportsTable,
-} from "@/db/schema/reviews/review-reports-table";
+} from "@/db/schema/reviews/review-reports/table";
 
 interface CreateReviewReportParams {
     reviewId: string;

@@ -29,7 +29,7 @@ export function ReviewReportDialog({
     const [
         reason,
         setReason,
-    ] = useState(
+    ] = useState<string>(
         REPORT_REASONS[0],
     );
 

@@ -15,7 +15,7 @@ import {
 
 import type {
     ReviewListItem,
-} from "../lib/to-review-list-item";
+} from "../lib/to-review-list-items";
 
 import {
     formatReviewDate,

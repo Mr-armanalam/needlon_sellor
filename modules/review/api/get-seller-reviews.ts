@@ -62,7 +62,7 @@ export async function getSellerReviews(
         params.toString();
 
     return apiClient.get<ReviewListDto>(
-        `/seller/reviews${
+        `/api/seller/reviews${
             queryString
                 ? `?${queryString}`
                 : ""

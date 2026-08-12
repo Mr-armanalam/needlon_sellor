@@ -1,10 +1,3 @@
-// ============================================================================
-// Needlon
-// Reviews Module
-// File: app/api/seller/reviews/route.ts
-// Description: Seller reviews route handler
-// Phase: 4.4 - 4.7
-// ============================================================================
 
 import { NextRequest } from "next/server";
 
@@ -22,11 +15,11 @@ import {
 
 import {
     listReviewsService,
-} from "@/modules/reviews/services";
+} from "@/modules/review/services";
 
 import {
     listReviewsQuerySchema,
-} from "@/modules/reviews/validation/list-reviews-query-schema";
+} from "@/modules/review/schema/list-reviews-query-schema";
 
 export async function GET(
     request: NextRequest,
@@ -102,7 +95,7 @@ export async function GET(
                 await listReviewsService(
                     {
                         sellerId:
-                        profile.id,
+                        profile.sellerId,
 
                         page:
                         parsed.data.page,

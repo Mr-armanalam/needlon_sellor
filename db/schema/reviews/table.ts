@@ -222,7 +222,7 @@ export const reviewsTable = pgTable(
 
         ratingRangeCheck: check(
             "reviews_rating_range_check",
-            sql`${table.rating} >= ${REVIEW_MIN_RATING} AND ${table.rating} <= ${REVIEW_MAX_RATING}`,
+            sql`${table.rating} >= 1 AND ${table.rating} <= 5`,
         ),
 
         /**

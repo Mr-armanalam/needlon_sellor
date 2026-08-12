@@ -4,11 +4,11 @@ import {
 
 import {
     reviewsTable,
-} from "./table";
+} from "../table";
 
 import {
     sellerReviewResponsesTable,
-} from "./review-response";
+} from "./table";
 
 import {
     seller,

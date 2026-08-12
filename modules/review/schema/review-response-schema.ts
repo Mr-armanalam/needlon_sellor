@@ -6,7 +6,7 @@ import {
 import {
     REVIEW_RESPONSE_MAX_LENGTH,
     REVIEW_RESPONSE_MIN_LENGTH,
-} from "@/db/schema/reviews/response-constants";
+} from "@/db/schema/reviews/review-response/constants";
 
 export const createReviewResponseSchema =
     z.object({

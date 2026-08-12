@@ -16,7 +16,7 @@ export async function createReviewResponse(
     input: CreateReviewResponseRequest,
 ) {
     return apiClient.post<ReviewResponseDto>(
-        "/seller/reviews/response",
+        "/api/seller/reviews/response",
         input,
     );
 }

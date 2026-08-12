@@ -31,6 +31,8 @@ type ReviewRepositoryResult = {
 
     updatedAt: Date;
 
+    reply: string | null;
+
     buyer: {
         id: string;
 
@@ -107,5 +109,8 @@ export function toReviewDto(
             slug:
             review.product.slug,
         },
+
+        reply:
+        review.reply,
     };
 }

@@ -16,11 +16,11 @@ import {
 
 import {
     createReviewResponseService,
-} from "@/modules/reviews/services";
+} from "@/modules/review/services";
 
 import {
     createReviewResponseSchema,
-} from "@/modules/reviews/validation/review-response-schema";
+} from "@/modules/review/schema/review-response-schema";
 
 export async function POST(
     request: NextRequest,
@@ -46,7 +46,7 @@ export async function POST(
                 await createReviewResponseService(
                     {
                         sellerId:
-                        profile.id,
+                        profile.sellerId,
 
                         reviewId:
                         parsed.data.reviewId,

@@ -1,6 +1,6 @@
 import type {
     ReportReviewInput,
-} from "../validation/report-review";
+} from "../schema/report-review-schema";
 
 export async function reportReview(
     input: ReportReviewInput,

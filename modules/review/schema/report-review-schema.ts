@@ -4,7 +4,7 @@ import {
 
 import {
     REVIEW_REPORT_REASON_MAX_LENGTH,
-} from "@/db/schema/reviews/report-constants";
+} from "@/db/schema/reviews/review-reports/constants";
 
 export const reportReviewSchema =
     z.object({

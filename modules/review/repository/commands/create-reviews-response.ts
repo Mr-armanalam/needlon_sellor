@@ -12,7 +12,7 @@ import type {
 
 import {
     sellerReviewResponsesTable,
-} from "@/db/schema/reviews/review-responses";
+} from "@/db/schema/reviews/review-response/table";
 
 interface CreateReviewResponseCommandParams {
     reviewId: string;

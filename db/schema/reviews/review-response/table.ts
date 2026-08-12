@@ -9,7 +9,7 @@ import {
 
 import {
     reviewsTable,
-} from "./table";
+} from "../table";
 
 import {
     seller,

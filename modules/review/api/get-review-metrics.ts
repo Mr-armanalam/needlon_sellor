@@ -8,6 +8,6 @@ import type {
 
 export async function getReviewMetricsApi(): Promise<ReviewMetricsDto> {
     return apiClient.get<ReviewMetricsDto>(
-        "/seller/reviews/metrics",
+        "/api/seller/reviews/metrics",
     );
 }

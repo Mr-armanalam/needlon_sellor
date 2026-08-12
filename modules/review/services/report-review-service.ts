@@ -1,6 +1,6 @@
 import {
     createReviewReport,
-} from "@/db/schema/reviews/report-repository";
+} from "../repository";
 
 import type {
     ReviewReportDto,
@@ -8,7 +8,7 @@ import type {
 
 import {
     reportReviewSchema,
-} from "../validation/report-review";
+} from "../schema/report-review-schema";
 
 interface ReportReviewServiceParams {
     sellerId: string;
