@@ -22,6 +22,8 @@ export function toProductCardViewModel(item: any): ProductCardViewModel {
     primaryImg = "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=600";
   }
 
+  console.log(item, 'mapperItem')
+
   return {
     id: item.id,
     name: item.name || "Untitled Product",
@@ -33,7 +35,7 @@ export function toProductCardViewModel(item: any): ProductCardViewModel {
     views: item.views ?? 0,
     likes: item.likes ?? 0,
     orders: item.orders ?? 0,
-    rating: item.rating || 4.8,
+    rating: item.reviews || 0,
     status: item.status === "PUBLISHED" ? (stockVal > 0 ? "Active" : "Out of Stock") : (item.status || "Draft"),
     bg: item.bg || "bg-orange-50 text-orange-700",
     initials: initials || "CK",

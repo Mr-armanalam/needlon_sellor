@@ -1,0 +1,13 @@
+export const REVIEW_REPORT_REASON_MAX_LENGTH = 500;
+
+export const REVIEW_REPORT_STATUS_VALUES = [
+    "PENDING",
+    "RESOLVED",
+    "DISMISSED",
+] as const;
+
+export const REVIEW_REPORT_STATUS = {
+    PENDING: "PENDING",
+    RESOLVED: "RESOLVED",
+    DISMISSED: "DISMISSED",
+} as const;

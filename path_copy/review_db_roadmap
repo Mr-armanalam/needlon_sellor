@@ -1,0 +1,228 @@
+// ============================================================================
+// Needlon
+// Reviews Module
+// File: reviews-implementation-roadmap.ts
+// Description: Vertical implementation roadmap
+// Status: Planning
+// ============================================================================
+
+export const REVIEWS_IMPLEMENTATION_ROADMAP = [
+    {
+        id: "1",
+        name: "Review Database Foundation",
+        status: "IN_PROGRESS",
+
+        steps: [
+            "1.1 Create db/schema/reviews/constants.ts",
+            "1.2 Create db/schema/reviews/types.ts",
+            "1.3 Create db/schema/reviews/metadata.ts",
+            "1.4 Create db/schema/reviews/table.ts",
+            "1.5 Create db/schema/reviews/relations.ts",
+            "1.6 Create db/schema/reviews/index.ts",
+            "1.7 Register the Reviews schema in the database schema exports",
+            "1.8 Generate and review the database migration",
+            "1.9 Apply the migration",
+        ],
+    },
+
+    {
+        id: "2",
+        name: "Review Read Repository",
+        status: "PLANNED",
+
+        steps: [
+            "2.1 Create modules/reviews/repository/queries/list-reviews.ts",
+            "2.2 Implement seller-scoped review query",
+            "2.3 Add product and buyer joins required by the UI",
+            "2.4 Add review ordering",
+            "2.5 Add pagination",
+            "2.6 Add search by review text and buyer name",
+            "2.7 Add rating filtering",
+            "2.8 Create modules/reviews/repository/index.ts",
+        ],
+    },
+
+    {
+        id: "3",
+        name: "Review Read Service and DTO",
+        status: "PLANNED",
+
+        steps: [
+            "3.1 Create modules/reviews/dto/review.dto.ts",
+            "3.2 Create modules/reviews/mapper/to-review.dto.ts",
+            "3.3 Create modules/reviews/services/list-reviews-service.ts",
+            "3.4 Connect the service to the review repository",
+            "3.5 Apply seller authorization at the service boundary",
+            "3.6 Return the review DTO collection",
+        ],
+    },
+
+    {
+        id: "4",
+        name: "Review Read API",
+        status: "PLANNED",
+
+        steps: [
+            "4.1 Create modules/reviews/api/get-seller-reviews.ts",
+            "4.2 Create the request query DTO",
+            "4.3 Create review list validation",
+            "4.4 Create the seller reviews route handler",
+            "4.5 Connect route handler to list-reviews-service",
+            "4.6 Apply shared routeHandler and successResponse patterns",
+            "4.7 Add API error handling",
+        ],
+    },
+
+    {
+        id: "5",
+        name: "Review List Frontend",
+        status: "PLANNED",
+
+        steps: [
+            "5.1 Create modules/reviews/keys.ts",
+            "5.2 Create modules/reviews/hooks/use-seller-reviews.ts",
+            "5.3 Connect the hook to the Reviews API",
+            "5.4 Create the review list DTO-to-UI mapping",
+            "5.5 Implement the review list container",
+            "5.6 Implement the individual review card",
+            "5.7 Display buyer information",
+            "5.8 Display verified buyer state",
+            "5.9 Display rating",
+            "5.10 Display review title and content",
+            "5.11 Display product information",
+            "5.12 Display review date",
+            "5.13 Add loading state",
+            "5.14 Add empty state",
+            "5.15 Add error state",
+        ],
+    },
+
+    {
+        id: "6",
+        name: "Review Search and Rating Filter Frontend",
+        status: "PLANNED",
+
+        steps: [
+            "6.1 Add review search state",
+            "6.2 Connect search state to the review query",
+            "6.3 Add rating filter state",
+            "6.4 Connect rating filter to the review query",
+            "6.5 Add query-key handling for search and rating",
+            "6.6 Add loading behavior during filtering",
+            "6.7 Verify search and rating filtering end-to-end",
+        ],
+    },
+
+    {
+        id: "7",
+        name: "Seller Review Response",
+        status: "PLANNED",
+
+        steps: [
+            "7.1 Create seller review response database table",
+            "7.2 Create response constants and types",
+            "7.3 Create response relations",
+            "7.4 Create response repository command",
+            "7.5 Create response DTO",
+            "7.6 Create response validation",
+            "7.7 Create response service",
+            "7.8 Create response API",
+            "7.9 Create response mutation hook",
+            "7.10 Create reply UI",
+            "7.11 Display existing seller response",
+            "7.12 Add response loading state",
+            "7.13 Add response error handling",
+            "7.14 Verify reply workflow end-to-end",
+        ],
+    },
+
+    {
+        id: "8",
+        name: "Review Moderation and Reporting",
+        status: "PLANNED",
+
+        steps: [
+            "8.1 Create review moderation status definition",
+            "8.2 Create review report database table",
+            "8.3 Create report constants and types",
+            "8.4 Create report relations",
+            "8.5 Create report repository command",
+            "8.6 Create report service",
+            "8.7 Create report API",
+            "8.8 Create report validation",
+            "8.9 Create report mutation hook",
+            "8.10 Add Flag Review action",
+            "8.11 Add flag confirmation UI",
+            "8.12 Display moderation state",
+            "8.13 Add moderation error handling",
+            "8.14 Verify reporting workflow end-to-end",
+        ],
+    },
+
+    {
+        id: "9",
+        name: "Review Dashboard Metrics",
+        status: "PLANNED",
+
+        steps: [
+            "9.1 Create review metrics repository query",
+            "9.2 Calculate seller average rating",
+            "9.3 Calculate total reviews",
+            "9.4 Calculate review reply rate",
+            "9.5 Calculate flagged/report count",
+            "9.6 Create review metrics DTO",
+            "9.7 Create review metrics service",
+            "9.8 Create review metrics API",
+            "9.9 Create review metrics query hook",
+            "9.10 Connect Average Rating card",
+            "9.11 Connect Total Reviews card",
+            "9.12 Connect Review Reply Rate card",
+            "9.13 Connect Flagged/Reports card",
+            "9.14 Verify metrics against persisted review data",
+        ],
+    },
+
+    {
+        id: "10",
+        name: "Reviews Production Verification",
+        status: "PLANNED",
+
+        steps: [
+            "10.1 Add review business-logic unit tests",
+            "10.2 Add review repository integration tests",
+            "10.3 Add review API integration tests",
+            "10.4 Add seller response tests",
+            "10.5 Add moderation/report tests",
+            "10.6 Add dashboard metric tests",
+            "10.7 Verify authentication and seller authorization",
+            "10.8 Verify validation and error handling",
+            "10.9 Verify loading, empty, and error frontend states",
+            "10.10 Run TypeScript checks",
+            "10.11 Run lint checks",
+            "10.12 Run production build verification",
+            "10.13 Update Current Progress",
+            "10.14 Update Changelog when the feature is approved/released",
+        ],
+    },
+] as const;
+
+
+// ============================================================================
+// COMPLETED
+// ============================================================================
+
+export const REVIEWS_IMPLEMENTATION_PROGRESS = {
+    completed: [] as const,
+
+    current: "1.1 Create db/schema/reviews/constants.ts",
+
+    next: "1.1 Create db/schema/reviews/constants.ts",
+} as const;
+
+
+// ============================================================================
+// NEXT STEP
+// ============================================================================
+
+export const NEXT_STEP =
+    "1.1 Create db/schema/reviews/constants.ts";

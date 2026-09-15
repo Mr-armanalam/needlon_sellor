@@ -46,7 +46,7 @@ const NavTabSearchNFilterBar = () => {
                     <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
-                        className={`px-4 py-1.5 text-[13px] font-semibold rounded-lg whitespace-nowrap transition-all duration-200 outline-none ${
+                        className={`px-2 py-1.5 text-[13px] font-semibold rounded-lg whitespace-nowrap transition-all duration-200 outline-none ${
                             activeTab === tab
                                 ? 'bg-white text-neutral-900 shadow-[0_2px_8px_rgba(0,0,0,0.04)]'
                                 : 'text-neutral-500 hover:text-neutral-900'
@@ -58,7 +58,7 @@ const NavTabSearchNFilterBar = () => {
             </div>
 
             {/* Smart Sub-Utilities Deck */}
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-nowrap items-center gap-3">
                 {/* Live Search Box */}
                 <div className="relative w-full sm:w-60">
                     <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />

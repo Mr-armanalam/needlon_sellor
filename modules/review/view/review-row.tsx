@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Star, CornerDownRight, ShieldAlert, Reply, Send } from 'lucide-react';
+import { Star, CornerDownRight, ShieldAlert, Reply, Send, Loader2 } from 'lucide-react';
+import { useCreateReviewResponse } from '../hooks/use-create-review-response';
 
 interface Review {
-  id: number;
+  id: string;
   customerName: string;
   avatar: string;
   date: string;
@@ -15,7 +16,7 @@ interface Review {
 
 interface ReviewRowProps {
   review: Review;
-  onReport: (id: number) => void;
+  onReport: (id: string) => void;
 }
 
 export default function ReviewRow({ review, onReport }: ReviewRowProps) {
@@ -23,11 +24,24 @@ export default function ReviewRow({ review, onReport }: ReviewRowProps) {
   const [replyText, setReplyText] = useState(review.reply || '');
   const [hasSubmittedReply, setHasSubmittedReply] = useState(!!review.reply);
 
+  const createResponseMutation = useCreateReviewResponse();
+
   const handleSendReply = (e: React.FormEvent) => {
     e.preventDefault();
     if (!replyText.trim()) return;
-    setHasSubmittedReply(true);
-    setIsReplying(false);
+
+    createResponseMutation.mutate({
+      reviewId: review.id,
+      content: replyText.trim()
+    }, {
+      onSuccess: () => {
+        setHasSubmittedReply(true);
+        setIsReplying(false);
+      },
+      onError: (err) => {
+        alert(err instanceof Error ? err.message : "Failed to submit response.");
+      }
+    });
   };
 
   return (
@@ -78,14 +92,16 @@ export default function ReviewRow({ review, onReport }: ReviewRowProps) {
           {!hasSubmittedReply && (
             <button
               onClick={() => setIsReplying(!isReplying)}
-              className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1.5 transition-colors"
+              disabled={createResponseMutation.isPending}
+              className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1.5 transition-colors disabled:opacity-50"
             >
               <Reply className="w-3.5 h-3.5" /> {isReplying ? 'Cancel Reply' : 'Reply to Customer'}
             </button>
           )}
           <button
             onClick={() => onReport(review.id)}
-            className="text-xs font-medium text-gray-400 hover:text-rose-600 flex items-center gap-1.5 transition-colors"
+            disabled={createResponseMutation.isPending}
+            className="text-xs font-medium text-gray-400 hover:text-rose-600 flex items-center gap-1.5 transition-colors disabled:opacity-50"
           >
             <ShieldAlert className="w-3.5 h-3.5" /> Flag Review
           </button>
@@ -100,13 +116,19 @@ export default function ReviewRow({ review, onReport }: ReviewRowProps) {
             value={replyText}
             onChange={(e) => setReplyText(e.target.value)}
             placeholder="Type your public response here..."
-            className="flex-1 bg-gray-50 border border-gray-200 rounded-xl text-xs px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+            disabled={createResponseMutation.isPending}
+            className="flex-1 bg-gray-50 border border-gray-200 rounded-xl text-xs px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all disabled:opacity-50"
           />
           <button
             type="submit"
-            className="bg-blue-600 text-white p-2.5 rounded-xl hover:bg-blue-700 transition-colors shadow-sm shadow-blue-600/10 flex-shrink-0"
+            disabled={createResponseMutation.isPending || !replyText.trim()}
+            className="bg-blue-600 text-white p-2.5 rounded-xl hover:bg-blue-700 transition-colors shadow-sm shadow-blue-600/10 flex-shrink-0 disabled:opacity-50 flex items-center justify-center min-w-9"
           >
-            <Send className="w-4 h-4" />
+            {createResponseMutation.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
           </button>
         </form>
       )}

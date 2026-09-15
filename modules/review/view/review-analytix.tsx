@@ -1,13 +1,40 @@
 import React from 'react';
 import { Star, ArrowUpRight, MessageSquare, AlertTriangle } from 'lucide-react';
+import { useReviewMetrics } from '../hooks/use-review-metrics';
 
 export default function ReviewAnalytics() {
-  // Mock aggregated metric analytics
+  const { data, isLoading, isError } = useReviewMetrics();
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 flex-shrink-0">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between animate-pulse">
+            <div className="space-y-2.5 flex-1">
+              <div className="h-3 bg-gray-100 rounded w-2/3" />
+              <div className="h-6 bg-gray-100 rounded w-1/2" />
+              <div className="h-3 bg-gray-100 rounded w-3/4" />
+            </div>
+            <div className="w-11 h-11 bg-gray-50 rounded-xl flex-shrink-0" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <div className="bg-red-50 text-red-600 p-4 rounded-2xl border border-red-100 text-xs shadow-sm flex-shrink-0">
+        Failed to load review analytics metrics.
+      </div>
+    );
+  }
+
   const metrics = {
-    averageRating: 4.8,
-    totalReviews: 1240,
-    replyRate: "94%",
-    pendingReports: 2
+    averageRating: data.averageRating,
+    totalReviews: data.totalReviews,
+    replyRate: `${data.replyRate.toFixed(0)}%`,
+    pendingReports: data.pendingReports
   };
 
   return (
@@ -20,9 +47,16 @@ export default function ReviewAnalytics() {
             <span className="text-2xl font-bold text-gray-900">{metrics.averageRating}</span>
             <span className="text-xs text-gray-400">/ 5.0</span>
           </div>
-          <div className="flex items-center gap-0.5 text-amber-400">
+          <div className="flex items-center gap-0.5">
             {[...Array(5)].map((_, i) => (
-              <Star key={i} className="w-3.5 h-3.5 fill-current" />
+              <Star 
+                key={i} 
+                className={`w-3.5 h-3.5 ${
+                  i < Math.round(metrics.averageRating) 
+                    ? 'fill-current text-amber-400' 
+                    : 'text-gray-200'
+                }`} 
+              />
             ))}
           </div>
         </div>

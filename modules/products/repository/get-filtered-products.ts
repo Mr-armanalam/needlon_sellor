@@ -6,6 +6,7 @@ import { pricingTable } from "@/db/schema/catalog/products/pricing/table";
 import { categoriesTable } from "@/db/schema/catalog/categories/table";
 import { productImagesTable } from "@/db/schema/catalog/products/product-images/table";
 import { and, eq, ilike, isNull, isNotNull, or, gte, lte, sql, inArray } from "drizzle-orm";
+import {reviewsTable} from "@/db/schema/reviews";
 
 export const getFilteredProducts = async (searchParams: URLSearchParams, sellerId: string) => {
 
@@ -109,7 +110,7 @@ export const getFilteredProducts = async (searchParams: URLSearchParams, sellerI
 
     // Fetch products joining categories, and variant/pricing/inventory conditionally to optimize performance
     let rows: any[] = [];
-    console.time("  -> [getFilteredProducts] DB SELECT products");
+    //console.time("  -> [getFilteredProducts] DB SELECT products");
 
     const needsVariants = (search && search.trim() !== "") || (size && size !== "Size") || (priceRange && priceRange !== "Price Range") || (sort === "price_asc" || sort === "price_desc");
     const needsInventory = (statusTab === "ACTIVE" || statusTab === "OUT_OF_STOCK" || statusTab.includes("OUT")) || (stockStatus && stockStatus !== "Stock Status");
@@ -178,7 +179,7 @@ export const getFilteredProducts = async (searchParams: URLSearchParams, sellerI
             .where(and(...conditions))
             .orderBy(orderByClause);
     }
-    console.timeEnd("  -> [getFilteredProducts] DB SELECT products");
+    //console.timeEnd("  -> [getFilteredProducts] DB SELECT products");
 
     if (rows.length === 0) {
         return new Map<string, any>();
@@ -201,6 +202,7 @@ export const getFilteredProducts = async (searchParams: URLSearchParams, sellerI
     const [
         variantsList,
         imagesList,
+        reviewList,
         viewsResult,
         likesResult,
         ordersResult
@@ -227,6 +229,20 @@ export const getFilteredProducts = async (searchParams: URLSearchParams, sellerI
                 })
                 .from(productImagesTable)
                 .where(inArray(productImagesTable.productId, productIds))
+                .catch(() => []);
+            console.timeEnd(label);
+            return res;
+        })(),
+        (async () => {
+            const label = `    -> review`;
+            console.time(label);
+            const res = await db
+                .select({
+                    productId: reviewsTable.productId,
+                    rating: reviewsTable.rating,
+                })
+                .from(reviewsTable)
+                .where(inArray(reviewsTable.productId, productIds))
                 .catch(() => []);
             console.timeEnd(label);
             return res;
@@ -308,6 +324,13 @@ export const getFilteredProducts = async (searchParams: URLSearchParams, sellerI
         if (r && r.product_id) viewsMap.set(r.product_id, r.count);
     }
 
+    // Map reviews
+    const reviewsMap = new Map<string, number>();
+    const reviewsRows = ((reviewList as any)?.rows || reviewList || []) as unknown as Array<{ productId: string; rating: number }>;
+    for (const r of reviewsRows) {
+        if (r && r.productId) reviewsMap.set(r.productId, r.rating);
+    }
+
     // Map likes
     const likesMap = new Map<string, number>();
     const likesRows = ((likesResult as any)?.rows || likesResult || []) as unknown as Array<{ product_id: string; count: number }>;
@@ -356,6 +379,7 @@ export const getFilteredProducts = async (searchParams: URLSearchParams, sellerI
             const views = viewsMap.get(row.product.id) ?? 0;
             const likes = likesMap.get(row.product.id) ?? 0;
             const orders = ordersMap.get(row.product.id) ?? 0;
+            const reviews = reviewsMap.get(row.product.id) ?? 0;
 
             const productVariants = variantsByProductId.get(row.product.id) || [];
             
@@ -395,6 +419,7 @@ export const getFilteredProducts = async (searchParams: URLSearchParams, sellerI
                 orders,
                 variants,
                 inventory,
+                reviews
             });
         }
     }
