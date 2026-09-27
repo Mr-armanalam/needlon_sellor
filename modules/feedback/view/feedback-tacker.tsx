@@ -7,26 +7,10 @@ import {
   KanbanSquare,
   Send,
 } from "lucide-react";
-
-const mockTrackLogs = [
-  {
-    id: "FB-9021",
-    title: "Tax Invoice Download button crashes",
-    type: "Bug Report",
-    status: "Resolved",
-    date: "June 28, 2026",
-  },
-  {
-    id: "FB-8840",
-    title: "Add thread count parameter selector",
-    type: "Feature Request",
-    status: "Under Review",
-    date: "June 14, 2026",
-  },
-];
+import { useSupport } from "@/modules/help/hooks/use-support";
 
 export default function FeedbackTracker() {
-  const [logs] = useState(mockTrackLogs);
+  const { tickets, loading } = useSupport();
   const [surveyRating, setSurveyRating] = useState(0);
   const [surveySubmitted, setSurveySubmitted] = useState(false);
 
@@ -94,41 +78,47 @@ export default function FeedbackTracker() {
           <KanbanSquare className="w-4 h-4" /> Track Feedback Status
         </h3>
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
-          {logs.map((log) => (
-            <div
-              key={log.id}
-              className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-medium"
-            >
-              <div className="space-y-1 min-w-0">
-                <p className="font-bold text-gray-900 truncate">{log.title}</p>
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-gray-400">
-                  <span className="font-semibold text-gray-700">{log.id}</span>
-                  <span>•</span>
-                  <span>Type: {log.type}</span>
-                  <span>•</span>
-                  <span>Logged: {log.date}</span>
-                </div>
-              </div>
-
-              {/* Functional Dynamic Status Badges */}
-              <span
-                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border self-start sm:self-center flex items-center gap-1 flex-shrink-0 ${
-                  log.status === "Resolved"
-                    ? "bg-green-50 text-green-700 border-green-100"
-                    : "bg-blue-50 text-blue-700 border-blue-100"
-                }`}
+        {loading ? (
+          <div className="p-8 text-center text-xs text-gray-400">Loading feedback tracking status...</div>
+        ) : tickets.length === 0 ? (
+          <div className="p-8 text-center text-xs text-gray-400">No support or feedback tickets submitted yet.</div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
+            {tickets.map((log) => (
+              <div
+                key={log.id}
+                className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-medium"
               >
-                {log.status === "Resolved" ? (
-                  <CheckCircle2 className="w-3 h-3" />
-                ) : (
-                  <Hourglass className="w-3 h-3 animate-spin-slow" />
-                )}
-                {log.status}
-              </span>
-            </div>
-          ))}
-        </div>
+                <div className="space-y-1 min-w-0">
+                  <p className="font-bold text-gray-900 truncate">{log.subject}</p>
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-gray-400">
+                    <span className="font-semibold text-gray-700">{log.ticketNumber}</span>
+                    <span>•</span>
+                    <span>Category: {log.category}</span>
+                    <span>•</span>
+                    <span>Logged: {new Date(log.createdAt).toLocaleDateString()}</span>
+                  </div>
+                </div>
+
+                {/* Functional Dynamic Status Badges */}
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full border self-start sm:self-center flex items-center gap-1 flex-shrink-0 ${
+                    log.status === "CLOSED" || log.status === "RESOLVED"
+                      ? "bg-green-50 text-green-700 border-green-100"
+                      : "bg-blue-50 text-blue-700 border-blue-100"
+                  }`}
+                >
+                  {log.status === "CLOSED" || log.status === "RESOLVED" ? (
+                    <CheckCircle2 className="w-3 h-3" />
+                  ) : (
+                    <Hourglass className="w-3 h-3 animate-spin-slow" />
+                  )}
+                  {log.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

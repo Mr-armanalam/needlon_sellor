@@ -1,22 +1,16 @@
-'use client'
+'use client';
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import CustomerList from '../view/customers-list';
 import CustomerDetail from '../view/customers-details';
 
 export default function CustomersPage() {
-  const [selectedCustomer, setSelectedCustomer] = useState({
-    id: 1,
-    name: 'Sarah Jenkins',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
-    location: 'New York, USA',
-    clv: '$1,420.00',
-    totalOrders: 12,
-    isRepeat: true,
-  });
+  const router = useRouter();
+  const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
 
   const handleMessageTransition = () => {
-    // Production note: Add router navigation logic here (e.g., router.push('/messages'))
-    alert(`Navigating to chat stream with ${selectedCustomer.name}`);
+    if (!selectedCustomer) return;
+    router.push(`/messages?buyerId=${selectedCustomer.id}`);
   };
 
   return (

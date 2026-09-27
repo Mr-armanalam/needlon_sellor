@@ -59,6 +59,7 @@ export const productVariantsTable = pgTable(
          */
 
         id: uuid("id").defaultRandom().primaryKey(),
+        name: varchar("variant_name", { length: 255 }),
         productId: uuid("product_id").notNull().references(() => productsTable.id, { onDelete: "cascade" }),
         sku: varchar("sku", { length: PRODUCT_VARIANT_SKU_MAX_LENGTH }).notNull(),
         barcode: varchar("barcode", { length: PRODUCT_VARIANT_BARCODE_MAX_LENGTH }),

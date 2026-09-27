@@ -27,6 +27,14 @@ function testValidationSchemas() {
   const parsedBody = updateOrderStatusBodySchema.parse(validBody);
   assert.strictEqual(parsedBody.action, "ADVANCE");
   assert.strictEqual(parsedBody.remarks, "Accepting order");
+
+  const validReturnAccept = { action: "ACCEPT_RETURN", remarks: "Return approved by seller" };
+  const parsedReturnAccept = updateOrderStatusBodySchema.parse(validReturnAccept);
+  assert.strictEqual(parsedReturnAccept.action, "ACCEPT_RETURN");
+
+  const validReturnReject = { action: "REJECT_RETURN", remarks: "Item damaged by buyer" };
+  const parsedReturnReject = updateOrderStatusBodySchema.parse(validReturnReject);
+  assert.strictEqual(parsedReturnReject.action, "REJECT_RETURN");
   
   assert.throws(() => {
     updateOrderStatusBodySchema.parse({ action: "INVALID", remarks: "" });

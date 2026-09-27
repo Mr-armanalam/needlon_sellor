@@ -10,9 +10,45 @@ import {
     updateDraftProductInventory,
     updateDraftProductDelivery,
     updateDraftProductSeo,
+    type UpdateProductData,
 } from "../repository";
 import { ConflictError, NotFoundError } from "@/modules/shared/errors";
 import { productStatusEnum } from "@/db/schema/catalog/enums";
+
+export interface DraftBasicInfoInput {
+  name?: string;
+  descriptionStory?: string;
+  slug?: string;
+}
+
+export interface DraftPricingInput {
+  retailPrice?: string;
+  discountOfferRate?: string;
+  [key: string]: unknown;
+}
+
+export interface DraftVariantsInput {
+  sizesMatrix?: string;
+  colorsTrack?: string;
+  [key: string]: unknown;
+}
+
+export interface DraftInventoryInput {
+  uniqueSku?: string;
+  boutiqueStockCount?: number;
+  [key: string]: unknown;
+}
+
+export interface DraftDeliveryInput {
+  packageWeight?: string;
+  [key: string]: unknown;
+}
+
+export interface DraftSeoInput {
+  customVisibility?: string;
+  searchKeywords?: string;
+  [key: string]: unknown;
+}
 
 /**
  * Creates a new draft product.
@@ -35,11 +71,11 @@ export async function updateDraftProductService(id: string, input: UpdateDraftRe
         throw new ConflictError("Only draft products can be updated.");
     }
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (input.currentStep !== undefined) updateData.currentStep = input.currentStep;
     if (input.completedSteps !== undefined) updateData.completedSteps = input.completedSteps;
 
-    return updateProduct(id, updateData);
+    return updateProduct(id, updateData as UpdateProductData);
 }
 
 /**
@@ -75,13 +111,13 @@ export async function deleteDraftProductService(id: string) {
 /**
  * Updates basic information of draft product (Step 2).
  */
-export async function updateDraftProductBasicInfoService(id: string, input: any) {
+export async function updateDraftProductBasicInfoService(id: string, input: DraftBasicInfoInput) {
     const draft = await findProductById(id);
     if (!draft) {
         throw new NotFoundError("Draft product not found.");
     }
 
-    const updateData: any = {};
+    const updateData: Partial<{ name: string; description: string; slug: string }> = {};
     if (input.name) updateData.name = input.name;
     if (input.descriptionStory) updateData.description = input.descriptionStory;
     if (input.slug) updateData.slug = input.slug;
@@ -91,7 +127,7 @@ export async function updateDraftProductBasicInfoService(id: string, input: any)
         : draft;
 }
 
-export async function updateDraftProductPricingService(id: string, input: any) {
+export async function updateDraftProductPricingService(id: string, input: DraftPricingInput) {
     const draft = await findProductById(id);
     if (!draft) {
         throw new NotFoundError("Draft product not found.");
@@ -102,7 +138,7 @@ export async function updateDraftProductPricingService(id: string, input: any) {
     return { ...draft, ...input, metadata: { ...input } };
 }
 
-export async function updateDraftProductVariantsService(id: string, input: any) {
+export async function updateDraftProductVariantsService(id: string, input: DraftVariantsInput) {
     const draft = await findProductById(id);
     if (!draft) {
         throw new NotFoundError("Draft product not found.");
@@ -113,7 +149,7 @@ export async function updateDraftProductVariantsService(id: string, input: any) 
     return { ...draft, ...input, metadata: { ...input } };
 }
 
-export async function updateDraftProductInventoryService(id: string, input: any) {
+export async function updateDraftProductInventoryService(id: string, input: DraftInventoryInput) {
     const draft = await findProductById(id);
     if (!draft) {
         throw new NotFoundError("Draft product not found.");
@@ -124,7 +160,7 @@ export async function updateDraftProductInventoryService(id: string, input: any)
     return { ...draft, sku: input.uniqueSku, metadata: { ...input } };
 }
 
-export async function updateDraftProductDeliveryService(id: string, input: any) {
+export async function updateDraftProductDeliveryService(id: string, input: DraftDeliveryInput) {
     const draft = await findProductById(id);
     if (!draft) {
         throw new NotFoundError("Draft product not found.");
@@ -135,14 +171,14 @@ export async function updateDraftProductDeliveryService(id: string, input: any) 
     return { ...draft, ...input, metadata: { ...input } };
 }
 
-export async function updateDraftProductSeoService(id: string, input: any) {
+export async function updateDraftProductSeoService(id: string, input: DraftSeoInput) {
     const draft = await findProductById(id);
     if (!draft) {
         throw new NotFoundError("Draft product not found.");
     }
 
     if (input.customVisibility) {
-        await updateProduct(id, { visibility: input.customVisibility });
+        await updateProduct(id, { visibility: input.customVisibility as ("PRIVATE" | "PUBLIC" | "UNLISTED") });
     }
 
     await updateDraftProductSeo(id, input.searchKeywords);
@@ -161,7 +197,7 @@ export async function publishDraftProductService(id: string, input?: { status?: 
 
     const newStatus = input?.status || "PUBLISHED";
     return updateProduct(id, {
-        status: newStatus as any,
+        status: newStatus,
     });
 }
 
@@ -181,22 +217,22 @@ export class DraftProductService {
     async deleteDraft(id: string) {
         return deleteDraftProductService(id);
     }
-    async updateBasicInfo(id: string, input: any) {
+    async updateBasicInfo(id: string, input: DraftBasicInfoInput) {
         return updateDraftProductBasicInfoService(id, input);
     }
-    async updatePricing(id: string, input: any) {
+    async updatePricing(id: string, input: DraftPricingInput) {
         return updateDraftProductPricingService(id, input);
     }
-    async updateVariants(id: string, input: any) {
+    async updateVariants(id: string, input: DraftVariantsInput) {
         return updateDraftProductVariantsService(id, input);
     }
-    async updateInventory(id: string, input: any) {
+    async updateInventory(id: string, input: DraftInventoryInput) {
         return updateDraftProductInventoryService(id, input);
     }
-    async updateDelivery(id: string, input: any) {
+    async updateDelivery(id: string, input: DraftDeliveryInput) {
         return updateDraftProductDeliveryService(id, input);
     }
-    async updateSeo(id: string, input: any) {
+    async updateSeo(id: string, input: DraftSeoInput) {
         return updateDraftProductSeoService(id, input);
     }
     async publishProduct(id: string, input?: { status?: "DRAFT" | "PUBLISHED" }) {

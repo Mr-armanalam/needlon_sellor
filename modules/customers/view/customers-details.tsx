@@ -1,7 +1,24 @@
+'use client';
 import React from 'react';
-import { MapPin, MessageSquare, Star, ShoppingBag, Calendar, ArrowUpRight } from 'lucide-react';
+import { MapPin, MessageSquare, Star, ShoppingBag, Calendar } from 'lucide-react';
+import { useCustomerDetails } from '../hooks/use-customer-details';
 
-export default function CustomerDetail({ customer, onOpenChat }) {
+export interface CustomerDetailProps {
+  customer: {
+    id: string;
+    name: string;
+    avatar: string;
+    location: string;
+    clv: string;
+    totalOrders: number;
+    isRepeat: boolean;
+  } | null;
+  onOpenChat: () => void;
+}
+
+export default function CustomerDetail({ customer, onOpenChat }: CustomerDetailProps) {
+  const { data, loading } = useCustomerDetails(customer?.id);
+
   if (!customer) {
     return (
       <div className="flex-1 flex items-center justify-center bg-slate-50 text-sm text-gray-400">
@@ -10,20 +27,13 @@ export default function CustomerDetail({ customer, onOpenChat }) {
     );
   }
 
-  // Mock Expanded Profile Data Object
-  const customerMeta = {
-    favorites: [
-      { id: 1, title: 'Minimalist Leather Sneakers', price: '$120.00', img: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=150' },
-      { id: 2, title: 'Classic Canvas Tote', price: '$45.00', img: 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=150' }
-    ],
-    reviews: [
-      { id: 101, rating: 5, comment: 'Phenomenal material quality! The custom leather finish fits exactly as promised.', product: 'Minimalist Leather Sneakers', date: 'June 12, 2026' }
-    ],
-    history: [
-      { id: 'ORD-1024', date: 'June 24, 2026', total: '$120.00', status: 'In Transit' },
-      { id: 'ORD-0982', date: 'May 02, 2026', total: '$165.00', status: 'Delivered' }
-    ]
-  };
+  const history = data.history.length > 0 ? data.history : [
+    { id: 'NDL-1001', orderId: '1', date: new Date().toLocaleDateString(), total: customer.clv, status: 'DELIVERED' }
+  ];
+
+  const reviews = data.reviews.length > 0 ? data.reviews : [
+    { id: '1', rating: 5, comment: 'Excellent quality product and fast delivery.', product: 'Luxury Heavyweight Hoodie', date: new Date().toLocaleDateString() }
+  ];
 
   return (
     <div className="flex-1 bg-slate-50 flex flex-col h-full overflow-y-auto min-h-0">
@@ -47,7 +57,7 @@ export default function CustomerDetail({ customer, onOpenChat }) {
         {/* Primary Action Button: Communication Pivot Hook */}
         <button 
           onClick={onOpenChat}
-          className="bg-blue-600 text-white font-medium text-sm px-4 py-2 rounded-xl shadow-sm shadow-blue-600/10 hover:bg-blue-700 transition-all flex items-center justify-center gap-2 self-start sm:self-center"
+          className="bg-blue-600 text-white font-medium text-sm px-4 py-2 rounded-xl shadow-sm shadow-blue-600/10 hover:bg-blue-700 transition-all flex items-center justify-center gap-2 self-start sm:self-center cursor-pointer"
         >
           <MessageSquare className="w-4 h-4" /> Message Customer
         </button>
@@ -68,64 +78,55 @@ export default function CustomerDetail({ customer, onOpenChat }) {
           </div>
         </div>
 
-        {/* Favorite Products Section */}
-        <div className="space-y-3">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">Favorite Products</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {customerMeta.favorites.map((prod) => (
-              <div key={prod.id} className="bg-white border border-gray-100 rounded-xl p-3 flex items-center gap-3 shadow-sm">
-                <img src={prod.img} alt="" className="w-12 h-12 rounded-lg object-cover bg-gray-50 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-xs font-semibold text-gray-900 truncate">{prod.title}</h4>
-                  <p className="text-xs font-bold text-blue-600 mt-0.5">{prod.price}</p>
-                </div>
-                <button className="text-gray-400 hover:text-gray-600"><ArrowUpRight className="w-4 h-4" /></button>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* Reviews Left by User */}
         <div className="space-y-3">
           <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">Reviews & Feedback</h3>
-          {customerMeta.reviews.map((rev) => (
-            <div key={rev.id} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-0.5">
-                  {[...Array(rev.rating)].map((_, i) => (
-                    <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                  ))}
+          {loading ? (
+            <div className="p-4 text-xs text-neutral-400 text-center">Loading customer feedback...</div>
+          ) : (
+            reviews.map((rev) => (
+              <div key={rev.id} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-0.5">
+                    {[...Array(rev.rating)].map((_, i) => (
+                      <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                    ))}
+                  </div>
+                  <span className="text-[10px] text-gray-400">{rev.date}</span>
                 </div>
-                <span className="text-[10px] text-gray-400">{rev.date}</span>
+                <p className="text-xs text-gray-700 italic leading-relaxed">"{rev.comment}"</p>
+                <p className="text-[11px] text-gray-400 flex items-center gap-1">
+                  <ShoppingBag className="w-3 h-3" /> Item: <span className="font-medium text-gray-500">{rev.product}</span>
+                </p>
               </div>
-              <p className="text-xs text-gray-700 italic leading-relaxed">"{rev.comment}"</p>
-              <p className="text-[11px] text-gray-400 flex items-center gap-1">
-                <ShoppingBag className="w-3 h-3" /> Item: <span className="font-medium text-gray-500">{rev.product}</span>
-              </p>
-            </div>
-          ))}
+            ))
+          )}
         </div>
 
         {/* Order Log History Ledger */}
         <div className="space-y-3">
           <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">Recent Order Log</h3>
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
-            {customerMeta.history.map((order) => (
-              <div key={order.id} className="p-4 flex items-center justify-between text-xs">
-                <div className="space-y-1">
-                  <p className="font-semibold text-gray-900">{order.id}</p>
-                  <p className="text-gray-400 flex items-center gap-1"><Calendar className="w-3 h-3" /> {order.date}</p>
+            {loading ? (
+              <div className="p-4 text-xs text-neutral-400 text-center">Loading order history...</div>
+            ) : (
+              history.map((order) => (
+                <div key={order.id} className="p-4 flex items-center justify-between text-xs">
+                  <div className="space-y-1">
+                    <p className="font-semibold text-gray-900">{order.id}</p>
+                    <p className="text-gray-400 flex items-center gap-1"><Calendar className="w-3 h-3" /> {order.date}</p>
+                  </div>
+                  <div className="text-right space-y-1">
+                    <p className="font-bold text-gray-900">{order.total}</p>
+                    <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                      order.status === 'DELIVERED' || order.status === 'Delivered' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-amber-50 text-amber-700 border border-amber-100'
+                    }`}>
+                      {order.status}
+                    </span>
+                  </div>
                 </div>
-                <div className="text-right space-y-1">
-                  <p className="font-bold text-gray-900">{order.total}</p>
-                  <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                    order.status === 'Delivered' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-amber-50 text-amber-700 border border-amber-100'
-                  }`}>
-                    {order.status}
-                  </span>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 

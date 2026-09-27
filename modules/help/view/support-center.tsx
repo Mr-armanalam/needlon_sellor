@@ -1,49 +1,84 @@
+'use client';
 import React, { useState } from 'react';
 import { 
   MessageSquare, Mail, Phone, Ticket, ShieldAlert, 
   Calendar, User, ArrowLeft, Send, CheckCircle2, RefreshCw 
 } from 'lucide-react';
+import { useSupport } from '@/modules/help/hooks/use-support';
 
-const mockTickets = [
-  {
-    id: 'TCK-4081',
-    status: 'Open',
-    priority: 'High',
-    category: 'Payment Settlements',
-    createdDate: 'June 28, 2026',
-    updatedDate: 'June 29, 2026',
-    assignedAgent: 'Vikram Sharma',
-    subject: 'Delay in weekly payout reconciliation',
-    timeline: [
-      { id: 1, type: 'system', text: 'Ticket opened by Arman Alam', time: 'June 28, 10:00 AM' },
-      { id: 2, type: 'agent', text: 'Hello Arman, our clearing house is completing a system audit. Payout logs will sync shortly.', time: 'June 28, 02:15 PM' }
-    ]
-  }
-];
-
-export default function SupportCenter({ onBack }) {
-  const [activeTicket, setActiveTicket] = useState(null);
+export default function SupportCenter({ onBack }: { onBack?: () => void }) {
+  const { tickets, loading, createTicket } = useSupport();
+  const [activeTicket, setActiveTicket] = useState<any | null>(null);
   const [replyText, setReplyText] = useState('');
+  const [newSubject, setNewSubject] = useState('');
+  const [newMessage, setNewMessage] = useState('');
+  const [newCategory, setNewCategory] = useState<any>('ORDER_ISSUE');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  // Handle local timeline replies
-  const handleSendReply = (e) => {
+  const displayTickets = tickets.length > 0 ? tickets.map((t) => ({
+    id: t.ticketNumber || t.id,
+    status: t.status === "OPEN" ? "Open" : "Closed",
+    priority: t.priority,
+    category: t.category,
+    createdDate: new Date(t.createdAt).toLocaleDateString(),
+    updatedDate: "Recently",
+    assignedAgent: "Support Desk",
+    subject: t.subject,
+    timeline: [
+      { id: 1, type: "system", text: t.message, time: new Date(t.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
+    ]
+  })) : [
+    {
+      id: 'TCK-4081',
+      status: 'Open',
+      priority: 'High',
+      category: 'Payment Settlements',
+      createdDate: 'June 28, 2026',
+      updatedDate: 'June 29, 2026',
+      assignedAgent: 'Vikram Sharma',
+      subject: 'Delay in weekly payout reconciliation',
+      timeline: [
+        { id: 1, type: 'system', text: 'Ticket opened by Seller', time: 'June 28, 10:00 AM' },
+        { id: 2, type: 'agent', text: 'Hello, our team is verifying your payout details.', time: 'June 28, 02:15 PM' }
+      ]
+    }
+  ];
+
+  const handleCreateNewTicket = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!replyText.trim()) return;
-    
-    const newReply = {
+    if (!newSubject.trim() || !newMessage.trim()) return;
+    const res = await createTicket({
+      subject: newSubject,
+      category: newCategory,
+      priority: "MEDIUM",
+      message: newMessage,
+    });
+    if (res.success) {
+      alert("Support ticket created successfully!");
+      setNewSubject('');
+      setNewMessage('');
+      setIsCreateModalOpen(false);
+    } else {
+      alert(res.error || "Failed to create ticket");
+    }
+  };
+
+  const handleSendReply = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!replyText.trim() || !activeTicket) return;
+    const newLog = {
       id: Date.now(),
-      type: 'user',
-      text: replyText,
-      time: 'Just now'
+      type: "user",
+      text: replyText.trim(),
+      time: "Just now",
     };
-    
     setActiveTicket({
       ...activeTicket,
-      timeline: [...activeTicket.timeline, newReply],
-      updatedDate: 'Just now'
+      timeline: [...activeTicket.timeline, newLog],
     });
-    setReplyText('');
+    setReplyText("");
   };
+
 
   const toggleTicketStatus = () => {
     const nextStatus = activeTicket.status === 'Open' ? 'Closed' : 'Open';
@@ -194,7 +229,7 @@ export default function SupportCenter({ onBack }) {
         </div>
         
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
-          {mockTickets.map((ticket) => (
+          {displayTickets.map((ticket) => (
             <div 
               key={ticket.id}
               onClick={() => setActiveTicket(ticket)}
