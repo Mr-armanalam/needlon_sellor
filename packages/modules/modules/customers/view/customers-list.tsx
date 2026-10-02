@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, MapPin, SlidersHorizontal, Award } from 'lucide-react';
 import { useCustomers } from '@/modules/customers/hooks/use-customers';
+import { deduplicateCustomers } from '../utils/customer-utils';
 
 export interface CustomerListProps {
   onSelectCustomer: (cust: {
@@ -20,6 +21,7 @@ export default function CustomerList({ onSelectCustomer, activeId }: CustomerLis
   const [filterRepeat, setFilterRepeat] = useState(false);
   const [search, setSearch] = useState('');
   const { customers, loading } = useCustomers(search);
+  
 
   const displayCustomers = customers.map((c) => ({
     id: c.buyerId,
@@ -31,10 +33,12 @@ export default function CustomerList({ onSelectCustomer, activeId }: CustomerLis
     isRepeat: c.totalOrders > 1,
   }));
 
-  const filteredCustomers = displayCustomers.filter(customer => {
-    const matchesFilter = filterRepeat ? customer.isRepeat : true;
-    return matchesFilter;
-  });
+  const filteredCustomers = deduplicateCustomers(
+    displayCustomers.filter(customer => {
+      const matchesFilter = filterRepeat ? customer.isRepeat : true;
+      return matchesFilter;
+    })
+  );
 
   useEffect(() => {
     if (!activeId && filteredCustomers.length > 0) {
@@ -80,9 +84,9 @@ export default function CustomerList({ onSelectCustomer, activeId }: CustomerLis
         ) : filteredCustomers.length === 0 ? (
           <div className="p-6 text-center text-xs text-gray-400">No customers found</div>
         ) : (
-          filteredCustomers.map((customer) => (
+          filteredCustomers.map((customer, index) => (
             <button
-              key={customer.id}
+              key={customer.id ? `${customer.id}-${index}` : index}
               onClick={() => onSelectCustomer(customer)}
               className={`w-full text-left p-4 flex items-center gap-3 hover:bg-gray-50 transition-colors cursor-pointer ${
                 activeId === customer.id ? 'bg-blue-50/50 hover:bg-blue-50/50' : ''

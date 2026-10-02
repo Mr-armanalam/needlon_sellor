@@ -7,7 +7,7 @@ export default function ReviewAnalytics() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 flex-shrink-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
         {[...Array(4)].map((_, i) => (
           <div key={i} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between animate-pulse">
             <div className="space-y-2.5 flex-1">
@@ -15,7 +15,7 @@ export default function ReviewAnalytics() {
               <div className="h-6 bg-gray-100 rounded w-1/2" />
               <div className="h-3 bg-gray-100 rounded w-3/4" />
             </div>
-            <div className="w-11 h-11 bg-gray-50 rounded-xl flex-shrink-0" />
+            <div className="w-11 h-11 bg-gray-50 rounded-xl shrink-0" />
           </div>
         ))}
       </div>
@@ -24,7 +24,7 @@ export default function ReviewAnalytics() {
 
   if (isError || !data) {
     return (
-      <div className="bg-red-50 text-red-600 p-4 rounded-2xl border border-red-100 text-xs shadow-sm flex-shrink-0">
+      <div className="bg-red-50 text-red-600 p-4 rounded-2xl border border-red-100 text-xs shadow-sm shrink-0">
         Failed to load review analytics metrics.
       </div>
     );
@@ -38,7 +38,7 @@ export default function ReviewAnalytics() {
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 flex-shrink-0">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
       {/* Average Rating Card */}
       <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
         <div className="space-y-1">

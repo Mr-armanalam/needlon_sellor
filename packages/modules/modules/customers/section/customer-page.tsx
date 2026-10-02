@@ -12,6 +12,7 @@ export default function CustomersPage() {
     if (!selectedCustomer) return;
     router.push(`/messages?buyerId=${selectedCustomer.id}`);
   };
+  
 
   return (
     /* Strictly sized to subtract the TopHeader layer perfectly without breaking view overflows */
