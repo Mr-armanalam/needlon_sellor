@@ -1,0 +1,48 @@
+{
+  "name": "@needlon/modules",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./modules/index.ts",
+  "types": "./modules/index.ts",
+  "exports": {
+    ".": "./modules/index.ts",
+    "./*": "./*"
+  },
+  "scripts": {
+    "test": "jest",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.4.0",
+    "@needlon/db": "workspace:*",
+    "@needlon/ui": "workspace:*",
+    "@sindresorhus/slugify": "^3.0.0",
+    "@tanstack/react-query": "^5.101.2",
+    "@upstash/redis": "^1.38.0",
+    "bcryptjs": "^3.0.3",
+    "date-fns": "^4.4.0",
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.2",
+    "framer-motion": "^12.40.0",
+    "jose": "^6.2.3",
+    "lucide-react": "^1.17.0",
+    "next": "16.2.9",
+    "nodemailer": "^8.0.11",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-hook-form": "^7.78.0",
+    "resend": "^6.12.4",
+    "sonner": "^2.0.7",
+    "swr": "^2.4.2",
+    "tsyringe": "^4.10.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^20",
+    "@types/nodemailer": "^8.0.1",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "^5"
+  }
+}

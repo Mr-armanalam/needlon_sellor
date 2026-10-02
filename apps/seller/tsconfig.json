@@ -1,0 +1,34 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@/db": ["../../packages/db/db/index.ts"],
+      "@/db/*": ["../../packages/db/db/*", "../../packages/db/*"],
+      "@/schema/*": ["../../packages/db/db/schema/*"],
+      "@/components/ui/*": ["../../packages/ui/components/ui/*"],
+      "@/components/*": ["../../packages/ui/components/*", "../../packages/ui/components/ui/*"],
+      "@/modules/*": ["../../packages/modules/modules/*"],
+      "@/modules": ["../../packages/modules/modules/index.ts"],
+      "@needlon/ui/*": ["../../packages/ui/*"],
+      "@needlon/ui": ["../../packages/ui"],
+      "@needlon/db/*": ["../../packages/db/*"],
+      "@needlon/db": ["../../packages/db/db/index.ts"],
+      "@needlon/modules/*": ["../../packages/modules/*"],
+      "@needlon/modules": ["../../packages/modules/modules/index.ts"],
+      "@/*": ["./*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": ["node_modules"]
+}

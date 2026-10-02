@@ -1,0 +1,26 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "baseUrl": ".",
+    "paths": {
+      "@/modules/*": ["./modules/*"],
+      "@/modules": ["./modules/index.ts"],
+      "@/db": ["../db/db/index.ts"],
+      "@/db/*": ["../db/db/*", "../db/*"],
+      "@/schema/*": ["../db/db/schema/*"],
+      "@/components/*": ["../ui/components/*", "../ui/components/ui/*"],
+      "@/components/ui/*": ["../ui/components/ui/*"],
+      "@/lib/*": ["../ui/lib/*", "../../apps/seller/lib/*"],
+      "@/hooks/*": ["../ui/hooks/*", "../../apps/seller/hooks/*"],
+      "@/types/*": ["../../apps/seller/types/*"],
+      "@needlon/ui/*": ["../ui/*"],
+      "@needlon/db/*": ["../db/*"],
+      "@needlon/db": ["../db/db/index.ts"]
+    }
+  },
+  "include": ["modules/**/*", "tests/**/*"],
+  "exclude": ["node_modules"]
+}
