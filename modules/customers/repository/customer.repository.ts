@@ -1,7 +1,8 @@
 import { db } from "@/db";
 import { orders } from "@/db/schema/orders/table";
-import { reviewsTable } from "@/db/schema/reviews/table";
+import { reviews } from "@/db/schema/review/reviews";
 import { productsTable } from "@/db/schema/catalog/products/table";
+import { usersTable } from "@/db/schema/users";
 import { and, eq, isNull, sql } from "drizzle-orm";
 
 export async function getSellerCustomersData(sellerId: string, search?: string) {
@@ -11,7 +12,10 @@ export async function getSellerCustomersData(sellerId: string, search?: string) 
   ];
 
   if (search) {
-    conditions.push(sql`${orders.buyerName} ILIKE ${`%${search}%`}`);
+    const term = `%${search}%`;
+    conditions.push(
+      sql`(${orders.buyerName} ILIKE ${term} OR ${orders.buyerEmail} ILIKE ${term} OR ${orders.buyerPhone} ILIKE ${term})`
+    );
   }
 
   const rows = await db
@@ -20,20 +24,24 @@ export async function getSellerCustomersData(sellerId: string, search?: string) 
       buyerName: orders.buyerName,
       buyerEmail: orders.buyerEmail,
       buyerPhone: orders.buyerPhone,
+      buyerAvatar: usersTable.imageUrl,
       totalOrders: sql<number>`COUNT(*)::int`,
       totalSpent: sql<string>`COALESCE(SUM(${orders.grandTotal}), 0)`,
       lastOrderAt: sql<Date>`MAX(${orders.createdAt})`,
     })
     .from(orders)
+    .leftJoin(usersTable, eq(orders.buyerId, usersTable.id))
     .where(and(...conditions))
-    .groupBy(orders.buyerId, orders.buyerName, orders.buyerEmail, orders.buyerPhone)
+    .groupBy(orders.buyerId, orders.buyerName, orders.buyerEmail, orders.buyerPhone, usersTable.imageUrl)
     .orderBy(sql`MAX(${orders.createdAt}) DESC`);
+
 
   return rows.map((r) => ({
     buyerId: r.buyerId,
     buyerName: r.buyerName || "Customer",
     buyerEmail: r.buyerEmail || "",
     buyerPhone: r.buyerPhone || null,
+    buyerAvatar: r.buyerAvatar || null,
     totalOrders: r.totalOrders,
     totalSpent: parseFloat(r.totalSpent || "0").toFixed(2),
     lastOrderAt: r.lastOrderAt
@@ -60,17 +68,18 @@ export async function getCustomerDetailsRepo(sellerId: string, buyerId: string) 
 
   const customerReviews = await db
     .select({
-      id: reviewsTable.id,
-      rating: reviewsTable.rating,
-      comment: reviewsTable.content,
-      date: reviewsTable.createdAt,
+      id: reviews.id,
+      rating: reviews.rating,
+      comment: reviews.reviewText,
+      date: reviews.createdAt,
       productName: productsTable.name,
     })
-    .from(reviewsTable)
-    .leftJoin(productsTable, eq(reviewsTable.productId, productsTable.id))
-    .where(and(eq(reviewsTable.sellerId, sellerId), eq(reviewsTable.buyerId, buyerId), isNull(reviewsTable.deletedAt)))
-    .orderBy(sql`${reviewsTable.createdAt} DESC`)
+    .from(reviews)
+    .leftJoin(productsTable, eq(reviews.productId, productsTable.id))
+    .where(and(eq(reviews.sellerId, sellerId), eq(reviews.buyerId, buyerId)))
+    .orderBy(sql`${reviews.createdAt} DESC`)
     .limit(10);
+    
 
   return {
     history: customerOrders.map((o) => ({

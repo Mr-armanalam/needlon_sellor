@@ -51,7 +51,7 @@ export const reviews = pgTable(
     // Core Score Data
     rating: smallint("rating").notNull(), // Valid values: 1 to 5 via check constraint
     title: varchar("title", { length: 150 }),
-    reviewText: text("review_text"),
+    reviewText: text("content"),
 
     // Social Integrity Metrics
     isVerifiedPurchase: boolean("is_verified_purchase").default(true).notNull(),

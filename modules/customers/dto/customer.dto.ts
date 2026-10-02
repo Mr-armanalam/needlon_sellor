@@ -13,7 +13,9 @@ export interface CustomerItemResponseDto {
   buyerName: string;
   buyerEmail: string;
   buyerPhone: string | null;
+  buyerAvatar?: string | null;
   totalOrders: number;
   totalSpent: string;
   lastOrderAt: string;
 }
+

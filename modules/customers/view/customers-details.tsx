@@ -27,13 +27,8 @@ export default function CustomerDetail({ customer, onOpenChat }: CustomerDetailP
     );
   }
 
-  const history = data.history.length > 0 ? data.history : [
-    { id: 'NDL-1001', orderId: '1', date: new Date().toLocaleDateString(), total: customer.clv, status: 'DELIVERED' }
-  ];
-
-  const reviews = data.reviews.length > 0 ? data.reviews : [
-    { id: '1', rating: 5, comment: 'Excellent quality product and fast delivery.', product: 'Luxury Heavyweight Hoodie', date: new Date().toLocaleDateString() }
-  ];
+  const history = data.history;
+  const reviews = data.reviews;
 
   return (
     <div className="flex-1 bg-slate-50 flex flex-col h-full overflow-y-auto min-h-0">
@@ -83,6 +78,10 @@ export default function CustomerDetail({ customer, onOpenChat }: CustomerDetailP
           <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">Reviews & Feedback</h3>
           {loading ? (
             <div className="p-4 text-xs text-neutral-400 text-center">Loading customer feedback...</div>
+          ) : reviews.length === 0 ? (
+            <div className="p-4 text-xs text-gray-400 text-center bg-white rounded-xl border border-gray-100 shadow-sm">
+              No reviews submitted by this customer yet.
+            </div>
           ) : (
             reviews.map((rev) => (
               <div key={rev.id} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm space-y-2">
@@ -109,6 +108,10 @@ export default function CustomerDetail({ customer, onOpenChat }: CustomerDetailP
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
             {loading ? (
               <div className="p-4 text-xs text-neutral-400 text-center">Loading order history...</div>
+            ) : history.length === 0 ? (
+              <div className="p-4 text-xs text-gray-400 text-center">
+                No recent order history found for this customer.
+              </div>
             ) : (
               history.map((order) => (
                 <div key={order.id} className="p-4 flex items-center justify-between text-xs">

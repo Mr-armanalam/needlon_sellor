@@ -20,12 +20,25 @@ async function runCustomerTests() {
     console.log(`✓ Customer list repository returned ${customers.length} records.`);
 
     if (customers.length > 0) {
-      const details = await getCustomerDetailsRepo(dummySellerId, customers[0].buyerId);
+      const first = customers[0];
+      if (!('buyerAvatar' in first)) {
+        throw new Error("Expected buyerAvatar property on customer item");
+      }
+      console.log(`✓ Customer avatar check passed for buyer ${first.buyerName}`);
+
+      const details = await getCustomerDetailsRepo(dummySellerId, first.buyerId);
       if (!Array.isArray(details.history) || !Array.isArray(details.reviews)) {
         throw new Error("Customer details history or reviews missing");
       }
-      console.log(`✓ Customer details repository returned ${details.history.length} order history records.`);
+      console.log(`✓ Customer details repository returned ${details.history.length} order history records and ${details.reviews.length} reviews.`);
     }
+
+    // 3. Test Search Parameter Querying
+    console.log("--> Testing Customer Search Query Filtering...");
+    const searchResults = await getSellerCustomersData(dummySellerId, "Rohan");
+    if (!Array.isArray(searchResults)) throw new Error("Expected array for search query");
+    console.log(`✓ Customer search query returned ${searchResults.length} matching records.`);
+
   } catch (err: any) {
     console.warn("Notice: Database connection in test environment:", err.message);
   }

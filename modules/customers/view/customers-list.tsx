@@ -21,25 +21,15 @@ export default function CustomerList({ onSelectCustomer, activeId }: CustomerLis
   const [search, setSearch] = useState('');
   const { customers, loading } = useCustomers(search);
 
-  const displayCustomers = customers.length > 0 ? customers.map((c) => ({
+  const displayCustomers = customers.map((c) => ({
     id: c.buyerId,
     name: c.buyerName,
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
+    avatar: c.buyerAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.buyerName)}&background=f1f5f9&color=475569`,
     location: c.buyerEmail || 'Customer',
     clv: `₹${c.totalSpent}`,
     totalOrders: c.totalOrders,
     isRepeat: c.totalOrders > 1,
-  })) : [
-    {
-      id: "1",
-      name: 'Sarah Jenkins',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
-      location: 'sarah@example.com',
-      clv: '₹1,420.00',
-      totalOrders: 12,
-      isRepeat: true,
-    }
-  ];
+  }));
 
   const filteredCustomers = displayCustomers.filter(customer => {
     const matchesFilter = filterRepeat ? customer.isRepeat : true;
@@ -87,6 +77,8 @@ export default function CustomerList({ onSelectCustomer, activeId }: CustomerLis
       <div className="flex-1 overflow-y-auto divide-y divide-gray-50 min-h-0">
         {loading ? (
           <div className="p-4 text-xs text-neutral-400 text-center">Loading customers...</div>
+        ) : filteredCustomers.length === 0 ? (
+          <div className="p-6 text-center text-xs text-gray-400">No customers found</div>
         ) : (
           filteredCustomers.map((customer) => (
             <button
