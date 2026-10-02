@@ -1,20 +1,33 @@
+'use client';
 import React from 'react';
 import { Sparkles, Calendar, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { useSubscription } from '@/modules/subscription/hooks/use-subscription';
 
 export default function SubscriptionHero() {
-  const subData = {
-    planName: "Seller Pro Growth",
-    cost: "$49/month",
-    status: "Active Trial",
-    trialDaysLeft: 8,
-    renewalDate: "July 7, 2026",
-    benefits: [
-      "Unlimited product listings & inventory tracking",
-      "Advanced industrial AI image & configuration inspection modules",
-      "Integrated multi-channel WhatsApp customer communication tools",
-      "0% platform transaction fees on international shipping zones"
-    ]
+  const { subscription, plans, loading, updatePlan } = useSubscription();
+
+  const handleUpgrade = async () => {
+    const proPlan = plans.find((p) => p.code === "STARTER_PRO") || plans[1] || plans[0];
+    if (!proPlan) return;
+    const confirmChoice = confirm(`Upgrade to ${proPlan.name} for ₹${proPlan.priceMonthly}/month?`);
+    if (confirmChoice) {
+      const ok = await updatePlan(proPlan.id, "MONTHLY");
+      if (ok) alert("Successfully upgraded subscription plan!");
+      else alert("Failed to update plan");
+    }
   };
+
+  const planName = subscription?.planName || "Free Starter Plan";
+  const cost = subscription ? `₹${subscription.price || "0"}/mo` : "₹0/mo";
+  const status = subscription?.status || "Active";
+  const renewalDate = subscription?.currentPeriodEnd ? new Date(subscription.currentPeriodEnd).toLocaleDateString() : "Auto-renews yearly";
+
+  const benefits = [
+    "Unlimited product listings & inventory tracking",
+    "Advanced industrial AI image & configuration inspection modules",
+    "Integrated multi-channel customer communication tools",
+    "Lowest platform transaction fees on international shipping"
+  ];
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-shrink-0">
@@ -27,13 +40,16 @@ export default function SubscriptionHero() {
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
           <div className="space-y-1">
             <span className="text-[10px] font-bold tracking-widest uppercase bg-blue-500/20 text-blue-400 px-2.5 py-1 rounded-md border border-blue-500/30">
-              {subData.status}
+              {loading ? "Loading..." : status}
             </span>
-            <h2 className="text-xl font-bold tracking-tight pt-2">{subData.planName}</h2>
-            <p className="text-2xl font-black text-white mt-1">{subData.cost}</p>
+            <h2 className="text-xl font-bold tracking-tight pt-2">{planName}</h2>
+            <p className="text-2xl font-black text-white mt-1">{cost}</p>
           </div>
           
-          <button className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-lg shadow-blue-600/20 transition-all text-center self-start sm:self-auto">
+          <button
+            onClick={handleUpgrade}
+            className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-lg shadow-blue-600/20 transition-all text-center self-start sm:self-auto cursor-pointer"
+          >
             Upgrade Tier Plan
           </button>
         </div>
@@ -41,11 +57,11 @@ export default function SubscriptionHero() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4 border-t border-slate-700/50 text-xs text-slate-300">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-blue-400 flex-shrink-0" />
-            <span>Trial Period Ends In: <strong className="text-white font-semibold">{subData.trialDaysLeft} Days</strong></span>
+            <span>Billing Cycle: <strong className="text-white font-semibold">{subscription?.billingType || "Monthly"}</strong></span>
           </div>
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-            <span>Next Automatic Renewal: <strong className="text-white font-semibold">{subData.renewalDate}</strong></span>
+            <span>Next Automatic Renewal: <strong className="text-white font-semibold">{renewalDate}</strong></span>
           </div>
         </div>
       </div>
@@ -55,7 +71,7 @@ export default function SubscriptionHero() {
         <div className="space-y-3">
           <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">Included Core Benefits</h3>
           <ul className="space-y-2.5">
-            {subData.benefits.map((benefit, index) => (
+            {benefits.map((benefit, index) => (
               <li key={index} className="flex items-start gap-2 text-xs text-gray-600 leading-relaxed">
                 <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 mt-0.5 flex-shrink-0" />
                 <span>{benefit}</span>
@@ -66,4 +82,4 @@ export default function SubscriptionHero() {
       </div>
     </div>
   );
-}
+}

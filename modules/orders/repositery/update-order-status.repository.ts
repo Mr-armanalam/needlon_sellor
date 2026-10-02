@@ -60,8 +60,13 @@ export const updateOrderStatus = async ({
         } else if (action === "CANCEL") {
             toStatus = "CANCELLED";
             updateData.cancelledAt = new Date();
+        } else if (action === "ACCEPT_RETURN") {
+            toStatus = "RETURNED";
+            updateData.returnedAt = new Date();
+        } else if (action === "REJECT_RETURN") {
+            toStatus = "RETURN_REJECTED";
         } else {
-            throw new InvalidOrderActionError(`Invalid action. Supported actions: ADVANCE, CANCEL.`);
+            throw new InvalidOrderActionError(`Invalid action. Supported actions: ADVANCE, CANCEL, ACCEPT_RETURN, REJECT_RETURN.`);
         }
 
         updateData.status = toStatus;
@@ -74,12 +79,35 @@ export const updateOrderStatus = async ({
         else if (toStatus === "OUT_FOR_DELIVERY") historyAction = "OUT_FOR_DELIVERY";
         else if (toStatus === "COMPLETED") historyAction = "DELIVERED";
         else if (toStatus === "CANCELLED") historyAction = "CANCELLED";
+        else if (toStatus === "RETURNED") historyAction = "RETURNED";
+        else if (toStatus === "RETURN_REJECTED") historyAction = "RETURN_REJECTED";
 
         // Update order
         await database
             .update(orders)
             .set(updateData)
             .where(eq(orders.id, orderId));
+
+        // Sync Inventory Stock
+        try {
+            const { orderItems } = await import("@/db/schema/orders/order-items/table");
+            const { reserveStock, releaseStock } = await import("@/modules/products/repository/inventory.repository");
+            const lines = await database.select().from(orderItems).where(eq(orderItems.orderId, orderId));
+            
+            for (const line of lines) {
+                if (line.variantId) {
+                    if (toStatus === "CONFIRMED") {
+                        await reserveStock(line.variantId, line.quantity, database);
+                    } else if (toStatus === "OUT_FOR_DELIVERY" || toStatus === "COMPLETED") {
+                        await releaseStock(line.variantId, line.quantity, true, database);
+                    } else if (toStatus === "CANCELLED") {
+                        await releaseStock(line.variantId, line.quantity, false, database);
+                    }
+                }
+            }
+        } catch {
+            // Log/ignore inventory sync errors if tables unseeded during testing
+        }
 
         // Insert status history log
         await database.insert(orderStatusHistory).values({

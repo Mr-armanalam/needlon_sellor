@@ -44,12 +44,12 @@ export async function getOrderDetailsClient(orderId: string) {
 
 export async function updateOrderStatusClient(
   orderId: string,
-  action: "ADVANCE" | "CANCEL",
+  action: "ADVANCE" | "CANCEL" | "ACCEPT_RETURN" | "REJECT_RETURN",
   remarks?: string
 ) {
   const data = await apiClient.post<
     { orderId: string; fromStatus: string; toStatus: string },
-    { action: "ADVANCE" | "CANCEL"; remarks?: string }
+    { action: "ADVANCE" | "CANCEL" | "ACCEPT_RETURN" | "REJECT_RETURN"; remarks?: string }
   >(`/api/seller/orders/${orderId}/action`, { action, remarks });
   return { success: true, data };
 }

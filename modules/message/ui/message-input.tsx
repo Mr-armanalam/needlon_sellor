@@ -6,7 +6,7 @@ import ReplyTargetPreview from "@/modules/message/components/reply-target-previe
 import FileUploadsPreview from "@/modules/message/components/file-uploads-preview";
 import EmojiPickerPopover from "@/modules/message/components/emoji-picker-popover";
 
-const mockQuickReplies = [
+const quickReplies = [
   "Is this item still available?",
   "Track my order updates",
   "Check delivery status"
@@ -108,7 +108,7 @@ export default function MessageInput({
       
       {/*  Quick Replies Chips Container */}
       <QuickReplyContainer
-        mockQuickReplies={mockQuickReplies}
+        mockQuickReplies={quickReplies}
         onQuickReplyClick={onQuickReplyClick}
       />
 
