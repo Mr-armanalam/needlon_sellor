@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { orders } from "@/db/schema/orders/table";
-import { reviews } from "@/db/schema/review/reviews";
+import { reviewsTable } from "@/db/schema/reviews";
 import { productsTable } from "@/db/schema/catalog/products/table";
 import { usersTable } from "@/db/schema/users";
 import { and, eq, isNull, sql } from "drizzle-orm";
@@ -68,16 +68,16 @@ export async function getCustomerDetailsRepo(sellerId: string, buyerId: string) 
 
   const customerReviews = await db
     .select({
-      id: reviews.id,
-      rating: reviews.rating,
-      comment: reviews.reviewText,
-      date: reviews.createdAt,
+      id: reviewsTable.id,
+      rating: reviewsTable.rating,
+      comment: reviewsTable.content,
+      date: reviewsTable.createdAt,
       productName: productsTable.name,
     })
-    .from(reviews)
-    .leftJoin(productsTable, eq(reviews.productId, productsTable.id))
-    .where(and(eq(reviews.sellerId, sellerId), eq(reviews.buyerId, buyerId)))
-    .orderBy(sql`${reviews.createdAt} DESC`)
+    .from(reviewsTable)
+    .leftJoin(productsTable, eq(reviewsTable.productId, productsTable.id))
+    .where(and(eq(reviewsTable.sellerId, sellerId), eq(reviewsTable.buyerId, buyerId)))
+    .orderBy(sql`${reviewsTable.createdAt} DESC`)
     .limit(10);
     
 

@@ -27,12 +27,14 @@ import {productTagMappingsTable} from "@/db/schema/catalog/products/product-tag-
 import {productTagsTable} from "@/db/schema/catalog/products/product-tags";
 import {productVariantOptionsTable} from "@/db/schema/catalog/products/product-variant-options";
 import {productVideosTable} from "@/db/schema/catalog/products/product-videos";
-import {shippingTable} from "@/db/schema/catalog/products/shipping";
+import { shippingTable } from "@/db/schema/catalog/products/shipping";
 import * as ordersSchema from "./schema/orders";
+import { reviewsTable } from "@/db/schema/reviews";
 
 
 export const schema = {
   ...ordersSchema,
+  reviewsTable: reviewsTable,
   users: usersTable.usersTable,
   passwordResetToken: passwordResetToken.passwordResetTokens,
   sellers: sellers.seller,
