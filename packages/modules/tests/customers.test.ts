@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { getSellerCustomersData, getCustomerDetailsRepo } from "../modules/customers/repository/customer.repository";
 import { getCustomersQuerySchema } from "../modules/customers/dto/customer.dto";
+import { deduplicateCustomers } from "../modules/customers/utils/customer-utils";
 
 async function runCustomerTests() {
   console.log("=== CUSTOMER DIRECTORY & DETAILS TEST SUITE ===");
@@ -38,6 +39,17 @@ async function runCustomerTests() {
     const searchResults = await getSellerCustomersData(dummySellerId, "Rohan");
     if (!Array.isArray(searchResults)) throw new Error("Expected array for search query");
     console.log(`✓ Customer search query returned ${searchResults.length} matching records.`);
+
+    // 4. Test Customer Deduplication Function
+    console.log("--> Testing Customer Deduplication Helper...");
+    const rawList = [
+      { id: "cust-1", name: "A", avatar: "", location: "", clv: "0", totalOrders: 1, isRepeat: false },
+      { id: "cust-1", name: "A Dup", avatar: "", location: "", clv: "0", totalOrders: 1, isRepeat: false },
+      { id: "cust-2", name: "B", avatar: "", location: "", clv: "0", totalOrders: 1, isRepeat: false },
+    ];
+    const deduped = deduplicateCustomers(rawList);
+    if (deduped.length !== 2) throw new Error(`Deduplication failed, expected 2 items but got ${deduped.length}`);
+    console.log("✓ Customer deduplication unit test passed.");
 
   } catch (err: any) {
     console.warn("Notice: Database connection in test environment:", err.message);

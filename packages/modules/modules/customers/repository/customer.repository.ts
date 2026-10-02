@@ -21,9 +21,9 @@ export async function getSellerCustomersData(sellerId: string, search?: string) 
   const rows = await db
     .select({
       buyerId: orders.buyerId,
-      buyerName: orders.buyerName,
-      buyerEmail: orders.buyerEmail,
-      buyerPhone: orders.buyerPhone,
+      buyerName: sql<string>`MAX(${orders.buyerName})`,
+      buyerEmail: sql<string>`MAX(${orders.buyerEmail})`,
+      buyerPhone: sql<string>`MAX(${orders.buyerPhone})`,
       buyerAvatar: usersTable.imageUrl,
       totalOrders: sql<number>`COUNT(*)::int`,
       totalSpent: sql<string>`COALESCE(SUM(${orders.grandTotal}), 0)`,
@@ -32,9 +32,9 @@ export async function getSellerCustomersData(sellerId: string, search?: string) 
     .from(orders)
     .leftJoin(usersTable, eq(orders.buyerId, usersTable.id))
     .where(and(...conditions))
-    .groupBy(orders.buyerId, orders.buyerName, orders.buyerEmail, orders.buyerPhone, usersTable.imageUrl)
+    .groupBy(orders.buyerId, usersTable.imageUrl)
     .orderBy(sql`MAX(${orders.createdAt}) DESC`);
-
+  
 
   return rows.map((r) => ({
     buyerId: r.buyerId,
@@ -76,11 +76,11 @@ export async function getCustomerDetailsRepo(sellerId: string, buyerId: string) 
     })
     .from(reviewsTable)
     .leftJoin(productsTable, eq(reviewsTable.productId, productsTable.id))
-    .where(and(eq(reviewsTable.sellerId, sellerId), eq(reviewsTable.buyerId, buyerId)))
+    .where(and(eq(reviewsTable.sellerId, sellerId), eq(reviewsTable.buyerId, buyerId), isNull(reviewsTable.deletedAt)))
     .orderBy(sql`${reviewsTable.createdAt} DESC`)
     .limit(10);
     
-
+    
   return {
     history: customerOrders.map((o) => ({
       id: o.id,

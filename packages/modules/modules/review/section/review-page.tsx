@@ -40,7 +40,7 @@ export default function ReviewsPage() {
     /* Constrained height layout to integrate seamlessly inside your SellerLayout dimensions */
     <div className="flex flex-1 h-[calc(100vh-64px)] w-full overflow-hidden p-6 bg-slate-50 flex-col space-y-6">
       
-      {/* 1. Header Metadata Section */}
+      {/* Header Metadata Section */}
       <div className="flex-shrink-0 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Reviews & Moderation</h1>
@@ -48,11 +48,11 @@ export default function ReviewsPage() {
         </div>
       </div>
 
-      {/* 2. Aggregate Analytics Metrics Grid */}
+      {/*  Aggregate Analytics Metrics Grid */}
       <ReviewAnalytics />
 
-      {/* 3. Operational Toolbar (Filter / Search) */}
-      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col sm:flex-row items-center gap-3 flex-shrink-0">
+      {/* Operational Toolbar (Filter / Search) */}
+      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col sm:flex-row items-center gap-3 shrink-0">
         <div className="relative flex-1 w-full">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
           <input
@@ -81,7 +81,7 @@ export default function ReviewsPage() {
         </div>
       </div>
 
-      {/* 4. Independent Scrollable Reviews Feed List */}
+      {/* Independent Scrollable Reviews Feed List */}
       <div className="flex-1 overflow-y-auto space-y-4 pr-1 min-h-0">
         {isLoading ? (
           /* Pulsing skeleton loaders */

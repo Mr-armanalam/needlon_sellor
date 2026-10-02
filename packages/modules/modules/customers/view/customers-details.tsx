@@ -29,6 +29,7 @@ export default function CustomerDetail({ customer, onOpenChat }: CustomerDetailP
 
   const history = data.history;
   const reviews = data.reviews;
+  
 
   return (
     <div className="flex-1 bg-slate-50 flex flex-col h-full overflow-y-auto min-h-0">
