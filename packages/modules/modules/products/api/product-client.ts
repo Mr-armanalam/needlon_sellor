@@ -36,7 +36,7 @@ export async function fetchProductsClient(
 }
 
 export async function createProductClient(payload: any) {
-  return apiClient.post<any>("/api/products", payload);
+  return apiClient.post<any>("/api/seller/products", payload);
 }
 
 export async function deleteProductClient(id: string) {

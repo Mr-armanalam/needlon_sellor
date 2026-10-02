@@ -22,8 +22,6 @@ export function toProductCardViewModel(item: any): ProductCardViewModel {
     primaryImg = "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=600";
   }
 
-  console.log(item, 'mapperItem')
-
   return {
     id: item.id,
     name: item.name || "Untitled Product",
