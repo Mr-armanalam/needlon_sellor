@@ -1,7 +1,19 @@
+'use client';
+
 import React from "react";
 import { Compass, TrendingUp, Sparkles, ArrowRight } from "lucide-react";
+import { useAnalytics } from "@/modules/analytics/hooks/use-analytics";
+import { useRouter } from "next/navigation";
 
-export default function InsightPanels() {
+interface InsightPanelsProps {
+  timeframe?: "7d" | "30d" | "90d" | "1y";
+  onTriggerAction?: (actionName: string) => void;
+}
+
+export default function InsightPanels({ timeframe = "30d", onTriggerAction }: InsightPanelsProps) {
+  const { data } = useAnalytics(timeframe);
+  const router = useRouter();
+
   const trafficSources = [
     {
       source: "Instagram Ads",
@@ -23,29 +35,43 @@ export default function InsightPanels() {
     },
   ];
 
-  const popularProducts = [
-    {
-      name: "Minimalist Leather Sneakers",
-      sales: "142 sold this week",
-      image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=100",
-    },
-    {
-      name: "Classic Canvas Tote",
-      sales: "98 sold this week",
-      image: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=100",
-    },
-  ];
+  const popularProducts = (data?.topProducts && data.topProducts.length > 0)
+    ? data.topProducts.map((p) => ({
+        name: p.name,
+        sales: `${p.salesCount} sold • ₹${p.totalRevenue}`,
+        image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=100",
+      }))
+    : [
+        {
+          name: "Minimalist Leather Sneakers",
+          sales: "142 sold this period",
+          image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=100",
+        },
+        {
+          name: "Classic Canvas Tote",
+          sales: "98 sold this period",
+          image: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=100",
+        },
+      ];
 
   const recommendations = [
     {
       title: "Restock Warning",
       body: "Minimalist Leather Sneakers are converting fast. At this rate, you will run out of stock in 4 days.",
       action: "Create Restock Order",
+      onClick: () => {
+        if (onTriggerAction) onTriggerAction("restock");
+        else router.push("/inventory");
+      },
     },
     {
       title: "Marketing Opportunity",
       body: "Traffic from Instagram is buying 2x more than Google searchers. Consider putting more budget there.",
       action: "Boost Campaigns",
+      onClick: () => {
+        if (onTriggerAction) onTriggerAction("campaign");
+        else router.push("/marketing");
+      },
     },
   ];
 
@@ -148,8 +174,11 @@ export default function InsightPanels() {
                 <p className="text-[11px] text-blue-800 leading-relaxed">
                   {rec.body}
                 </p>
-                <button className="text-[11px] font-bold text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1">
-                  {rec.action} <ArrowRight className="w-3 h-3" />
+                <button
+                  onClick={rec.onClick}
+                  className="text-[11px] font-bold text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1 group"
+                >
+                  {rec.action} <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                 </button>
               </div>
             ))}
