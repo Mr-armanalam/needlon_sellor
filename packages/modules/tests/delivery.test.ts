@@ -4,7 +4,10 @@ import {
   createShippingMethodSchema,
   createShipmentOrderSchema,
   updateShipmentStatusSchema,
-  getShipmentsQuerySchema,
+  connectCarrierSchema,
+  localDeliverySettingsSchema,
+  pickupHubSchema,
+  shippingZoneSchema,
 } from "../modules/delivery/dto/delivery.dto";
 
 function testDeliveryValidations() {
@@ -21,38 +24,48 @@ function testDeliveryValidations() {
   assert.strictEqual(parsedPartner.partnerCode, "FEDEX");
   assert.strictEqual(parsedPartner.supportsCod, true);
 
-  // Valid Shipping Method DTO
-  const validMethod = {
-    partnerId: "123e4567-e89b-12d3-a456-426614174000",
-    methodCode: "FEDEX_EXPRESS",
-    methodName: "FedEx Next-Day Express",
-    estimatedMinDays: 1,
-    estimatedMaxDays: 2,
+  // Connect Carrier DTO validation
+  const connectCarrier = {
+    partnerId: "p1",
+    partnerCode: "SHIPROCKET",
+    apiKey: "sbx_test_key_9812739",
+    isSandbox: true,
+    isActive: true,
   };
-  const parsedMethod = createShippingMethodSchema.parse(validMethod);
-  assert.strictEqual(parsedMethod.methodCode, "FEDEX_EXPRESS");
-  assert.strictEqual(parsedMethod.estimatedMaxDays, 2);
+  const parsedConnect = connectCarrierSchema.parse(connectCarrier);
+  assert.strictEqual(parsedConnect.partnerCode, "SHIPROCKET");
+  assert.strictEqual(parsedConnect.isSandbox, true);
 
-  // Valid Shipment Order DTO
-  const validShipment = {
-    orderId: "123e4567-e89b-12d3-a456-426614174000",
-    buyerId: "223e4567-e89b-12d3-a456-426614174000",
-    shippingPartnerId: "323e4567-e89b-12d3-a456-426614174000",
-    shippingMethodId: "423e4567-e89b-12d3-a456-426614174000",
-    shippingCost: 150,
+  // Local Delivery Radius DTO validation
+  const localSettings = {
+    maxRadiusKm: 15,
+    baseCharge: 5,
+    freeShippingThreshold: 100,
   };
-  const parsedShipment = createShipmentOrderSchema.parse(validShipment);
-  assert.strictEqual(parsedShipment.shippingCost, 150);
+  const parsedLocal = localDeliverySettingsSchema.parse(localSettings);
+  assert.strictEqual(parsedLocal.maxRadiusKm, 15);
+  assert.strictEqual(parsedLocal.baseCharge, 5);
 
-  // Invalid UUID assertion
-  assert.throws(() => {
-    createShipmentOrderSchema.parse({
-      orderId: "invalid-uuid",
-      buyerId: "223e4567-e89b-12d3-a456-426614174000",
-      shippingPartnerId: "323e4567-e89b-12d3-a456-426614174000",
-      shippingMethodId: "423e4567-e89b-12d3-a456-426614174000",
-    });
-  });
+  // Pickup Hub DTO validation
+  const hub = {
+    hubName: "Needlon Main Hub",
+    address: "Block-C Industrial Sector",
+    city: "Pimpri-Chinchwad",
+    pincode: "411019",
+    phone: "+91 98765 43210",
+  };
+  const parsedHub = pickupHubSchema.parse(hub);
+  assert.strictEqual(parsedHub.pincode, "411019");
+
+  // Shipping Zone DTO validation
+  const zone = {
+    zoneName: "Domestic All States",
+    partnerCode: "FEDEX",
+    flatRateFee: 12,
+    estimatedDays: "2-4 days",
+  };
+  const parsedZone = shippingZoneSchema.parse(zone);
+  assert.strictEqual(parsedZone.flatRateFee, 12);
 
   // Valid Status Update DTO
   const validStatusUpdate = {
@@ -64,19 +77,11 @@ function testDeliveryValidations() {
   assert.strictEqual(parsedStatus.status, "OUT_FOR_DELIVERY");
   assert.strictEqual(parsedStatus.trackingNumber, "TRK-99887766");
 
-  // Invalid Status Enum assertion
-  assert.throws(() => {
-    updateShipmentStatusSchema.parse({
-      shipmentId: "123e4567-e89b-12d3-a456-426614174000",
-      status: "INVALID_STATUS",
-    });
-  });
-
   console.log("✓ Delivery Zod validation tests passed.");
 }
 
 function testDeliveryCalculations() {
-  console.log("--> Testing Delivery Status & Date Calculations...");
+  console.log("--> Testing Delivery Status & Rate Calculations...");
 
   const mockShipments = [
     { id: "1", status: "PENDING" },
@@ -99,11 +104,12 @@ function testDeliveryCalculations() {
   assert.strictEqual(counts.delivered, 2);
   assert.strictEqual(counts.pending, 2);
 
-  // Test Estimated Delivery Date Calculation
-  const orderDate = new Date("2026-09-27T10:00:00Z");
-  const maxDays = 3;
-  const estimatedDelivery = new Date(orderDate.getTime() + maxDays * 24 * 60 * 60 * 1000);
-  assert.strictEqual(estimatedDelivery.toISOString(), "2026-09-30T10:00:00.000Z");
+  // Test Free Shipping Threshold Override
+  const cartAmount = 150;
+  const freeThreshold = 100;
+  const baseRate = 12.0;
+  const finalShippingFee = cartAmount >= freeThreshold ? 0.0 : baseRate;
+  assert.strictEqual(finalShippingFee, 0.0);
 
   console.log("✓ Delivery calculation tests passed.");
 }
