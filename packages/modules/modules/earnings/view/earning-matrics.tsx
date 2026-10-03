@@ -1,27 +1,44 @@
 'use client';
 import React from 'react';
-import { Wallet, Clock, ArrowUpRight } from 'lucide-react';
-import { useEarnings } from '@/modules/earnings/hooks/use-earnings';
+import { Wallet, Clock, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { EarningsSummaryResponseDto } from '../dto/finance.dto';
+import { useEarnings } from '../hooks/use-earnings';
 
-export default function EarningsMetrics({ onWithdrawClick }: { onWithdrawClick?: () => void }) {
-  const { summary, loading, requestPayout } = useEarnings();
+interface EarningsMetricsProps {
+  summary?: EarningsSummaryResponseDto | null;
+  loading?: boolean;
+  onWithdrawClick?: () => void;
+}
 
-  const handleWithdraw = async () => {
-    if (onWithdrawClick) onWithdrawClick();
-    else {
-      const amountStr = prompt("Enter withdrawal amount in ₹:");
-      if (!amountStr) return;
-      const amount = parseFloat(amountStr);
-      if (isNaN(amount)) return alert("Invalid amount entered");
-      const res = await requestPayout(amount);
-      if (res.success) alert(`Payout request submitted successfully! ID: ${res.data?.requestId}`);
-      else alert(res.error || "Payout request failed");
+export default function EarningsMetrics({
+  summary: propSummary,
+  loading: propLoading,
+  onWithdrawClick,
+}: EarningsMetricsProps) {
+  const fallbackHook = useEarnings();
+  const summary = propSummary !== undefined ? propSummary : fallbackHook.summary;
+  const loading = propLoading !== undefined ? propLoading : fallbackHook.loading;
+
+  const handleWithdraw = () => {
+    if (onWithdrawClick) {
+      onWithdrawClick();
     }
   };
 
-  const availableBalance = summary ? `₹${summary.availablePayoutBalance}` : "₹0.00";
-  const pendingBalance = summary ? `₹${summary.pendingBalance}` : "₹0.00";
-  const totalRevenue = summary ? `₹${summary.grossSales}` : "₹0.00";
+  const availableBalance = summary
+    ? `₹${parseFloat(summary.availablePayoutBalance).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
+    : '₹0.00';
+
+  const pendingBalance = summary
+    ? `₹${parseFloat(summary.pendingBalance).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
+    : '₹0.00';
+
+  const totalRevenue = summary
+    ? `₹${parseFloat(summary.grossSales).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
+    : '₹0.00';
+
+  const growthPercent = summary ? summary.monthOverMonthGrowth : 0;
+  const isPositiveGrowth = summary ? summary.isGrowthPositive : true;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-shrink-0">
@@ -63,8 +80,15 @@ export default function EarningsMetrics({ onWithdrawClick }: { onWithdrawClick?:
         <div className="space-y-1">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Revenue</p>
           <p className="text-2xl font-bold text-gray-900 tracking-tight">{loading ? "..." : totalRevenue}</p>
-          <p className="text-[11px] text-green-600 flex items-center gap-0.5 font-medium mt-1">
-            <ArrowUpRight className="w-3 h-3" /> +14.2% vs last month
+          <p className={`text-[11px] flex items-center gap-0.5 font-medium mt-1 ${
+            isPositiveGrowth ? 'text-green-600' : 'text-rose-600'
+          }`}>
+            {isPositiveGrowth ? (
+              <ArrowUpRight className="w-3 h-3" />
+            ) : (
+              <ArrowDownRight className="w-3 h-3" />
+            )}
+            {growthPercent >= 0 ? `+${growthPercent}%` : `${growthPercent}%`} vs last month
           </p>
         </div>
         <div className="p-3 bg-green-50 text-green-600 rounded-xl">
@@ -73,4 +97,4 @@ export default function EarningsMetrics({ onWithdrawClick }: { onWithdrawClick?:
       </div>
     </div>
   );
-}
+}
