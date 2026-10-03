@@ -11,6 +11,37 @@ export const createShippingPartnerSchema = z.object({
   supportsReturn: z.boolean().optional().default(true),
 });
 
+export const connectCarrierSchema = z.object({
+  partnerId: z.string().min(1, "Partner ID is required"),
+  partnerCode: z.string().min(1),
+  apiKey: z.string().optional(),
+  apiSecret: z.string().optional(),
+  isSandbox: z.boolean().default(true),
+  isActive: z.boolean().default(true),
+});
+
+export const localDeliverySettingsSchema = z.object({
+  maxRadiusKm: z.number().positive("Radius must be greater than 0"),
+  baseCharge: z.number().min(0, "Base charge cannot be negative"),
+  freeShippingThreshold: z.number().min(0).optional(),
+});
+
+export const pickupHubSchema = z.object({
+  hubName: z.string().min(2, "Hub name is required"),
+  address: z.string().min(5, "Address is required"),
+  city: z.string().min(2, "City is required"),
+  pincode: z.string().min(3, "Pincode is required"),
+  phone: z.string().min(5, "Phone is required"),
+  operatingHours: z.string().optional(),
+});
+
+export const shippingZoneSchema = z.object({
+  zoneName: z.string().min(2, "Zone name is required"),
+  partnerCode: z.string().min(1, "Partner code is required"),
+  flatRateFee: z.number().min(0, "Fee cannot be negative"),
+  estimatedDays: z.string().default("2-4 days"),
+});
+
 export const createShippingMethodSchema = z.object({
   partnerId: z.string().uuid("Invalid partner ID"),
   methodCode: z.string().min(1),
@@ -21,10 +52,10 @@ export const createShippingMethodSchema = z.object({
 });
 
 export const createShipmentOrderSchema = z.object({
-  orderId: z.string().uuid("Invalid order ID"),
-  buyerId: z.string().uuid("Invalid buyer ID"),
-  shippingPartnerId: z.string().uuid("Invalid shipping partner ID"),
-  shippingMethodId: z.string().uuid("Invalid shipping method ID"),
+  orderId: z.string().min(1, "Invalid order ID"),
+  buyerId: z.string().optional(),
+  shippingPartnerId: z.string().optional(),
+  shippingMethodId: z.string().optional(),
   awbNumber: z.string().optional(),
   trackingNumber: z.string().optional(),
   shippingCost: z.number().min(0).default(0),
@@ -33,7 +64,7 @@ export const createShipmentOrderSchema = z.object({
 });
 
 export const updateShipmentStatusSchema = z.object({
-  shipmentId: z.string().uuid("Invalid shipment ID"),
+  shipmentId: z.string().min(1, "Invalid shipment ID"),
   status: z.enum([
     "PENDING",
     "READY_FOR_PICKUP",
@@ -58,6 +89,10 @@ export const getShipmentsQuerySchema = z.object({
 });
 
 export type CreateShippingPartnerDto = z.infer<typeof createShippingPartnerSchema>;
+export type ConnectCarrierDto = z.infer<typeof connectCarrierSchema>;
+export type LocalDeliverySettingsDto = z.infer<typeof localDeliverySettingsSchema>;
+export type PickupHubDto = z.infer<typeof pickupHubSchema>;
+export type ShippingZoneDto = z.infer<typeof shippingZoneSchema>;
 export type CreateShippingMethodDto = z.infer<typeof createShippingMethodSchema>;
 export type CreateShipmentOrderDto = z.infer<typeof createShipmentOrderSchema>;
 export type UpdateShipmentStatusDto = z.infer<typeof updateShipmentStatusSchema>;

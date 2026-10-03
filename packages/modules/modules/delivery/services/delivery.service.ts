@@ -2,11 +2,23 @@ import { getCurrentSellerOrThrow } from "@/modules/seller-profile/services/get-c
 import {
   getShippingPartners,
   getShippingMethodsForPartner,
+  updateShippingPartnerRepo,
+  getDeliverySettingsRepo,
+  updateLocalDeliverySettingsRepo,
+  updatePickupHubRepo,
+  addShippingZoneRepo,
   createShipmentOrder,
   getSellerShipments,
   updateShipmentStatus,
 } from "../repository/delivery.repository";
-import { CreateShipmentOrderDto, UpdateShipmentStatusDto } from "../dto/delivery.dto";
+import {
+  CreateShipmentOrderDto,
+  UpdateShipmentStatusDto,
+  ConnectCarrierDto,
+  LocalDeliverySettingsDto,
+  PickupHubDto,
+  ShippingZoneDto,
+} from "../dto/delivery.dto";
 
 export async function getShippingPartnersService() {
   const partners = await getShippingPartners();
@@ -20,6 +32,31 @@ export async function getShippingPartnersService() {
     })
   );
   return partnersWithMethods;
+}
+
+export async function connectCarrierService(dto: ConnectCarrierDto) {
+  await getCurrentSellerOrThrow();
+  return updateShippingPartnerRepo(dto);
+}
+
+export async function getDeliverySettingsService() {
+  await getCurrentSellerOrThrow();
+  return getDeliverySettingsRepo();
+}
+
+export async function updateLocalDeliverySettingsService(dto: LocalDeliverySettingsDto) {
+  await getCurrentSellerOrThrow();
+  return updateLocalDeliverySettingsRepo(dto);
+}
+
+export async function updatePickupHubService(dto: PickupHubDto) {
+  await getCurrentSellerOrThrow();
+  return updatePickupHubRepo(dto);
+}
+
+export async function addShippingZoneService(dto: ShippingZoneDto) {
+  await getCurrentSellerOrThrow();
+  return addShippingZoneRepo(dto);
 }
 
 export async function getSellerShipmentsService(statusFilter?: string) {

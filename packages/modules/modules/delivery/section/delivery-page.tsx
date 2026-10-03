@@ -2,11 +2,12 @@
 
 import DeliveryOverview from "../view/delivery-overview";
 import DeliverySettingsTabs from "../view/delivery-setting-tab";
+import ShipmentDispatchTable from "../view/shipment-dispatch-table";
 
 export default function DeliveryPage() {
   return (
     /* Strictly sized layout boundaries to prevent full-frame scroll leaks */
-    <div className="flex flex-1 h-[calc(100vh-64px)] w-full overflow-hidden p-6 bg-slate-50 flex-col space-y-6 min-h-0">
+    <div className="flex flex-1 h-[calc(100vh-64px) h-fit w-full overflow-y-auto p-6 bg-slate-50 flex-col space-y-6 min-h-0">
       
       {/* Page Header */}
       <div className="flex-shrink-0">
@@ -17,7 +18,10 @@ export default function DeliveryPage() {
       {/* 1. Partner Status Grid Container */}
       <DeliveryOverview />
 
-      {/* 2. Scroll-Isolated Configuration Tabs System Layout */}
+      {/* 2. Active Shipments Dispatch & AWB Label Table */}
+      <ShipmentDispatchTable />
+
+      {/* 3. Configuration Tabs System Layout */}
       <DeliverySettingsTabs />
 
     </div>
