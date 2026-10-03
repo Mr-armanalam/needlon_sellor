@@ -3,13 +3,24 @@ import React from 'react';
 import { DollarSign, ShoppingBag, Users, RefreshCw } from 'lucide-react';
 import { useAnalytics } from '@/modules/analytics/hooks/use-analytics';
 
-export default function AnalyticsGrid() {
-  const { data, loading } = useAnalytics("30d");
+interface AnalyticsGridProps {
+  timeframe?: "7d" | "30d" | "90d" | "1y";
+}
+
+export default function AnalyticsGrid({ timeframe = "30d" }: AnalyticsGridProps) {
+  const { data, loading } = useAnalytics(timeframe);
 
   const revenue = data ? `₹${data.totalRevenue}` : "₹0.00";
   const orders = data ? data.totalOrders : 0;
   const aov = data ? `₹${data.averageOrderValue}` : "₹0.00";
   const conversionRate = data ? `${data.conversionRatePercent}%` : "3.2%";
+
+  const labelMap = {
+    "7d": "last 7 days",
+    "30d": "last 30 days",
+    "90d": "last 90 days",
+    "1y": "last 1 year",
+  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 flex-shrink-0">
@@ -21,7 +32,7 @@ export default function AnalyticsGrid() {
         </div>
         <div>
           <p className="text-2xl font-bold text-gray-900">{loading ? "..." : revenue}</p>
-          <p className="text-xs text-green-600 font-medium mt-1">Calculated over the last 30 days window.</p>
+          <p className="text-xs text-green-600 font-medium mt-1">Calculated over the {labelMap[timeframe]} window.</p>
         </div>
       </div>
 
@@ -62,4 +73,4 @@ export default function AnalyticsGrid() {
       </div>
     </div>
   );
-}
+}

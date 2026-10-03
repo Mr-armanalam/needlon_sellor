@@ -1,33 +1,63 @@
 'use client';
+
 import React from 'react';
 import { Sparkles, Calendar, CheckCircle2, ShieldCheck } from 'lucide-react';
-import { useSubscription } from '@/modules/subscription/hooks/use-subscription';
+import { SellerSubscriptionResponseDto, SubscriptionPlanDto } from '../dto/subscription.dto';
+import { useSubscription } from '../hooks/use-subscription';
 
-export default function SubscriptionHero() {
-  const { subscription, plans, loading, updatePlan } = useSubscription();
+interface SubscriptionHeroProps {
+  subscription?: SellerSubscriptionResponseDto | null;
+  plans?: SubscriptionPlanDto[];
+  loading?: boolean;
+  onUpgradeClick?: () => void;
+}
 
-  const handleUpgrade = async () => {
-    const proPlan = plans.find((p) => p.code === "STARTER_PRO") || plans[1] || plans[0];
-    if (!proPlan) return;
-    const confirmChoice = confirm(`Upgrade to ${proPlan.name} for ₹${proPlan.priceMonthly}/month?`);
-    if (confirmChoice) {
-      const ok = await updatePlan(proPlan.id, "MONTHLY");
-      if (ok) alert("Successfully upgraded subscription plan!");
-      else alert("Failed to update plan");
+export default function SubscriptionHero({
+  subscription: propSubscription,
+  plans: propPlans,
+  loading: propLoading,
+  onUpgradeClick,
+}: SubscriptionHeroProps) {
+  const fallbackHook = useSubscription();
+
+  const subscription =
+    propSubscription !== undefined ? propSubscription : fallbackHook.subscription;
+  const plans = propPlans !== undefined ? propPlans : fallbackHook.plans;
+  const loading = propLoading !== undefined ? propLoading : fallbackHook.loading;
+
+  const handleUpgrade = () => {
+    if (onUpgradeClick) {
+      onUpgradeClick();
     }
   };
 
   const planName = subscription?.planName || "Free Starter Plan";
-  const cost = subscription ? `₹${subscription.price || "0"}/mo` : "₹0/mo";
-  const status = subscription?.status || "Active";
-  const renewalDate = subscription?.currentPeriodEnd ? new Date(subscription.currentPeriodEnd).toLocaleDateString() : "Auto-renews yearly";
+  const cost = subscription
+    ? `₹${parseFloat(subscription.price || "0").toLocaleString("en-IN")}/${
+        subscription.billingType === "YEARLY" ? "yr" : "mo"
+      }`
+    : "₹0/mo";
 
-  const benefits = [
+  const status = subscription?.status || "Active";
+  const renewalDate = subscription?.currentPeriodEnd
+    ? new Date(subscription.currentPeriodEnd).toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "Auto-renews yearly";
+
+  const defaultBenefits = [
     "Unlimited product listings & inventory tracking",
     "Advanced industrial AI image & configuration inspection modules",
     "Integrated multi-channel customer communication tools",
-    "Lowest platform transaction fees on international shipping"
+    "Lowest platform transaction fees on international shipping",
   ];
+
+  const benefits =
+    subscription?.benefits && subscription.benefits.length > 0
+      ? subscription.benefits
+      : defaultBenefits;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-shrink-0">
@@ -82,4 +112,4 @@ export default function SubscriptionHero() {
       </div>
     </div>
   );
-}
+}

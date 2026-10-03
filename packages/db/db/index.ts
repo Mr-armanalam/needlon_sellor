@@ -13,6 +13,11 @@ import {sellerDocuments} from "@/db/schema/seller/seller-document";
 import {sellerBankAccounts} from "@/db/schema/seller/seller-bank-account";
 import {sellerPayoutRequests} from "@/db/schema/seller/seller-payout-request";
 import {sellerVerification} from "@/db/schema/seller/seller-verification";
+import {subscriptionPlans} from "@/db/schema/subscription/sucbscription-plan";
+import {sellerSubscriptions} from "@/db/schema/subscription/seller-subscription";
+import {subscriptionPlanFeatures} from "@/db/schema/subscription/subscription-plan-features";
+import {subscriptionPayments} from "@/db/schema/subscription/subscription-payment";
+import {subscriptionInvoices} from "@/db/schema/subscription/subscription-invoice";
 import { productsRelations, productsTable } from "@/db/schema/catalog/products";
 import { productVariantsTable } from "@/db/schema/catalog/products/product-variants";
 import { productVariantsRelations } from "@/db/schema/catalog/products/product-variants/relations";
@@ -51,6 +56,11 @@ export const schema = {
   sellerBankAccounts: sellerBankAccounts,
   sellerPayoutRequests: sellerPayoutRequests,
   sellerVerification: sellerVerification,
+  subscriptionPlans: subscriptionPlans,
+  sellerSubscriptions: sellerSubscriptions,
+  subscriptionPlanFeatures: subscriptionPlanFeatures,
+  subscriptionPayments: subscriptionPayments,
+  subscriptionInvoices: subscriptionInvoices,
   categoriesTable: categoriesTable,
   categories: categoriesTable,
   categoryRelations: categoriesRelations,
