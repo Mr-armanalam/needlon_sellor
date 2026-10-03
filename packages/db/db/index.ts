@@ -11,6 +11,7 @@ import {sellerProfiles} from "@/db/schema/seller/seller-profile";
 import {sellerStore} from "@/db/schema/seller/seller-store";
 import {sellerDocuments} from "@/db/schema/seller/seller-document";
 import {sellerBankAccounts} from "@/db/schema/seller/seller-bank-account";
+import {sellerPayoutRequests} from "@/db/schema/seller/seller-payout-request";
 import {sellerVerification} from "@/db/schema/seller/seller-verification";
 import { productsRelations, productsTable } from "@/db/schema/catalog/products";
 import { productVariantsTable } from "@/db/schema/catalog/products/product-variants";
@@ -48,6 +49,7 @@ export const schema = {
   sellerStore: sellerStore,
   sellerDocuments: sellerDocuments,
   sellerBankAccounts: sellerBankAccounts,
+  sellerPayoutRequests: sellerPayoutRequests,
   sellerVerification: sellerVerification,
   categoriesTable: categoriesTable,
   categories: categoriesTable,

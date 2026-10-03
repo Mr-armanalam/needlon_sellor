@@ -38,7 +38,7 @@ export default function ReviewsPage() {
 
   return (
     /* Constrained height layout to integrate seamlessly inside your SellerLayout dimensions */
-    <div className="flex flex-1 h-[calc(100vh-64px)] w-full overflow-hidden p-6 bg-slate-50 flex-col space-y-6">
+    <div className="flex flex-1 h-auto w-full overflow-hidde p-6 bg-slate-50 flex-col space-y-6">
       
       {/* Header Metadata Section */}
       <div className="flex-shrink-0 flex items-center justify-between">
@@ -82,7 +82,7 @@ export default function ReviewsPage() {
       </div>
 
       {/* Independent Scrollable Reviews Feed List */}
-      <div className="flex-1 overflow-y-auto space-y-4 pr-1 min-h-0">
+      <div className="flex-1 overflow-y-aut space-y-4 pr-1 min-h-0">
         {isLoading ? (
           /* Pulsing skeleton loaders */
           [...Array(3)].map((_, index) => (
