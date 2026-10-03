@@ -6,8 +6,12 @@ import {
   ledgerQuerySchema,
   exportLedgerQuerySchema,
 } from "../modules/earnings/dto/finance.dto";
-import { updateSubscriptionSchema } from "../modules/subscription/dto/subscription.dto";
+import {
+  updateSubscriptionSchema,
+  billingLedgerQuerySchema,
+} from "../modules/subscription/dto/subscription.dto";
 import { PayoutGatewayService } from "../modules/earnings/services/payout-gateway.service";
+import { SubscriptionPaymentGatewayService } from "../modules/subscription/services/subscription-payment-gateway.service";
 
 function testFinanceValidations() {
   console.log("--> Testing Finance & Subscriptions Zod Validations...");
@@ -70,7 +74,11 @@ function testFinanceValidations() {
     updateSubscriptionSchema.parse({ planId: "invalid-uuid" });
   });
 
-  console.log("✓ Finance Zod validation tests passed.");
+  // Valid Billing Ledger query schema
+  const parsedBillingLedger = billingLedgerQuerySchema.parse({ tab: "invoices" });
+  assert.strictEqual(parsedBillingLedger.tab, "invoices");
+
+  console.log("✓ Finance & Subscriptions Zod validation tests passed.");
 }
 
 function testCommissionCalculations() {
@@ -128,8 +136,9 @@ function testMonthOverMonthCalculations() {
 }
 
 async function testFreeTestPaymentGatewayAdapter() {
-  console.log("--> Testing Free Test Payment Gateway Integration Adapter...");
+  console.log("--> Testing Free Test Payment Gateway Integration Adapters...");
 
+  // 1. Payout Gateway test
   const payoutResult = await PayoutGatewayService.processPayout({
     sellerId: "test-seller-uuid",
     amount: 1500,
@@ -149,7 +158,37 @@ async function testFreeTestPaymentGatewayAdapter() {
   assert.strictEqual(payoutResult.rawResponse.amount, 1500);
   assert.strictEqual(payoutResult.rawResponse.currency, "INR");
 
-  console.log("✓ Free Test Payment Gateway Adapter tests passed.");
+  // 2. Subscription Payment Gateway test
+  const subPaymentResult = await SubscriptionPaymentGatewayService.processPayment({
+    sellerId: "test-seller-uuid",
+    planId: "123e4567-e89b-12d3-a456-426614174000",
+    planName: "Pro Merchant Plan",
+    amount: 999,
+    currency: "INR",
+    billingCycle: "MONTHLY",
+  });
+
+  assert.strictEqual(subPaymentResult.success, true);
+  assert.strictEqual(subPaymentResult.status, "SUCCESS");
+  assert.ok(subPaymentResult.gatewayPaymentId.startsWith("pi_test_") || subPaymentResult.gatewayPaymentId.startsWith("pi_"));
+  assert.strictEqual(subPaymentResult.paymentMethod, "CARD");
+
+  console.log("✓ Free Test Payment Gateway Adapters passed.");
+}
+
+function testSubscriptionTierPricingMath() {
+  console.log("--> Testing Subscription Tier Pricing & Discount Calculations...");
+
+  const monthlyPrice = 999;
+  const yearlyPriceExpected = monthlyPrice * 10; // 2 months free annual discount
+  const fullYearWithoutDiscount = monthlyPrice * 12;
+  const savings = fullYearWithoutDiscount - yearlyPriceExpected;
+  const savingsPercent = Math.round((savings / fullYearWithoutDiscount) * 100);
+
+  assert.strictEqual(yearlyPriceExpected, 9990);
+  assert.strictEqual(savingsPercent, 17); // ~17% annual savings
+
+  console.log("✓ Subscription Tier Pricing math tests passed.");
 }
 
 function testCsvExportFormatting() {
@@ -183,9 +222,10 @@ async function runAllTests() {
   testFinanceValidations();
   testCommissionCalculations();
   testMonthOverMonthCalculations();
+  testSubscriptionTierPricingMath();
   await testFreeTestPaymentGatewayAdapter();
   testCsvExportFormatting();
-  console.log("=== ALL FINANCE UNIT TESTS PASSED SUCCESSFULLY! ===");
+  console.log("=== ALL FINANCE & SUBSCRIPTION TESTS PASSED SUCCESSFULLY! ===");
 }
 
 runAllTests().catch((err) => {

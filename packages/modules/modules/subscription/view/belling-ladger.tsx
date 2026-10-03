@@ -1,16 +1,55 @@
+'use client';
+
 import React, { useState } from 'react';
-import { CreditCard, FileText, Download, CheckCircle2 } from 'lucide-react';
+import { CreditCard, FileText, Download } from 'lucide-react';
+import {
+  BillingLedgerResponseDto,
+  BillingPaymentItemDto,
+  BillingInvoiceItemDto,
+} from '../dto/subscription.dto';
+import { useSubscription } from '../hooks/use-subscription';
 
-export default function BillingLedger() {
-  const [ledgerTab, setLedgerTab] = useState('history'); // history or invoices
+interface BillingLedgerProps {
+  ledger?: BillingLedgerResponseDto | null;
+  ledgerTab?: 'history' | 'invoices';
+  loading?: boolean;
+  onTabChange?: (tab: 'history' | 'invoices') => void;
+  onDownloadInvoice?: (invoiceId: string) => void;
+}
 
-  const statements = ledgerTab === 'history' ? [
-    { id: 'PAY-9012', date: 'June 07, 2026', method: 'Visa ending in 4921', total: '$49.00', status: 'Succeeded' },
-    { id: 'PAY-8821', date: 'May 07, 2026', method: 'Visa ending in 4921', total: '$49.00', status: 'Succeeded' }
-  ] : [
-    { id: 'INV-2026-004', date: 'June 07, 2026', period: 'May 07 - June 07', total: '$49.00', status: 'Paid' },
-    { id: 'INV-2026-003', date: 'May 07, 2026', period: 'Apr 07 - May 07', total: '$49.00', status: 'Paid' }
-  ];
+export default function BillingLedger({
+  ledger: propLedger,
+  ledgerTab: propLedgerTab,
+  loading: propLoading,
+  onTabChange,
+  onDownloadInvoice,
+}: BillingLedgerProps) {
+  const fallbackHook = useSubscription();
+  const [localTab, setLocalTab] = useState<'history' | 'invoices'>('history');
+
+  const ledgerTab = propLedgerTab !== undefined ? propLedgerTab : localTab;
+  const ledger = propLedger !== undefined ? propLedger : fallbackHook.ledger;
+  const loading = propLoading !== undefined ? propLoading : fallbackHook.ledgerLoading;
+
+  const handleTabSwitch = (tab: 'history' | 'invoices') => {
+    setLocalTab(tab);
+    if (onTabChange) {
+      onTabChange(tab);
+    } else {
+      fallbackHook.setLedgerTab(tab);
+    }
+  };
+
+  const handleDownload = (invoiceId?: string) => {
+    if (!invoiceId) return;
+    if (onDownloadInvoice) {
+      onDownloadInvoice(invoiceId);
+    } else {
+      fallbackHook.downloadInvoice(invoiceId);
+    }
+  };
+
+  const statements = ledger?.items && ledger.items.length > 0 ? ledger.items : [];
 
   return (
     <div className="bg-white rounded-3xl border border-gray-100 shadow-sm flex flex-col min-h-0 flex-1 overflow-hidden">
@@ -18,17 +57,21 @@ export default function BillingLedger() {
       <div className="p-4 border-b border-gray-50 flex items-center justify-between gap-4 flex-shrink-0">
         <div className="flex gap-4">
           <button
-            onClick={() => setLedgerTab('history')}
-            className={`text-xs font-bold pb-1 border-b-2 transition-all flex items-center gap-1.5 ${
-              ledgerTab === 'history' ? 'text-blue-600 border-blue-600' : 'text-gray-400 hover:text-gray-900 border-transparent'
+            onClick={() => handleTabSwitch('history')}
+            className={`text-xs font-bold pb-1 border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
+              ledgerTab === 'history'
+                ? 'text-blue-600 border-blue-600'
+                : 'text-gray-400 hover:text-gray-900 border-transparent'
             }`}
           >
             <CreditCard className="w-3.5 h-3.5" /> Payment History
           </button>
           <button
-            onClick={() => setLedgerTab('invoices')}
-            className={`text-xs font-bold pb-1 border-b-2 transition-all flex items-center gap-1.5 ${
-              ledgerTab === 'invoices' ? 'text-blue-600 border-blue-600' : 'text-gray-400 hover:text-gray-900 border-transparent'
+            onClick={() => handleTabSwitch('invoices')}
+            className={`text-xs font-bold pb-1 border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
+              ledgerTab === 'invoices'
+                ? 'text-blue-600 border-blue-600'
+                : 'text-gray-400 hover:text-gray-900 border-transparent'
             }`}
           >
             <FileText className="w-3.5 h-3.5" /> Invoices & Receipts
@@ -49,19 +92,43 @@ export default function BillingLedger() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50 font-medium text-gray-700">
-            {statements.map((row) => (
-              <tr key={row.id} className="hover:bg-slate-50/50 transition-colors">
-                <td className="p-4 font-semibold text-gray-900">{row.id}</td>
-                <td className="p-4 text-gray-400 whitespace-nowrap">{row.date}</td>
-                <td className="p-4 text-gray-500">{'method' in row ? row.method : row.period}</td>
-                <td className="p-4 font-bold text-gray-900">{row.total}</td>
-                <td className="p-4 text-right">
-                  <button className="text-gray-400 hover:text-blue-600 p-1.5 inline-flex items-center gap-1 border border-gray-200 rounded-xl hover:bg-gray-50 transition-all font-semibold text-[11px]">
-                    <Download className="w-3.5 h-3.5" /> PDF
-                  </button>
+            {loading ? (
+              <tr>
+                <td colSpan={5} className="p-6 text-center text-gray-400 text-xs">
+                  Loading billing ledger records...
                 </td>
               </tr>
-            ))}
+            ) : statements.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="p-6 text-center text-gray-400 text-xs">
+                  {ledgerTab === 'history'
+                    ? 'No subscription payment transactions found.'
+                    : 'No invoices issued yet.'}
+                </td>
+              </tr>
+            ) : (
+              statements.map((row) => {
+                const subLabel = 'method' in row ? row.method : (row as BillingInvoiceItemDto).period;
+                const downloadTarget = 'invoiceId' in row && row.invoiceId ? row.invoiceId : row.id;
+
+                return (
+                  <tr key={row.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="p-4 font-semibold text-gray-900">{row.id}</td>
+                    <td className="p-4 text-gray-400 whitespace-nowrap">{row.date}</td>
+                    <td className="p-4 text-gray-500">{subLabel}</td>
+                    <td className="p-4 font-bold text-gray-900">{row.total}</td>
+                    <td className="p-4 text-right">
+                      <button
+                        onClick={() => handleDownload(downloadTarget)}
+                        className="text-gray-400 hover:text-blue-600 p-1.5 inline-flex items-center gap-1 border border-gray-200 rounded-xl hover:bg-gray-50 transition-all font-semibold text-[11px] cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5" /> PDF
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>
