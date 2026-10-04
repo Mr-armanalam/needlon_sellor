@@ -60,7 +60,7 @@ export async function PATCH(req: NextRequest) {
 
     const body = await req.json();
 
-    const parsed = updateSellerSettingsSchema.safeParse(body);
+    const parsed = updateSellerSettingsSchema.partial().safeParse(body);
 
     if (!parsed.success) {
       return NextResponse.json(

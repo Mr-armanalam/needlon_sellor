@@ -1,18 +1,18 @@
 import { SellerTheme } from "../types";
 
 export interface UpdateSellerSettingsDto {
-  languageCode: string;
-  currencyCode: string;
-  timezone: string;
+  languageCode?: string;
+  currencyCode?: string;
+  timezone?: string;
 
-  theme: SellerTheme;
+  theme?: SellerTheme;
 
-  emailNotifications: boolean;
-  smsNotifications: boolean;
-  pushNotifications: boolean;
+  emailNotifications?: boolean;
+  smsNotifications?: boolean;
+  pushNotifications?: boolean;
 
-  marketingNotifications: boolean;
-  orderNotifications: boolean;
-  payoutNotifications: boolean;
-  lowInventoryNotifications: boolean;
+  marketingNotifications?: boolean;
+  orderNotifications?: boolean;
+  payoutNotifications?: boolean;
+  lowInventoryNotifications?: boolean;
 }
