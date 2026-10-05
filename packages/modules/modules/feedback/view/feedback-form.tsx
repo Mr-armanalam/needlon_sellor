@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Send, Paperclip, Terminal, Info } from 'lucide-react';
+import { ArrowLeft, Send, Paperclip, Terminal } from 'lucide-react';
+import { useFeedback } from '../hooks/use-feedback';
 
 const categories = [
   'Bug Report', 'Feature Request', 'General Feedback', 
@@ -13,18 +14,19 @@ interface FeedbackFormProps {
 }
 
 export default function FeedbackForm({ onBack, onSubmitSuccess }: FeedbackFormProps) {
+  const { submitFeedback } = useFeedback();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     category: 'Feature Request',
     priority: 'Medium',
-    language: 'English (US)'
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Auto-collected System Telemetry Metadata
   const [systemMeta, setSystemMeta] = useState({
-    device: 'Loading telemetry...',
-    browser: 'Loading telemetry...',
+    deviceInfo: 'Loading telemetry...',
+    browserInfo: 'Loading telemetry...',
     appVersion: 'v2.4.1-build-2026'
   });
 
@@ -32,27 +34,34 @@ export default function FeedbackForm({ onBack, onSubmitSuccess }: FeedbackFormPr
     // Safely capture system strings inside the client browser window
     if (typeof window !== 'undefined') {
       const userAgent = navigator.userAgent;
-      let browserName = "Unknown Browser";
+      let browserName = "Google Chrome";
       
-      if (userAgent.match(/chrome|chromium|crios/i)) browserName = "Google Chrome";
-      else if (userAgent.match(/firefox|fxios/i)) browserName = "Mozilla Firefox";
+      if (userAgent.match(/firefox|fxios/i)) browserName = "Mozilla Firefox";
       else if (userAgent.match(/safari/i)) browserName = "Apple Safari";
+      else if (userAgent.match(/edge/i)) browserName = "Microsoft Edge";
 
       setSystemMeta({
-        device: navigator.platform || "Desktop Workspace",
-        browser: browserName,
+        deviceInfo: navigator.platform || "Desktop Workspace",
+        browserInfo: browserName,
         appVersion: 'v2.4.1-build-2026'
       });
     }
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title.trim() || !formData.description.trim()) return;
     
-    // Bundle user inputs with telemetry data strings for the backend API route
+    setIsSubmitting(true);
     const completePayload = { ...formData, ...systemMeta };
-    onSubmitSuccess?.(completePayload);
+    const res = await submitFeedback(completePayload);
+    setIsSubmitting(false);
+
+    if (res.success) {
+      onSubmitSuccess?.(res.data || completePayload);
+    } else {
+      alert(res.error || "Failed to submit feedback log");
+    }
   };
 
   return (
@@ -145,8 +154,8 @@ export default function FeedbackForm({ onBack, onSubmitSuccess }: FeedbackFormPr
           <Terminal className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
           <div className="text-[10px] font-mono leading-relaxed space-y-0.5">
             <span className="font-sans font-bold text-gray-700 block text-xs mb-1">Diagnostically Transmitted Telemetry Meta</span>
-            <p>● Environment: {systemMeta.device}</p>
-            <p>● UserAgent Client: {systemMeta.browser}</p>
+            <p>● Environment: {systemMeta.deviceInfo}</p>
+            <p>● UserAgent Client: {systemMeta.browserInfo}</p>
             <p>● App Core Version: {systemMeta.appVersion}</p>
           </div>
         </div>
@@ -154,9 +163,10 @@ export default function FeedbackForm({ onBack, onSubmitSuccess }: FeedbackFormPr
         {/* Submit Interaction Bar */}
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white font-bold py-2.5 px-4 rounded-xl shadow-sm shadow-blue-600/10 hover:bg-blue-700 transition-all flex items-center justify-center gap-1.5 pt-3"
+          disabled={isSubmitting}
+          className="w-full bg-blue-600 text-white font-bold py-2.5 px-4 rounded-xl shadow-sm shadow-blue-600/10 hover:bg-blue-700 transition-all flex items-center justify-center gap-1.5 pt-3 disabled:opacity-50"
         >
-          <Send className="w-3.5 h-3.5" /> Submit Feedback Log
+          <Send className="w-3.5 h-3.5" /> {isSubmitting ? "Submitting to Database..." : "Submit Feedback Log"}
         </button>
       </form>
     </div>

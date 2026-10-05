@@ -6,41 +6,44 @@ import * as usersTable from './schema/users';
 import * as passwordResetToken from './schema/password-reset-tokens';
 import * as sellers from './schema/seller';
 import { sellerSettings } from './schema/seller/seller-setting';
-import {sellerAddresses} from "@/db/schema/seller/seller-address";
-import {sellerProfiles} from "@/db/schema/seller/seller-profile";
-import {sellerStore} from "@/db/schema/seller/seller-store";
-import {sellerDocuments} from "@/db/schema/seller/seller-document";
-import {sellerBankAccounts} from "@/db/schema/seller/seller-bank-account";
-import {sellerPayoutRequests} from "@/db/schema/seller/seller-payout-request";
-import {sellerVerification} from "@/db/schema/seller/seller-verification";
-import {subscriptionPlans} from "@/db/schema/subscription/sucbscription-plan";
-import {sellerSubscriptions} from "@/db/schema/subscription/seller-subscription";
-import {subscriptionPlanFeatures} from "@/db/schema/subscription/subscription-plan-features";
-import {subscriptionPayments} from "@/db/schema/subscription/subscription-payment";
-import {subscriptionInvoices} from "@/db/schema/subscription/subscription-invoice";
-import { productsRelations, productsTable } from "@/db/schema/catalog/products";
-import { productVariantsTable } from "@/db/schema/catalog/products/product-variants";
-import { productVariantsRelations } from "@/db/schema/catalog/products/product-variants/relations";
-import {categoriesRelations, categoriesTable} from "@/db/schema/catalog/categories";
-import {categoryAttributeOptionsTable} from "@/db/schema/catalog/category-attribute-options";
-import {categoryAttributesTable} from "@/db/schema/catalog/category-attributes";
-import {inventoryTable} from "@/db/schema/catalog/products/inventory/table";
-import {pricingTable} from "@/db/schema/catalog/products/pricing";
-import {productAiTable} from "@/db/schema/catalog/products/product-ai";
-import {productAttributeValuesTable} from "@/db/schema/catalog/products/product-attribute-values";
-import {productImagesTable} from "@/db/schema/catalog/products/product-images";
-import {productSeoTable} from "@/db/schema/catalog/products/product-seo";
-import {productTagMappingsTable} from "@/db/schema/catalog/products/product-tag-mappings";
-import {productTagsTable} from "@/db/schema/catalog/products/product-tags";
-import {productVariantOptionsTable} from "@/db/schema/catalog/products/product-variant-options";
-import {productVideosTable} from "@/db/schema/catalog/products/product-videos";
-import { shippingTable } from "@/db/schema/catalog/products/shipping";
+import {sellerAddresses} from "./schema/seller/seller-address";
+import {sellerProfiles} from "./schema/seller/seller-profile";
+import {sellerStore} from "./schema/seller/seller-store";
+import {sellerDocuments} from "./schema/seller/seller-document";
+import {sellerBankAccounts} from "./schema/seller/seller-bank-account";
+import {sellerPayoutRequests} from "./schema/seller/seller-payout-request";
+import {sellerVerification} from "./schema/seller/seller-verification";
+import {subscriptionPlans} from "./schema/subscription/sucbscription-plan";
+import {sellerSubscriptions} from "./schema/subscription/seller-subscription";
+import {subscriptionPlanFeatures} from "./schema/subscription/subscription-plan-features";
+import {subscriptionPayments} from "./schema/subscription/subscription-payment";
+import {subscriptionInvoices} from "./schema/subscription/subscription-invoice";
+import { productsRelations, productsTable } from "./schema/catalog/products";
+import { productVariantsTable } from "./schema/catalog/products/product-variants";
+import { productVariantsRelations } from "./schema/catalog/products/product-variants/relations";
+import {categoriesRelations, categoriesTable} from "./schema/catalog/categories";
+import {categoryAttributeOptionsTable} from "./schema/catalog/category-attribute-options";
+import {categoryAttributesTable} from "./schema/catalog/category-attributes";
+import {inventoryTable} from "./schema/catalog/products/inventory/table";
+import {pricingTable} from "./schema/catalog/products/pricing";
+import {productAiTable} from "./schema/catalog/products/product-ai";
+import {productAttributeValuesTable} from "./schema/catalog/products/product-attribute-values";
+import {productImagesTable} from "./schema/catalog/products/product-images";
+import {productSeoTable} from "./schema/catalog/products/product-seo";
+import {productTagMappingsTable} from "./schema/catalog/products/product-tag-mappings";
+import {productTagsTable} from "./schema/catalog/products/product-tags";
+import {productVariantOptionsTable} from "./schema/catalog/products/product-variant-options";
+import {productVideosTable} from "./schema/catalog/products/product-videos";
+import { shippingTable } from "./schema/catalog/products/shipping";
 import * as ordersSchema from "./schema/orders";
-import { reviewsTable } from "@/db/schema/reviews";
-
+import { reviewsTable } from "./schema/reviews";
+import * as helpSchema from "./schema/help";
+import * as feedbackSchema from "./schema/feedback";
 
 export const schema = {
   ...ordersSchema,
+  ...helpSchema,
+  ...feedbackSchema,
   reviewsTable: reviewsTable,
   users: usersTable.usersTable,
   passwordResetToken: passwordResetToken.passwordResetTokens,

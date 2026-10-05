@@ -44,11 +44,63 @@ export function useSupport() {
     }
   };
 
+  const fetchTicketDetails = async (ticketId: string) => {
+    try {
+      const res = await fetch(`/api/seller/support/tickets/${ticketId}`);
+      const json = await res.json();
+      if (json.success) {
+        return { success: true, data: json.data };
+      }
+      return { success: false, error: json.error?.message || "Failed to load ticket details" };
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
+  };
+
+  const sendReply = async (ticketId: string, message: string) => {
+    try {
+      const res = await fetch(`/api/seller/support/tickets/${ticketId}/reply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        await fetchTickets();
+        return { success: true, data: json.data };
+      }
+      return { success: false, error: json.error?.message || "Failed to send reply" };
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
+  };
+
+  const updateStatus = async (ticketId: string, status: "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED") => {
+    try {
+      const res = await fetch(`/api/seller/support/tickets/${ticketId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        await fetchTickets();
+        return { success: true, data: json.data };
+      }
+      return { success: false, error: json.error?.message || "Failed to update ticket status" };
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
+  };
+
   return {
     tickets,
     loading,
     error,
     refetch: fetchTickets,
     createTicket,
+    fetchTicketDetails,
+    sendReply,
+    updateStatus,
   };
 }
