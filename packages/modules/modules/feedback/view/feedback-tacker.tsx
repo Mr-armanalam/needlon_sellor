@@ -3,20 +3,37 @@ import {
   Star,
   CheckCircle2,
   Hourglass,
-  HelpCircle,
   KanbanSquare,
   Send,
 } from "lucide-react";
-import { useSupport } from "@/modules/help/hooks/use-support";
+import { useFeedback } from "../hooks/use-feedback";
 
 export default function FeedbackTracker() {
-  const { tickets, loading } = useSupport();
+  const { trackerItems, loadingTracker, submitSurvey } = useFeedback();
   const [surveyRating, setSurveyRating] = useState(0);
+  const [surveyComment, setSurveyComment] = useState("");
   const [surveySubmitted, setSurveySubmitted] = useState(false);
+  const [isSubmittingSurvey, setIsSubmittingSurvey] = useState(false);
+
+  const handleSurveySubmit = async () => {
+    if (surveyRating <= 0) return;
+    setIsSubmittingSurvey(true);
+    const res = await submitSurvey({
+      rating: surveyRating,
+      feedbackText: surveyComment.trim() || undefined,
+      context: "Product Listing Workflow",
+    });
+    setIsSubmittingSurvey(false);
+    if (res.success) {
+      setSurveySubmitted(true);
+    } else {
+      alert(res.error || "Failed to submit survey");
+    }
+  };
 
   return (
     <div className="space-y-6 flex-1 overflow-y-auto pr-1 min-h-0 animate-in fade-in duration-200">
-      {/* 1. Occasional Customer Satisfaction Micro-Survey (Builds Trust) */}
+      {/* 1. Occasional Customer Satisfaction Micro-Survey */}
       {!surveySubmitted && (
         <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-5 rounded-2xl shadow-md border border-slate-700/50 space-y-4 max-w-xl mx-auto w-full relative overflow-hidden">
           <div className="space-y-1">
@@ -51,14 +68,17 @@ export default function FeedbackTracker() {
             <div className="space-y-2 animate-in fade-in duration-200">
               <textarea
                 rows={2}
+                value={surveyComment}
+                onChange={(e) => setSurveyComment(e.target.value)}
                 placeholder="Optional: What can we improve to make your workflow smoother?"
                 className="w-full bg-slate-800/80 border border-slate-700 rounded-xl text-xs px-3 py-2 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 placeholder-slate-500 resize-none leading-relaxed"
               />
               <button
-                onClick={() => setSurveySubmitted(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-1.5 px-3 rounded-lg transition-all flex items-center gap-1 ml-auto"
+                onClick={handleSurveySubmit}
+                disabled={isSubmittingSurvey}
+                className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-1.5 px-3 rounded-lg transition-all flex items-center gap-1 ml-auto disabled:opacity-50"
               >
-                Submit <Send className="w-3 h-3" />
+                {isSubmittingSurvey ? "Submitting..." : "Submit"} <Send className="w-3 h-3" />
               </button>
             </div>
           )}
@@ -68,7 +88,7 @@ export default function FeedbackTracker() {
       {surveySubmitted && (
         <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl text-center text-xs text-emerald-800 max-w-xl mx-auto font-medium animate-in fade-in duration-200 flex items-center justify-center gap-1.5">
           <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Thank you! Your
-          feedback helps us build a better experience.
+          feedback was saved to the database.
         </div>
       )}
 
@@ -78,19 +98,24 @@ export default function FeedbackTracker() {
           <KanbanSquare className="w-4 h-4" /> Track Feedback Status
         </h3>
 
-        {loading ? (
+        {loadingTracker ? (
           <div className="p-8 text-center text-xs text-gray-400">Loading feedback tracking status...</div>
-        ) : tickets.length === 0 ? (
+        ) : trackerItems.length === 0 ? (
           <div className="p-8 text-center text-xs text-gray-400">No support or feedback tickets submitted yet.</div>
         ) : (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
-            {tickets.map((log) => (
+            {trackerItems.map((log: any) => (
               <div
                 key={log.id}
                 className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-medium"
               >
                 <div className="space-y-1 min-w-0">
-                  <p className="font-bold text-gray-900 truncate">{log.subject}</p>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-gray-900 truncate">{log.subject}</span>
+                    <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
+                      {log.type}
+                    </span>
+                  </div>
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-gray-400">
                     <span className="font-semibold text-gray-700">{log.ticketNumber}</span>
                     <span>•</span>
