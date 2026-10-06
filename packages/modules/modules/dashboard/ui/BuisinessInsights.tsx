@@ -1,7 +1,12 @@
 import { Sparkles } from "lucide-react";
 import RecommendationStack from "../view/recommendation-stack";
+import { BusinessInsightDto } from "../dto/dashboard.dto";
 
-export default function BusinessInsights() {
+interface BusinessInsightsProps {
+  insights?: BusinessInsightDto[];
+}
+
+export default function BusinessInsights({ insights }: BusinessInsightsProps) {
   return (
     <div className="flex flex-col gap-4 w-full">
       {/* Title Container */}
@@ -14,7 +19,8 @@ export default function BusinessInsights() {
         </h3>
       </div>
 
-      <RecommendationStack />
+      <RecommendationStack insights={insights} />
     </div>
   );
 }
+

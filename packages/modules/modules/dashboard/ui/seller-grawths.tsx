@@ -1,7 +1,11 @@
 import GamifiedCard from '../view/gamified-card';
+import { SellerGrowthOverviewDto } from '../dto/dashboard.dto';
 
-export default function SellerGrowth() {
+interface SellerGrowthProps {
+  sellerGrowth?: SellerGrowthOverviewDto;
+}
 
+export default function SellerGrowth({ sellerGrowth }: SellerGrowthProps) {
   return (
     <div className="flex flex-col gap-4 w-full">
       {/* Section Header */}
@@ -12,7 +16,7 @@ export default function SellerGrowth() {
       </div>
 
       {/* Main Gamified Card */}
-     <GamifiedCard />
+      <GamifiedCard sellerGrowth={sellerGrowth} />
     </div>
   );
-}
+}

@@ -1,7 +1,14 @@
-import { metrics } from "../data/performance-snapData";
+import { metrics as defaultMetrics } from "../data/performance-snapData";
+import { PerformanceMetricDto } from "../dto/dashboard.dto";
 import PerformanceMetricCard from "../view/performance-metric-card";
 
-export default function PerformanceSnapshot() {
+interface PerformanceSnapshotProps {
+  performance?: PerformanceMetricDto[];
+}
+
+export default function PerformanceSnapshot({ performance }: PerformanceSnapshotProps) {
+  const items = performance && performance.length > 0 ? performance : defaultMetrics;
+
   return (
     <div className="flex flex-col gap-4 w-full">
       <div className="flex items-center justify-between">
@@ -11,10 +18,11 @@ export default function PerformanceSnapshot() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {metrics.map((metric, idx) => {
+        {items.map((metric, idx) => {
           return <PerformanceMetricCard metric={metric} key={idx} />;
         })}
       </div>
     </div>
   );
 }
+

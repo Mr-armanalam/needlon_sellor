@@ -1,15 +1,16 @@
 import { ArrowUpRight } from "lucide-react";
 import { actionType } from "../data/quickActionData";
 
-const ActionGridComp = ({ action }: { action: actionType }) => {
+const ActionGridComp = ({ action, onClick }: { action: actionType; onClick?: () => void }) => {
   const Icon = action.icon;
 
   return (
     <button
+      onClick={onClick}
       className={`
         group flex flex-col justify-between items-start text-left p-5 rounded-2xl h-35
         transition-all duration-300 ease-out outline-none select-none relative overflow-hidden
-        hover:-translate-y-0.5  ${action.styles}
+        hover:-translate-y-0.5 cursor-pointer ${action.styles}
       `}
     >
       {/* Dynamic Icon Wrapper */}

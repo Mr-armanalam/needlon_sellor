@@ -1,7 +1,27 @@
-import { ArrowRight } from "lucide-react";
-import OrderListCont from "../view/order-list-container";
+"use client";
 
-export default function RecentOrders() {
+import { ArrowRight } from "lucide-react";
+import { useRouter } from "next/navigation";
+import OrderListCont from "../view/order-list-container";
+import { RecentOrderOverviewDto } from "../dto/dashboard.dto";
+
+interface RecentOrdersProps {
+  orders?: RecentOrderOverviewDto[];
+  onAccept?: (orderId: string) => void;
+  onDecline?: (orderId: string) => void;
+  onChat?: (orderId: string) => void;
+  actionLoadingMap?: Record<string, boolean>;
+}
+
+export default function RecentOrders({
+  orders,
+  onAccept,
+  onDecline,
+  onChat,
+  actionLoadingMap,
+}: RecentOrdersProps) {
+  const router = useRouter();
+
   return (
     <div className="flex flex-col gap-4 w-full">
       {/* Header Container */}
@@ -9,7 +29,10 @@ export default function RecentOrders() {
         <h3 className="text-[14px] font-semibold text-neutral-400 tracking-tight uppercase">
           Recent Activity
         </h3>
-        <button className="text-[13px] font-medium text-neutral-900 hover:text-neutral-600 transition-colors flex items-center gap-1 group">
+        <button
+          onClick={() => router.push("/orders")}
+          className="text-[13px] font-medium text-neutral-900 hover:text-neutral-600 transition-colors flex items-center gap-1 group cursor-pointer"
+        >
           View all orders
           <ArrowRight
             size={14}
@@ -18,7 +41,14 @@ export default function RecentOrders() {
         </button>
       </div>
 
-      <OrderListCont />
+      <OrderListCont
+        orders={orders}
+        onAccept={onAccept}
+        onDecline={onDecline}
+        onChat={onChat}
+        actionLoadingMap={actionLoadingMap}
+      />
     </div>
   );
 }
+
