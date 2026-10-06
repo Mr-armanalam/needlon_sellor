@@ -1,6 +1,11 @@
 import IncomeWorkspaceCard from "../view/income-workspace-card";
+import { EarningsOverviewDto } from "../dto/dashboard.dto";
 
-export default function Earnings() {
+interface EarningsProps {
+  earnings?: EarningsOverviewDto;
+}
+
+export default function Earnings({ earnings }: EarningsProps) {
   return (
     <div className="flex flex-col gap-4 w-full">
       {/* Section Header */}
@@ -10,7 +15,8 @@ export default function Earnings() {
         </h3>
       </div>
 
-      <IncomeWorkspaceCard />
+      <IncomeWorkspaceCard earnings={earnings} />
     </div>
   );
 }
+

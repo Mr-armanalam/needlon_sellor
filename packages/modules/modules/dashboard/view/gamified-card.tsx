@@ -1,21 +1,26 @@
 import SellerProgressBlock from "../components/seller-progress-block";
 import SellerMileStoneGrid from "../components/seller-milestone-grid";
+import { SellerGrowthOverviewDto } from "../dto/dashboard.dto";
 
-const milestones = [
-  { id: 1, label: "Shop Profile", completed: true },
-  { id: 2, label: "Verified Phone", completed: true },
-  { id: 3, label: "Verified Shop", completed: true },
-  { id: 4, label: "Add Logo", completed: false },
-  { id: 5, label: "Add Cover Photo", completed: false },
+const defaultMilestones = [
+  { id: 1, label: "Shop Profile", completed: true, actionUrl: "/settings/profile" },
+  { id: 2, label: "Verified Phone", completed: true, actionUrl: "/settings/security" },
+  { id: 3, label: "Verified Shop", completed: true, actionUrl: "/verification" },
+  { id: 4, label: "Add Logo", completed: false, actionUrl: "/settings/store" },
+  { id: 5, label: "Add Cover Photo", completed: false, actionUrl: "/settings/store" },
 ];
 
-export type milestonesType = (typeof milestones)[number];
+export type milestonesType = (typeof defaultMilestones)[number];
 
-const GamifiedCard = () => {
+interface GamifiedCardProps {
+  sellerGrowth?: SellerGrowthOverviewDto;
+}
 
-  //  percentage dynamically
-  const completedCount = milestones.filter((m) => m.completed).length;
-  const percentage = Math.round((completedCount / milestones.length) * 100);
+const GamifiedCard = ({ sellerGrowth }: GamifiedCardProps) => {
+  const milestoneList = sellerGrowth?.milestones || defaultMilestones;
+  const percentage = sellerGrowth?.percentage ?? Math.round(
+    (milestoneList.filter((m) => m.completed).length / milestoneList.length) * 100
+  );
 
   return (
     <div className="bg-white border border-neutral-100/80 rounded-2xl p-6 flex flex-col gap-6 shadow-[0_4px_12px_rgba(0,0,0,0.01)]">
@@ -29,9 +34,10 @@ const GamifiedCard = () => {
         />
       </div>
 
-      <SellerMileStoneGrid milestones={milestones} />
+      <SellerMileStoneGrid milestones={milestoneList} />
     </div>
   );
 };
 
 export default GamifiedCard;
+

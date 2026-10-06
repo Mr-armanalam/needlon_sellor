@@ -1,10 +1,42 @@
-import { ArrowRight } from "lucide-react";
-import { recommendations } from "../data/buisinessInsightData";
+"use client";
 
-const RecommendationStack = () => {
+import { ArrowRight, AlertCircle, TrendingUp, Sparkles } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { recommendations as defaultRecommendations } from "../data/buisinessInsightData";
+import { BusinessInsightDto } from "../dto/dashboard.dto";
+
+interface RecommendationStackProps {
+  insights?: BusinessInsightDto[];
+}
+
+const RecommendationStack = ({ insights }: RecommendationStackProps) => {
+  const router = useRouter();
+
+  const items = insights && insights.length > 0
+    ? insights.map((ins, idx) => ({
+        id: ins.id,
+        message: ins.message,
+        actionLabel: ins.actionLabel,
+        actionUrl: ins.actionUrl,
+        icon: ins.type === "alert" ? AlertCircle : TrendingUp,
+        cardStyles: ins.type === "alert"
+          ? "bg-amber-50/40 border-amber-100/70 text-amber-900"
+          : "bg-blue-50/40 border-blue-100/70 text-blue-900",
+        iconStyles: ins.type === "alert"
+          ? "bg-amber-500 text-white"
+          : "bg-blue-500 text-white",
+        buttonStyles: ins.type === "alert"
+          ? "bg-amber-900 text-white hover:bg-amber-800"
+          : "bg-blue-900 text-white hover:bg-blue-800",
+      }))
+    : defaultRecommendations.map((r, idx) => ({
+        ...r,
+        actionUrl: idx === 0 ? "/products" : "/products",
+      }));
+
   return (
     <div className="flex flex-col gap-3.5">
-      {recommendations.map((item) => {
+      {items.map((item) => {
         const Icon = item.icon;
         return (
           <div
@@ -27,9 +59,10 @@ const RecommendationStack = () => {
 
             {/* Right Wing: Inline Action Button */}
             <button
+              onClick={() => router.push(item.actionUrl)}
               className={`
                   px-4 py-2 text-[12px] font-bold rounded-xl flex items-center justify-center gap-1.5 
-                  transition-all duration-200 shrink-0 select-none outline-none group
+                  transition-all duration-200 shrink-0 select-none outline-none group cursor-pointer
                   ${item.buttonStyles}
                 `}
             >
@@ -47,3 +80,4 @@ const RecommendationStack = () => {
 };
 
 export default RecommendationStack;
+

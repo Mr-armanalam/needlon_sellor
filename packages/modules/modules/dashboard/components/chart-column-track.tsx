@@ -1,9 +1,16 @@
-import { weeklyData } from "../data/earningsData";
+import { weeklyData as defaultWeeklyData } from "../data/earningsData";
+import { WeeklyChartPointDto } from "../dto/dashboard.dto";
 
-const ChartColumnTrack = () => {
+interface ChartColumnTrackProps {
+  weeklyData?: WeeklyChartPointDto[];
+}
+
+const ChartColumnTrack = ({ weeklyData }: ChartColumnTrackProps) => {
+  const dataPoints = weeklyData && weeklyData.length > 0 ? weeklyData : defaultWeeklyData;
+
   return (
     <div className="flex items-end justify-between h-32 gap-3 px-2 border-b border-neutral-100/70 pb-1">
-      {weeklyData.map((data, index) => (
+      {dataPoints.map((data, index) => (
         <div
           key={index}
           className="flex-1 flex flex-col items-center gap-2 h-full justify-end group relative"
@@ -27,3 +34,4 @@ const ChartColumnTrack = () => {
 };
 
 export default ChartColumnTrack;
+

@@ -1,7 +1,22 @@
 import { ordersType } from "../data/recent-orderData";
+import { RecentOrderOverviewDto } from "../dto/dashboard.dto";
 import MetaValueQuickAction from "./meta-value-quick-process";
 
-const MetaValueNmicroAction = ({ order }: { order: ordersType }) => {
+interface MetaValueNmicroActionProps {
+  order: RecentOrderOverviewDto | ordersType;
+  onAccept?: (orderId: string) => void;
+  onDecline?: (orderId: string) => void;
+  onChat?: (orderId: string) => void;
+  isLoading?: boolean;
+}
+
+const MetaValueNmicroAction = ({
+  order,
+  onAccept,
+  onDecline,
+  onChat,
+  isLoading = false,
+}: MetaValueNmicroActionProps) => {
   return (
     <div className="flex items-center justify-between sm:justify-end gap-6 border-t sm:border-none pt-3 sm:pt-0 border-neutral-50">
       <div className="flex flex-col sm:items-end gap-0.5">
@@ -13,9 +28,17 @@ const MetaValueNmicroAction = ({ order }: { order: ordersType }) => {
         </span>
       </div>
 
-      <MetaValueQuickAction />
+      <MetaValueQuickAction
+        orderId={order.id}
+        status={order.status}
+        onAccept={onAccept}
+        onDecline={onDecline}
+        onChat={onChat}
+        isLoading={isLoading}
+      />
     </div>
   );
 };
 
 export default MetaValueNmicroAction;
+
