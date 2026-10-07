@@ -7,9 +7,8 @@ import {useBusinessIdentityForm} from "@/modules/seller-profile/hooks/use-buisin
 import {BusinessType} from "@/modules/seller-profile/types/seller-profile-form";
 import {BUSINESS_TYPES} from "@/modules/seller-profile/constants";
 import {Spinner} from "@/components/ui/spinner";
-import {SellerVerificationSection} from "@/modules/seller-profile/components";
-import {Separator} from "@/components/ui/separator";
 import Link from "next/link";
+import {useVerificationForm} from "@/modules/seller-profile/hooks";
 
 export default function BusinessIdentitySection({
                                                   setSaveStatus,
@@ -19,29 +18,26 @@ export default function BusinessIdentitySection({
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-
   const {
     form,
     setField,
-
     save,
     reset,
-
     uploadImage,
-
     isDirty,
     isSaving,
     isUploading,
     isLoading,
   } = useBusinessIdentityForm();
 
+  const { verification } = useVerificationForm();
+  const documents = verification?.documents ?? [];
+  const gstDoc = documents.find((doc) => doc.documentType === "GST");
+  const panDoc = documents.find((doc) => doc.documentType === "PAN");
 
-  // Trigger click on the hidden input element
   const handleDivClick = () => {
     fileInputRef.current?.click();
   };
-
-  console.log(form, 'jkj')
 
 
   const handleFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -317,57 +313,94 @@ export default function BusinessIdentitySection({
                 </p>
               </div>
 
-              {/*<SellerVerificationSection />*/}
-
-               {/*GST BLOCK*/}
-              <Link href={'/profile/verification'} className="border cursor-pointer border-gray-100 hover:border-blue-800 hover:bg-gray-50 bg-gray-50/40 rounded-xl p-3 flex flex-col  gap-2">
-                <div className={'flex items-center justify-between'}>
-                  <div>
-                    <span className="text-xs font-bold text-gray-800 block">
+              {/* DOCUMENT CARDS */}
+              <div className="space-y-2.5">
+                {/* GST CARD */}
+                <Link
+                  href="/profile/verification"
+                  className="border border-gray-100 hover:border-blue-700 hover:bg-blue-50/20 bg-gray-50/40 rounded-xl p-3 flex items-center justify-between transition-colors block group"
+                >
+                  <div className="space-y-0.5">
+                    <span className="text-xs font-bold text-gray-800 block group-hover:text-blue-900 transition-colors">
                       GSTIN Registration
                     </span>
-                    <span className="text-[10px] text-gray-400 font-medium">
-                      Optional Verification
+                    <div className="flex items-center gap-2">
+                      {gstDoc ? (
+                        <>
+                          <span className="text-[11px] font-mono font-medium text-gray-600">
+                            {gstDoc.documentNumber || "Document Uploaded"}
+                          </span>
+                          <span
+                            className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                              gstDoc.status === "VERIFIED"
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                : gstDoc.status === "REJECTED"
+                                ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                : "bg-amber-50 text-amber-700 border border-amber-200"
+                            }`}
+                          >
+                            {gstDoc.status === "VERIFIED"
+                              ? "Verified ✓"
+                              : gstDoc.status === "REJECTED"
+                              ? "Rejected"
+                              : "Under Review"}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-[10px] text-gray-400 font-medium">
+                          Optional Verification
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <span className="bg-white border border-gray-200 text-gray-700 group-hover:border-blue-200 group-hover:text-blue-700 text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-xs transition-colors">
+                    {gstDoc ? "View" : "Add"}
+                  </span>
+                </Link>
+
+                {/* PAN CARD */}
+                <Link
+                  href="/profile/verification"
+                  className="border border-gray-100 hover:border-blue-700 hover:bg-blue-50/20 bg-gray-50/40 rounded-xl p-3 flex items-center justify-between transition-colors block group"
+                >
+                  <div className="space-y-0.5">
+                    <span className="text-xs font-bold text-gray-800 block group-hover:text-blue-900 transition-colors">
+                      Business PAN Card
                     </span>
+                    <div className="flex items-center gap-2">
+                      {panDoc ? (
+                        <>
+                          <span className="text-[11px] font-mono font-medium text-gray-600">
+                            {panDoc.documentNumber || "Document Uploaded"}
+                          </span>
+                          <span
+                            className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                              panDoc.status === "VERIFIED"
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                : panDoc.status === "REJECTED"
+                                ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                : "bg-amber-50 text-amber-700 border border-amber-200"
+                            }`}
+                          >
+                            {panDoc.status === "VERIFIED"
+                              ? "Verified ✓"
+                              : panDoc.status === "REJECTED"
+                              ? "Rejected"
+                              : "Under Review"}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-[10px] text-gray-400 font-medium">
+                          Optional Verification
+                        </span>
+                      )}
+                    </div>
                   </div>
-                <button className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-xs transition-colors">
-                  Add
-                </button>
-                </div>
-
-                <Separator />
-
-                <div className={'flex items-center justify-between'}>
-
-                  <div>
-                     <span className="text-xs font-bold text-gray-800 block">
-                        Business PAN Card
-                     </span>
-                     <span className="text-[10px] text-gray-400 font-medium">
-                        Optional Verification
-                     </span>
-                  </div>
-                  <button className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-xs transition-colors">
-                    Add
-                  </button>
-                </div>
-
-              </Link>
-
-               {/*PAN BLOCK*/}
-              {/*<div className="border border-gray-100 bg-gray-50/40 rounded-xl p-3 flex items-center justify-between gap-2">*/}
-              {/*  <div>*/}
-              {/*  <span className="text-xs font-bold text-gray-800 block">*/}
-              {/*    Business PAN Card*/}
-              {/*  </span>*/}
-              {/*    <span className="text-[10px] text-gray-400 font-medium">*/}
-              {/*    Optional Verification*/}
-              {/*  </span>*/}
-              {/*  </div>*/}
-              {/*  <button className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-xs transition-colors">*/}
-              {/*    Add*/}
-              {/*  </button>*/}
-              {/*</div>*/}
+                  <span className="bg-white border border-gray-200 text-gray-700 group-hover:border-blue-200 group-hover:text-blue-700 text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-xs transition-colors">
+                    {panDoc ? "View" : "Add"}
+                  </span>
+                </Link>
+              </div>
 
               {/* VERIFICATION VALUE PROPOSITIONS */}
               <div className="bg-blue-50/30 border border-blue-100/60 rounded-xl p-3.5 space-y-2.5">
