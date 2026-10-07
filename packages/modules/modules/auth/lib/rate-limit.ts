@@ -28,6 +28,12 @@ export async function rateLimit({
 
     if (count === 1) {
       await redis.expire(key, window);
+    } else {
+      // Defensive check: if TTL is missing (-1 or -2), re-apply expiry window to prevent keys locking permanently
+      const ttl = await redis.ttl(key);
+      if (ttl < 0) {
+        await redis.expire(key, window);
+      }
     }
 
     return {
@@ -43,32 +49,40 @@ export async function rateLimit({
   }
 }
 
+export async function resetRateLimit(key: string): Promise<boolean> {
+  if (!redis) return true;
+  try {
+    await redis.del(key);
+    return true;
+  } catch (error) {
+    console.warn("[RateLimit] Failed to reset rate limit key:", error);
+    return false;
+  }
+}
 
-const FIFTEEN_MINUTES =
-  60 * 15;
 
-const ONE_HOUR =
-  60 * 60;
+const FIFTEEN_MINUTES = 60 * 15;
+
+const ONE_HOUR = 60 * 60;
 
 export async function limitLogin(
   ip: string,
   email: string
 ) {
+  const normalizedEmail = email.trim().toLowerCase();
+
   const ipResult =
     await rateLimit({
       key: `rl:login:ip:${ip}`,
-      limit: 80, // TODO: Wrong
-      // limit: 10, // Correct
-      window:
-        FIFTEEN_MINUTES,
+      limit: 10,
+      window: FIFTEEN_MINUTES,
     });
 
   const emailResult =
     await rateLimit({
-      key: `rl:login:email:${email}`,
-      limit: 15, // TODO: Temporarily increased from 5 to unblock testing after DB connection errors
-      window:
-        FIFTEEN_MINUTES,
+      key: `rl:login:email:${normalizedEmail}`,
+      limit: 5,
+      window: FIFTEEN_MINUTES,
     });
 
   return (
