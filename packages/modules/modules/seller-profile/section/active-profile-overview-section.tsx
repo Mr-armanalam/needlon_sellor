@@ -3,7 +3,7 @@ import { WorkspaceTab} from "@/modules/seller-profile/view/seller-foundation-pag
 import {ArrowRight} from "lucide-react";
 import {FoundationSectionCard} from "@/modules/seller-profile/components/foundation-secion-card";
 import {NextFoundationStepDto, SellerFoundationProgressDto} from "@/modules/seller-profile/dto";
-
+import {useSellerProfile} from "@/modules/seller-profile/hooks/use-seller-profile";
 
 type prop = {
     missingStepsCount: number;
@@ -12,24 +12,24 @@ type prop = {
     handleTabSwitch: (tab: WorkspaceTab) => void;
 }
 
-
 const ActiveProfileOverviewSection = ({missingStepsCount, nextStep, handleTabSwitch, foundation}: prop) => {
+    const { profile } = useSellerProfile();
 
     const handleContinueSetup = () => {
-
         if (!nextStep)  return;
         const tab =  new URLSearchParams( nextStep.route.split("?")[1]).get("tab");
         if (tab) {
             handleTabSwitch( tab as WorkspaceTab);
         }
-
     }
+
+    const sellerName = profile?.displayName?.trim() || "Seller";
 
     return (
         <div className="space-y-6 max-w-4xl animate-in fade-in duration-200">
             <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className="space-y-1">
-                    <h2 className="text-lg font-black text-gray-900">Welcome back, Arman 👋</h2>
+                    <h2 className="text-lg font-black text-gray-900">Welcome back, {sellerName} 👋</h2>
                     <p className="text-xs text-gray-500 font-medium">
                         {missingStepsCount === 0
                             ? "Your seller account is fully configured and ready to start selling."
