@@ -44,10 +44,11 @@ const orderSteps: OrderStep[] = [
   },
 ];
 
-export default function OrderTimeline() {
+export default function OrderTimeline({ steps }: { steps?: OrderStep[] } = {}) {
+  const currentSteps = steps && steps.length > 0 ? steps : orderSteps;
   return (
     <ol className="relative border-s border-gray-200 dark:border-gray-700">
-      {orderSteps.map((order, i) => (
+      {currentSteps.map((order, i) => (
         <li key={i} className="mb-4 ms-4">
           <div className="absolute w-3 h-3 bg-gray-200 rounded-full mt-1.5 -start-1.5 border border-white dark:border-gray-900 dark:bg-gray-700"></div>
           <time className="mt-4 text-stone-800 dark:text-yellow-700 font-semibold text-ms">

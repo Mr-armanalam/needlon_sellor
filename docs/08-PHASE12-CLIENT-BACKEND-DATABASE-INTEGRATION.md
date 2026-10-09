@@ -128,37 +128,38 @@ This document specifies the end-to-end architecture and implementation roadmap f
        - Clear user's `client_cart_items`.
   3. Unit test: Transaction atomicity, stock decrement, and webhook signature verification.
 
-### Phase 7: Buyer Order History & Shipment Tracking
+### Phase 7: Buyer Order History & Shipment Tracking — ✅ Completed
 - **Goal**: Give buyers full visibility into their orders, delivery status, and invoice breakdown.
 - **Tasks**:
-  1. Update `/api/orders` to query `orders` where `buyerId = session.user.id`, joined with `orderItems` and `orderAddresses`.
-  2. Update `/api/orders/[id]` to return comprehensive tracking timeline from `orderStatusHistory` and shipment details from `orderShipments`.
-  3. Implement buyer order cancellation for `PENDING` / `CONFIRMED` orders.
-  4. Unit test: Buyer ownership check (prevent cross-user order access) and order transformation.
+  1. ✅ Update `/api/orders` to query `orders` where `buyerId = session.user.id`, joined with `orderItems` and `orderAddresses`.
+  2. ✅ Update `/api/orders/[id]` to return comprehensive tracking timeline from `orderStatusHistory` and shipment details from `orderShipments`.
+  3. ✅ Implement buyer order cancellation for `PENDING` / `CONFIRMED` orders.
+  4. ✅ Unit test: Buyer ownership check (prevent cross-user order access) and order transformation.
 
-### Phase 8: Verified Buyer Product Reviews & Ratings
+### Phase 8: Verified Buyer Product Reviews & Ratings — ✅ Completed
 - **Goal**: Enable verified customers to review products and display live ratings on product pages.
 - **Tasks**:
-  1. In `/api/orders/review`:
+  1. ✅ In `/api/orders/review`:
      - Check `product_order_items` to ensure buyer has purchased the item and order is `DELIVERED`.
      - Insert review into `reviewsTable` (`buyerId`, `productId`, `sellerId`, `rating`, `reviewTitle`, `reviewContent`, `isVerifiedPurchase: true`).
-  2. In `/api/products/[productId]`:
+  2. ✅ In `/api/products/[productId]`:
      - Compute real-time rating average and review distribution from `reviewsTable`.
-  3. Unit test: Verified purchase enforcement and rating calculation.
+  3. ✅ Unit test: Verified purchase enforcement and rating calculation.
 
-### Phase 9: In-App Notifications & Buyer Rewards
+### Phase 9: In-App Notifications & Buyer Rewards — ✅ Completed
 - **Goal**: Live notification feed and loyalty points management.
 - **Tasks**:
-  1. In `/api/notification`:
+  1. ✅ In `/api/notification`:
      - Query `notifications` table where `recipientType = 'BUYER'` and `recipientId = session.user.id`.
      - Implement `/api/notification/mark-all` to update `isRead = true`.
-  2. In `/api/rewards`:
+  2. ✅ In `/api/rewards`:
      - Query `clientLoyaltyAccountsTable` and active promotions from `promotions` where `promotionType IN ('COUPON', 'LOYALTY', 'FIRST_ORDER')`.
-  3. Unit test: Notification filtering and reward points ledger calculation.
+  3. ✅ Unit test: Notification filtering and reward points ledger calculation.
 
-### Phase 10: Seeding, Automated Test Suite & Validation
+### Phase 10: Seeding, Automated Test Suite & Validation — ✅ Completed
 - **Goal**: Populate initial client store data and verify zero regressions.
 - **Tasks**:
-  1. Build `seed-client-data.ts` to populate sample hero banners, store categories, client cart test items, and review records.
-  2. Run full test suite covering all client services and API routes.
-  3. Verify that `apps/seller` and `packages/modules` remain 100% untouched via git status.
+  1. ✅ Build `seed-client-data.ts` to populate sample hero banners, store categories, client cart test items, and review records.
+  2. ✅ Run full test suite covering all client services and API routes.
+  3. ✅ Verify that `apps/seller` and `packages/modules` remain 100% untouched via git status.
+

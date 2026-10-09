@@ -68,6 +68,7 @@ export interface BestSellerResponse {
 export interface OrderItemProp {
   orderDate: Date;
   orderId: string;
+  rawOrderId?: string;
   shippingAddress: Address;
   paymentMode: string;
   shippingCharge: number;
@@ -79,6 +80,10 @@ export interface OrderItemProp {
   itemName: string;
   couponDiscount: number;
   totalPurchasePrice: number;
+  orderStatus?: string;
+  timeline?: any[];
+  shipments?: any[];
+  canCancel?: boolean;
 }
 
 export interface suggestionAndRecentSearch {

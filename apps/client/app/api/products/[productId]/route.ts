@@ -1,4 +1,5 @@
 import { ProductDetailService } from "@/modules/product/services/product-details-services";
+import { ReviewService } from "@/modules/orders/services/review-services";
 import { NextRequest, NextResponse } from "next/server";
 
 export const GET = async (
@@ -17,11 +18,10 @@ export const GET = async (
       return NextResponse.json({ productItem: null }, { status: 404 });
     }
 
-    //  Fetch Filters
+    // Fetch Filters
     const rawFilters = await ProductDetailService.getProductFilters(productId);
 
     // Transformation: Convert array of pairs to a single clean object
-    // Result: { "Color": "Red", "Material": "Cotton" }
     const productFilterData = rawFilters.reduce((acc, curr) => {
       if (curr.groupName) {
         acc[curr.groupName] = curr.optionValue ?? "";
@@ -29,10 +29,22 @@ export const GET = async (
       return acc;
     }, {} as Record<string, string>);
 
-    //  Final Response
+    // Compute live reviews and rating distribution from reviewsTable
+    const reviewData = await ReviewService.getProductReviews(productId);
+
+    const baseItem = productRecord.product_items;
+    const finalAverageRating =
+      reviewData.reviewCount > 0 ? reviewData.averageRating : baseItem.averageRating || "4.5";
+    const finalReviewCount =
+      reviewData.reviewCount > 0 ? reviewData.reviewCount : baseItem.reviewCount || 0;
+
+    // Final Response
     return NextResponse.json({
       productItem: {
-        ...productRecord.product_items,
+        ...baseItem,
+        averageRating: finalAverageRating,
+        reviewCount: finalReviewCount,
+        ratingDistribution: reviewData.distribution,
         category: productRecord.product_category,
         attributes: productFilterData
       }

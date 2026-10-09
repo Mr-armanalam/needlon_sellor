@@ -24,6 +24,7 @@ type props = {
   itemName: string;
   productId: string;
   orderItemId: string;
+  timeline?: any[];
 };
 
 const OrderStatus = ({
@@ -34,6 +35,7 @@ const OrderStatus = ({
   itemName,
   productId,
   orderItemId,
+  timeline,
 }: props) => {
   const router = useRouter();
   const isMobile = useIsMobile();
@@ -90,7 +92,7 @@ const OrderStatus = ({
               See All Updates -&gt;
             </AccordionTrigger>
             <AccordionContent className="p-4 bg-white dark:bg-black rounded-md mb-4">
-              <OrderTimeline />
+              <OrderTimeline steps={timeline} />
             </AccordionContent>
           </AccordionItem>
         </Accordion>

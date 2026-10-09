@@ -39,6 +39,7 @@ const IndividualOrder = ({
               image={order?.image}
               properties={order?.orderProperties}
               orderItemId={order.orderId}
+              timeline={order?.timeline}
             />
           ))} 
         </>

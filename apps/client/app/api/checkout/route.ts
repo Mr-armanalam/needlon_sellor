@@ -21,12 +21,27 @@ export async function POST(req: Request) {
       cartItems = [],
       currentAddressId,
       userId = "mock-user",
+      userEmail,
       discountAmount = 0,
       couponId,
       price,
+      shippingCharge: explicitShippingCharge,
+      embedded = false,
     } = body;
 
     const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:3000";
+
+    // Compute subtotal and shipping policy (Free if subtotal >= 1999, else ₹49)
+    const cartSubtotal = Array.isArray(cartItems)
+      ? cartItems.reduce((acc: number, item: any) => acc + (Number(item.price) || 0) * (Number(item.quantity) || 1), 0)
+      : 0;
+
+    const computedShippingCharge =
+      typeof explicitShippingCharge === "number"
+        ? explicitShippingCharge
+        : cartSubtotal >= 1999 || cartSubtotal === 0
+        ? 0
+        : 49;
 
     // 1. Stock Validation against inventoryTable
     if (process.env.DATABASE_URL && Array.isArray(cartItems)) {
@@ -89,26 +104,87 @@ export async function POST(req: Request) {
         apiVersion: "2024-12-18.acacia" as any,
       });
 
-      const lineItems = mapCartToLineItems(cartItems, 0);
+      const lineItems = mapCartToLineItems(cartItems, 0, false);
 
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ["card"],
+      // Create native shipping option
+      const shippingOptions: Stripe.Checkout.SessionCreateParams.ShippingOption[] = [
+        {
+          shipping_rate_data: {
+            type: "fixed_amount",
+            fixed_amount: {
+              amount: Math.round(computedShippingCharge * 100),
+              currency: "inr",
+            },
+            display_name: computedShippingCharge === 0 ? "Complimentary Express Delivery" : "Standard Express Delivery",
+            delivery_estimate: {
+              minimum: { unit: "business_day", value: 2 },
+              maximum: { unit: "business_day", value: 4 },
+            },
+          },
+        },
+      ];
+
+      // Create one-off Stripe coupon if discount is applied
+      let discounts: Stripe.Checkout.SessionCreateParams.Discount[] | undefined = undefined;
+      const numDiscount = Number(discountAmount) || 0;
+      if (numDiscount > 0) {
+        try {
+          const stripeCoupon = await stripe.coupons.create({
+            amount_off: Math.round(numDiscount * 100),
+            currency: "inr",
+            duration: "once",
+            name: verifiedCouponCode ? `Needlon Promo: ${verifiedCouponCode}` : "Promotional Discount",
+          });
+          discounts = [{ coupon: stripeCoupon.id }];
+        } catch (couponErr: any) {
+          console.warn("Stripe coupon creation warning:", couponErr.message);
+        }
+      }
+
+      const sessionPayload: Stripe.Checkout.SessionCreateParams = {
         line_items: lineItems,
         mode: "payment",
-        success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${baseUrl}/cart`,
+        shipping_options: shippingOptions,
+        discounts: discounts,
+        allow_promotion_codes: discounts ? undefined : true,
+        phone_number_collection: { enabled: true },
+        billing_address_collection: "auto",
+        ...(userEmail && userEmail.includes("@") ? { customer_email: userEmail } : {}),
         metadata: {
           userId: String(userId),
           addressId: String(currentAddressId || ""),
           couponCode: verifiedCouponCode || "",
-          couponDiscount: String(discountAmount || 0),
+          couponDiscount: String(numDiscount),
+          shippingCharge: String(computedShippingCharge),
+          brand: "Needlon",
         },
-      });
+      };
 
-      return NextResponse.json({
-        url: session.url,
-        sessionId: session.id,
-      });
+      if (embedded) {
+        sessionPayload.ui_mode = "embedded";
+        sessionPayload.return_url = `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`;
+
+        const session = await stripe.checkout.sessions.create(sessionPayload);
+
+        return NextResponse.json({
+          clientSecret: session.client_secret,
+          sessionId: session.id,
+          mode: "embedded",
+          url: session.url,
+        });
+      } else {
+        sessionPayload.ui_mode = "hosted";
+        sessionPayload.success_url = `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`;
+        sessionPayload.cancel_url = `${baseUrl}/checkout`;
+
+        const session = await stripe.checkout.sessions.create(sessionPayload);
+
+        return NextResponse.json({
+          url: session.url,
+          sessionId: session.id,
+          mode: "hosted",
+        });
+      }
     }
 
     // Sandbox / Development Auto-Fulfillment
@@ -138,6 +214,7 @@ export async function POST(req: Request) {
       sessionId: mockSessionId,
       orderId: orderResult.orderNumber || orderResult.orderId,
       total: price || orderResult.grandTotal,
+      mode: "sandbox",
     });
   } catch (error: any) {
     console.error("CHECKOUT_ERROR:", error);

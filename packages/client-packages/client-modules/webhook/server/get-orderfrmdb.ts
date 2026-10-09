@@ -63,7 +63,36 @@ export const getOrderFromDB = async (sessionId: string) => {
       };
     }
 
-    // 4. Fallback search by order number
+    // 4. If record not yet found and session is from Stripe, retrieve directly from Stripe
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+    if (sessionId.startsWith("cs_") && stripeKey && !stripeKey.includes("placeholder") && stripeKey.startsWith("sk_")) {
+      try {
+        const Stripe = (await import("stripe")).default;
+        const stripe = new Stripe(stripeKey, { apiVersion: "2024-12-18.acacia" as any });
+        const session = await stripe.checkout.sessions.retrieve(sessionId, { expand: ["line_items"] });
+
+        if (session) {
+          const items = session.line_items?.data || [];
+          return {
+            line_items: {
+              data: items.map((it) => ({
+                quantity: it.quantity || 1,
+                description: it.description || "Needlon Tailored Item",
+              })),
+            },
+            Payment: {
+              status: session.payment_status === "paid" ? "paid" : "pending",
+              paymentAmount: (session.amount_total || 0) / 100,
+              orderId: session.id.slice(-10).toUpperCase(),
+            },
+          };
+        }
+      } catch (stripeErr: any) {
+        console.warn("Direct Stripe session retrieval warning:", stripeErr.message);
+      }
+    }
+
+    // 5. Fallback search by order number
     const [orderRecord] = await db
       .select()
       .from(orders)
