@@ -39,11 +39,13 @@ import * as ordersSchema from "./schema/orders";
 import { reviewsTable } from "./schema/reviews";
 import * as helpSchema from "./schema/help";
 import * as feedbackSchema from "./schema/feedback";
+import * as clientSchema from "./schema/client";
 
 export const schema = {
   ...ordersSchema,
   ...helpSchema,
   ...feedbackSchema,
+  ...clientSchema,
   reviewsTable: reviewsTable,
   users: usersTable.usersTable,
   passwordResetToken: passwordResetToken.passwordResetTokens,

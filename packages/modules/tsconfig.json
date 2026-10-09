@@ -13,7 +13,7 @@
       "@/schema/*": ["../db/db/schema/*"],
       "@/components/*": ["../ui/components/*", "../ui/components/ui/*"],
       "@/components/ui/*": ["../ui/components/ui/*"],
-      "@/lib/*": ["../ui/lib/*", "../../apps/seller/lib/*"],
+      "@/lib/*": ["../../apps/client/lib/*", "../ui/lib/*", "../../apps/seller/lib/*"],
       "@/hooks/*": ["../ui/hooks/*", "../../apps/seller/hooks/*"],
       "@/types/*": ["../../apps/seller/types/*"],
       "@needlon/ui/*": ["../ui/*"],

@@ -1,0 +1,29 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "baseUrl": ".",
+    "paths": {
+      "@/modules/*": ["./client-modules/*"],
+      "@/data/*": ["./data/*"],
+      "@/features/*": ["./features/*"],
+      "@/store/*": ["./store/*"],
+      "@/components/ui/*": ["../ui/components/ui/*"],
+      "@/components/*": ["../../apps/client/components/*", "../ui/components/*", "../ui/components/ui/*"],
+      "@/lib/*": ["../../apps/client/lib/*"],
+      "@/hooks/*": ["../../apps/client/hooks/*"],
+      "@/types/*": ["../../apps/client/types/*"],
+      "@/db": ["../db/db/index.ts"],
+      "@/db/*": ["../db/db/*", "../db/*"],
+      "@/schema/*": ["../db/db/schema/*"],
+      "@needlon/ui/*": ["../ui/*"],
+      "@needlon/ui": ["../ui"],
+      "@needlon/db/*": ["../db/*"],
+      "@needlon/db": ["../db/db/index.ts"]
+    }
+  },
+  "include": ["client-modules/**/*", "data/**/*", "features/**/*", "store/**/*"],
+  "exclude": ["node_modules"]
+}
