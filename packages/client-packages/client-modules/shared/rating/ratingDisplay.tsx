@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { RatingComponentProps } from "@/types/ratingTypes";
-import { calculateRatingMetrics } from "@/utils/calculate-rating-metrics";
+import { calculateRatingMetrics } from "../../utils/calculate-rating-metrics";
 import { StarHalfIcon, StarIcon } from "lucide-react";
 import React from "react";
 

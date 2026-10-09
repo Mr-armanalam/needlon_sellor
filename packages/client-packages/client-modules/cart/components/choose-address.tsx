@@ -39,7 +39,6 @@ export function ChooseAddress({
                 className="bg-stone-200 dark:bg-black items-center gap-x-4 flex rounded-md py-3 px-4 cursor-pointer"
               >
                 <RadioGroupItem
-                  color="white"
                   value={item.id}
                   id={item.id}
                   className="bg-white border border-gray-400"

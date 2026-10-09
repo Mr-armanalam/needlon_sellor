@@ -103,8 +103,12 @@ export const notificationSlice = createSlice({
 export const { pushNotification, setInitialNotifications } =
   notificationSlice.actions;
 
-export const selectUnreadCount = (state: any) =>
-  state.notification.notifications.filter((n: NotificationType) => !n.read).length;
+export const selectUnreadCount = (state: any) => {
+  const notifications = state?.notification?.notifications;
+  return Array.isArray(notifications)
+    ? notifications.filter((n: NotificationType) => !n?.read).length
+    : 0;
+};
 
 export default notificationSlice.reducer;
 

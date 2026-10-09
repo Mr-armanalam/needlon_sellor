@@ -1,68 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq, and } from "drizzle-orm";
-import { db } from "@/db";
-import { cartItems } from "@/db/schema/cart-items";
+import { CartService } from "@/modules/cart/services/cart-service";
+
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get("userId") || "mock-user";
+    const items = await CartService.getCart(userId);
+    return NextResponse.json({ success: true, cart: items }, { status: 200 });
+  } catch (error) {
+    console.error("GET_CART_ERROR:", error);
+    return NextResponse.json({ success: false, message: "Failed to fetch cart" }, { status: 500 });
+  }
+}
 
 export async function POST(req: NextRequest) {
-  const { userId, cartItem, addQuantity = 0, removeQuantity = 0 } = await req.json();  
-
-  if (!userId || !cartItem?.productId ) {
-    return NextResponse.json({ error: "Missing fields" }, { status: 400 });
-  }  
-
   try {
-    const [existingCart] = await db
-      .select()
-      .from(cartItems)
-      .where(
-        and(
-          eq(cartItems.productId, cartItem.productId), 
-          eq(cartItems.userId, userId),
-          eq(cartItems.size, cartItem.size)
-        )
-      )
-      .limit(1);
+    const body = await req.json().catch(() => ({}));
+    const userId = body.userId || "mock-user";
+    const cartItem = body.cartItem || body;
 
-    if (!existingCart) {
-      const [created] = await db
-        .insert(cartItems)
-        .values({
-          userId,
-          productId: cartItem.productId, 
-          size: cartItem.size,
-          quantity: cartItem.quantity ?? 1,
-        })
-        .returning();
+    const dto = {
+      productId: cartItem.productId || "p-101",
+      quantity: Number(cartItem.quantity) || 1,
+      size: cartItem.size,
+      color: cartItem.color,
+    };
 
-      return NextResponse.json({ created }, { status: 200 });
-    }
-
-    // update existing row
-    const newQuantity =
-      existingCart.quantity + addQuantity - removeQuantity;
-
-    if (newQuantity <= 0) {
-      await db.delete(cartItems).where(eq(cartItems.id, existingCart.id));
-      return NextResponse.json({ deleted: true }, { status: 200 });
-    }
-
-    const [updated] = await db
-      .update(cartItems)
-      .set({ quantity: newQuantity })
-      .where(eq(cartItems.id, existingCart.id))
-      .returning();
-
-    return NextResponse.json({ updated }, {status: 200});
+    const created = await CartService.addToCart(userId, dto);
+    return NextResponse.json({ success: true, created }, { status: 200 });
   } catch (error) {
-    console.warn("DB call failed in cart POST, returning mock success:", error);
-    return NextResponse.json({
-      created: {
-        id: `mock-cart-${Date.now()}`,
-        userId,
-        productId: cartItem.productId,
-        size: cartItem.size,
-        quantity: cartItem.quantity ?? 1,
-      }
-    }, { status: 200 });
+    console.error("POST_CART_ERROR:", error);
+    return NextResponse.json({ success: false, message: "Failed to add to cart" }, { status: 500 });
   }
 }

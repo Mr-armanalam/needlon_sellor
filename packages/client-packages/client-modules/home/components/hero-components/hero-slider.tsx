@@ -20,7 +20,7 @@ import { LucideTag } from "lucide-react";
 import Image from "next/image";
 import Autoplay from "embla-carousel-autoplay";
 import { useEffect, useState } from "react";
-import { heroProps } from "@/app/(root)/(home)/@hero_section/page";
+import { heroProps } from "../../types/hero-types";
 import { useRouter } from "next/navigation";
 
 

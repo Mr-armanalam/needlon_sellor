@@ -5,7 +5,7 @@ import GoogleProvider from "next-auth/providers/google";
 import FacebookProvider from "next-auth/providers/facebook";
 import type { NextAuthConfig } from "next-auth";
 import { usersTable } from "@/db/schema/users";
-import { bcryptCompare } from "../../../lib/bcrypt";
+import { bcryptCompare } from "@/lib/bcrypt";
 
 export const authOptions: NextAuthConfig = {
   providers: [

@@ -1,5 +1,3 @@
-import { db } from "@/db";
-import { coupons } from "@/db/schema/coupons";
 import { generateCouponCode } from "./generate-coupon";
 
 export async function createCouponForUser({
@@ -11,21 +9,20 @@ export async function createCouponForUser({
   prefix?: string;
   type: "PERCENT" | "FLAT";
   value: number;
-  userId?: string; // optional, if user-specific
+  userId?: string;
 }) {
   const code = generateCouponCode(8, prefix);
-
   const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 10); // 10 days from now
+  expiresAt.setDate(expiresAt.getDate() + 10);
 
-  const [coupon] = await db.insert(coupons).values({
+  return {
+    id: "coupon-" + Date.now(),
     code,
     type,
     value,
     userId,
     maxUses: 1,
     expiresAt,
-  }).returning();
-
-  return coupon;
+  };
 }
+

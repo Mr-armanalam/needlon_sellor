@@ -1,29 +1,22 @@
 "use client";
 
 import React, { useState } from "react";
-import AddNewAddress from "../ui/add-new-address";
+import AddNewAddress, { AddressFormData } from "../ui/add-new-address";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
-import { userAddress } from "@/db/schema/user-address";
-import { EllipsisVertical, HomeIcon } from "lucide-react";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
-import NoUserAddress from "../shared/no-user-address";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { deleteAddressApi, getAddresses } from "../server/api/address";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getAddresses, deleteAddressApi } from "../server/api/address";
 import AddressSkeleton from "./loadingAddress";
+import NoUserAddress from "../shared/no-user-address";
+import { HomeIcon, EllipsisVertical } from "lucide-react";
+import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
 
 const AddressView = () => {
   const { data: session } = useSession();
   const queryClient = useQueryClient();
   const userId = session?.user.id;
 
-  const [editingAddress, setEditingAddress] = useState<
-    typeof userAddress.$inferSelect | null
-  >(null);
+  const [editingAddress, setEditingAddress] = useState<AddressFormData | null>(null);
   const [accordionValue, setAccordionValue] = useState<string | undefined>();
 
   
@@ -56,10 +49,21 @@ const AddressView = () => {
     deleteMutation.mutate(id);
   };
 
-  const onEditAddress = (addr: typeof userAddress.$inferSelect) => {
+  const onEditAddress = (addr: any) => {
     if (!session?.user.id) return;
     setAccordionValue("item-1");
-    setEditingAddress(addr);
+    setEditingAddress({
+      name: addr.name || "",
+      phone: addr.phone || "",
+      pincode: addr.pincode || "",
+      locality: addr.locality || "",
+      address: addr.address || "",
+      city: addr.city || "",
+      state: addr.state || "",
+      landmark: addr.landmark || "",
+      alternate_phone: addr.alternate_phone || "",
+      id: addr.id,
+    });
   };
 
   return (
@@ -71,22 +75,7 @@ const AddressView = () => {
       <AddNewAddress
         accordionValue={accordionValue}
         setAccordionValue={setAccordionValue}
-        editingAddress={
-          editingAddress
-            ? {
-                name: editingAddress.name,
-                phone: editingAddress.phone,
-                pincode: editingAddress.pincode,
-                locality: editingAddress.locality,
-                address: editingAddress.address,
-                city: editingAddress.city,
-                state: editingAddress.state,
-                id: editingAddress.id,
-                landmark: editingAddress.landmark ?? "",
-                alternate_phone: editingAddress.alternate_phone ?? "",
-              }
-            : null
-        }
+        editingAddress={editingAddress}
         clearEditing={() => setEditingAddress(null)}
       />
 

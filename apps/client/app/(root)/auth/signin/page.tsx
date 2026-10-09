@@ -169,7 +169,7 @@ const SignIn = () => {
         <div>
           <Form
             // key={isSignUp ? "signup" : "signin"}
-            {...form}
+            {...(form as any)}
           >
             <form
               className="flex flex-col gap-2"

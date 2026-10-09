@@ -18,12 +18,24 @@
         "name": "next"
       }
     ],
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"],
-      "@/db": ["../../packages/db/src/index.ts"],
-      "@/db/*": ["../../packages/db/src/*"],
-      "@needlon/db": ["../../packages/db/src/index.ts"],
-      "@needlon/db/*": ["../../packages/db/src/*"]
+      "@/db": ["../../packages/db/db/index.ts"],
+      "@/db/*": ["../../packages/db/db/*", "../../packages/db/*"],
+      "@/schema/*": ["../../packages/db/db/schema/*"],
+      "@/components/ui/*": ["../../packages/ui/components/ui/*"],
+      "@/components/*": ["./components/*", "../../packages/ui/components/*", "../../packages/ui/components/ui/*"],
+      "@/modules/*": ["../../packages/client-packages/client-modules/*"],
+      "@/data/*": ["../../packages/client-packages/data/*"],
+      "@/features/*": ["../../packages/client-packages/features/*"],
+      "@/store/*": ["../../packages/client-packages/store/*"],
+      "@needlon/ui/*": ["../../packages/ui/*"],
+      "@needlon/ui": ["../../packages/ui"],
+      "@needlon/db/*": ["../../packages/db/*"],
+      "@needlon/db": ["../../packages/db/db/index.ts"],
+      "@needlon/modules/*": ["../../packages/modules/*"],
+      "@needlon/modules": ["../../packages/modules/modules/index.ts"],
+      "@/*": ["./*"]
     }
   },
   "include": [
@@ -32,7 +44,9 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts"
+    ".next/dev/types/**/*.ts",
+    "../../packages/client-packages/**/*.ts",
+    "../../packages/client-packages/**/*.tsx"
   ],
   "exclude": ["node_modules"]
 }

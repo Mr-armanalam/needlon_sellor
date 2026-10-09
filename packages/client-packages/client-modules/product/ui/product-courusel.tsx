@@ -58,11 +58,11 @@ const ProductCourusel = ({
           ))}
       </CarouselContent>
       <CarouselPrevious
-        size={"xl"}
+        size={"lg"}
         className="border-none dark:bg-black cursor-pointer shadow-lg left-2"
       />
       <CarouselNext
-        size={"xl"}
+        size={"lg"}
         className=" md:left-98 max-md:right-2 dark:bg-black cursor-pointer border-none shadow-lg"
       />
       {data && <ProductDescriptionn productData={data} />}

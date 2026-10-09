@@ -123,8 +123,9 @@ function NavigationMenuPositioner({
 
 function NavigationMenuLink({
   className,
+  asChild,
   ...props
-}: NavigationMenuPrimitive.Link.Props) {
+}: any) {
   return (
     <NavigationMenuPrimitive.Link
       data-slot="navigation-menu-link"

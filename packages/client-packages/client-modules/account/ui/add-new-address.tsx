@@ -51,7 +51,7 @@ export const FormSchema = z.object({
   alternate_phone: z.string().optional(),
 });
 
-type AddressFormData = z.infer<typeof FormSchema> & { id?: string };
+export type AddressFormData = z.infer<typeof FormSchema> & { id?: string };
 
 type Props = {
   editingAddress?: AddressFormData | null;
@@ -155,10 +155,12 @@ const AddNewAddress = ({
   return (
     <Accordion
       className="border bg-stone-100 dark:bg-black rounded-xs px-3"
-      type="single"
-      collapsible
-      value={accordionValue}
-      onValueChange={setAccordionValue}
+      {...({
+        type: "single",
+        collapsible: true,
+        value: accordionValue,
+        onValueChange: setAccordionValue,
+      } as any)}
     >
       <AccordionItem value="item-1">
         <AccordionTrigger className="justify-start cursor-pointer text-blue-700 hover:no-underline flex items-center gap-x-2">
@@ -167,7 +169,7 @@ const AddNewAddress = ({
         </AccordionTrigger>
 
         <AccordionContent className="max-w-200">
-          <Form {...form}>
+          <Form {...(form as any)}>
             <form
               onSubmit={form.handleSubmit(onSubmit)}
               className="grid grid-cols-2 p-1 space-x-4 space-y-4"

@@ -17,8 +17,9 @@ const CheckoutPrompt = ({
 }) => {
   const {data: session} = useSession();
   const router = useRouter();
-  const cart = useAppSelector((state) => state.cart.cart);
-  const dispatch = useAppDispatch()
+  const rawCart = useAppSelector((state) => state.cart.cart);
+  const cart = Array.isArray(rawCart) ? rawCart : [];
+  const dispatch = useAppDispatch();
 
   const subtotal = cart.reduce(
     (sum, item) => sum + Number(item.price) * item.quantity,

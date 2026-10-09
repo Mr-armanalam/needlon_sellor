@@ -17,7 +17,7 @@ const nextConfig: NextConfig = {
     ],
     // dangerouslyAllowLocalIP: true,
   },
-  transpilePackages: ["@needlon/db"],
+  transpilePackages: ["@needlon/ui", "@needlon/db", "@needlon/client-packages", "@needlon/modules"],
 };
 
 export default nextConfig;

@@ -10,7 +10,7 @@ const page = async() => {
   
   return (
     <section className='px-2'>
-      <SeasonSection navigateTo='/season-product' seasonData = {seasonProduct} />
+      <SeasonSection navigateTo='/season-product' seasonData={seasonProduct as any} />
     </section>
   )
 }

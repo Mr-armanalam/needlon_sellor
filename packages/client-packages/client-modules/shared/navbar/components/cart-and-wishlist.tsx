@@ -39,7 +39,7 @@ const CartAndWishList = () => {
           <Heart className="w-4 h-4 hover:scale-110" />
         </Link>
         <Link href={"/cart"} className="relative cursor-pointer">
-          {cart?.length !== 0 && (
+          {Array.isArray(cart) && cart.length !== 0 && (
             <span className="absolute -top-2.5 -right-2 bg-red-500 text-white text-xs rounded-full px-1">
               {cart.length}
             </span>

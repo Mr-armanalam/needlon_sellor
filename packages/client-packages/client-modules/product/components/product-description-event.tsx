@@ -20,7 +20,7 @@ const ProductDescriptionEvent = ({dispatch, userId, productItem}:{dispatch: any,
 
     const selectedSize = productItem?.sizes?.at(0) ?? "S";
 
-    const isAlreadyInCart = cart.some(
+    const isAlreadyInCart = (Array.isArray(cart) ? cart : []).some(
     (item) =>
       item.productId === productItem.id &&
       item.size === selectedSize,

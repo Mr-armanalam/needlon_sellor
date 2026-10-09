@@ -87,6 +87,7 @@ const ItemControl = ({ sort, category, setFilterOpen, isFilterHide }: param) => 
         <Select
           value={sort}
           onValueChange={(sortby) => {
+            if (!sortby) return;
             const newParams = new URLSearchParams(searchParams.toString());
             let values = newParams.get(category)?.split(",") || [];
             values = values.filter((v) => v === sortby);

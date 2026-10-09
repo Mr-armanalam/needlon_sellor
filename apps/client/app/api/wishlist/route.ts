@@ -1,45 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/db";
-import { wishListItems } from "@/db/schema/wishlist-items";
-import { eq, and } from "drizzle-orm";
+import { WishlistService } from "@/modules/account/services/wishlist-service";
+
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get("userId") || "mock-user";
+    const items = await WishlistService.getWishlist(userId);
+    return NextResponse.json({ success: true, items }, { status: 200 });
+  } catch (error) {
+    console.error("GET_WISHLIST_ERROR:", error);
+    return NextResponse.json({ error: "Failed to fetch wishlist" }, { status: 500 });
+  }
+}
 
 export async function POST(req: NextRequest) {
-  const { userId, productId, size, action } = await req.json();
-
-  if (!userId || !productId) {
-    return NextResponse.json({ error: "Missing fields" }, { status: 400 });
-  }
-
   try {
-    const [existing] = await db
-      .select()
-      .from(wishListItems)
-      .where(and(eq(wishListItems.userId, userId), eq(wishListItems.productId, productId)))
-      .limit(1);
+    const body = await req.json().catch(() => ({}));
+    const { userId = "mock-user", productId, action = "toggle" } = body;
 
-    if (action === "remove" && existing) {
-      await db.delete(wishListItems).where(eq(wishListItems.id, existing.id));
-      return NextResponse.json({ removed: true }, { status: 200, statusText: 'Item is removed'});
+    if (action === "remove" && productId) {
+      await WishlistService.removeFromWishlist(userId, productId);
+      return NextResponse.json({ removed: true }, { status: 200 });
     }
 
-    if (action === "add" && !existing) {
-      const [created] = await db.insert(wishListItems).values({
-        userId,
-        productId,
-        size,
-        quantity: 1,
-      }).returning();
-      return NextResponse.json({ created }, {status: 200, statusText: 'Item added'});
+    if (productId) {
+      const result = await WishlistService.toggleWishlist(userId, productId);
+      return NextResponse.json({ success: true, ...result }, { status: 200 });
     }
 
-    return NextResponse.json({ success: true }, {status: 200});
+    return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
-    console.warn("DB call failed in wishlist POST, returning mock response:", error);
-    if (action === "remove") {
-      return NextResponse.json({ removed: true }, { status: 200, statusText: 'Item is removed'});
-    }
-    return NextResponse.json({
-      created: { id: `mock-wish-${Date.now()}`, userId, productId, size, quantity: 1 }
-    }, { status: 200, statusText: 'Item added' });
+    console.error("POST_WISHLIST_ERROR:", error);
+    return NextResponse.json({ error: "Failed to update wishlist" }, { status: 500 });
   }
 }

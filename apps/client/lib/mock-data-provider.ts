@@ -251,10 +251,10 @@ export const MOCK_WISHLIST_ITEMS = [
 
 // ─────────────── MOCK NOTIFICATIONS ───────────────
 export const MOCK_NOTIFICATIONS = [
-  { id: "notif-1", userId: "mock-user", title: "Order Shipped!",     message: "Your order #order-002 has been shipped. Expected delivery in 2-3 days.", read: false, createdAt: new Date("2026-09-28") },
-  { id: "notif-2", userId: "mock-user", title: "Order Delivered",    message: "Your order #order-001 has been successfully delivered. Enjoy your purchase!", read: true,  createdAt: new Date("2026-09-20") },
-  { id: "notif-3", userId: "mock-user", title: "Exclusive Offer!",   message: "Get 25% OFF on all Premium collections this weekend. Use code: PREM25", read: false, createdAt: new Date("2026-10-01") },
-  { id: "notif-4", userId: "mock-user", title: "New Arrival Alert",  message: "The Winter Cashmere Edit is now live. Shop before it sells out!", read: false, createdAt: new Date("2026-10-03") },
+  { id: "notif-1", userId: "mock-user", title: "Order Shipped!",     message: "Your order #order-002 has been shipped. Expected delivery in 2-3 days.", type: "order" as const, time: "2 days ago", read: false, createdAt: new Date("2026-09-28") },
+  { id: "notif-2", userId: "mock-user", title: "Order Delivered",    message: "Your order #order-001 has been successfully delivered. Enjoy your purchase!", type: "order" as const, time: "1 week ago", read: true,  createdAt: new Date("2026-09-20") },
+  { id: "notif-3", userId: "mock-user", title: "Exclusive Offer!",   message: "Get 25% OFF on all Premium collections this weekend. Use code: PREM25", type: "offer" as const, time: "3 days ago", read: false, createdAt: new Date("2026-10-01") },
+  { id: "notif-4", userId: "mock-user", title: "New Arrival Alert",  message: "The Winter Cashmere Edit is now live. Shop before it sells out!", type: "system" as const, time: "Just now", read: false, createdAt: new Date("2026-10-03") },
 ];
 
 // ─────────────── MOCK REWARDS / COUPONS ───────────────

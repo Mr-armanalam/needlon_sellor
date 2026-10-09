@@ -1,23 +1,17 @@
 import { CartItem } from "@/features/cart-slice";
+import { CartService } from "@/modules/cart/services/cart-service";
 
 export async function fetchCartSSR(userId: string): Promise<CartItem[]> {
   try {
-    if (userId) {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_URL}/api/cart/${userId}`,
-        { cache: "no-store" }
-      );
-
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) return data;
-      }
+    const items = await CartService.getCart(userId || "mock-user");
+    if (Array.isArray(items) && items.length > 0) {
+      return items as unknown as CartItem[];
     }
   } catch (err) {
-    console.warn("fetchCartSSR error:", err);
+    console.warn("fetchCartSSR error, falling back to static presentation data:", err);
   }
 
-  // Fallback mock items for UI presentation during migration
+  // Fallback mock items for UI presentation
   return [
     {
       id: "ci-1",

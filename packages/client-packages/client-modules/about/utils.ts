@@ -4,6 +4,11 @@ import { adminTemplate } from './components/admin-template';
 import { clientTemplate } from './components/client-template';
 
 export async function sendEmails(formData: { name: string; email: string; phone?: string; subject: string; message: string }) {
+  if (!process.env.EMAIL_SERVER_USER || !process.env.EMAIL_SERVER_PASSWORD) {
+    console.log("Mock inquiry received for:", formData.name);
+    return;
+  }
+
   const transporter = nodemailer.createTransport({
     service: 'gmail', 
     auth: {

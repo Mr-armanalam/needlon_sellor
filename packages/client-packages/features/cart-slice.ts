@@ -29,8 +29,30 @@ const initialState: CartState = {
 export const fetchCart = createAsyncThunk(
   "cart/fetchCart",
   async (userId: string) => {
-    const res = await fetch(`/api/cart/${userId}`);
-    return (await res.json()) as CartItem[];
+    if (!userId) {
+      if (typeof window !== "undefined") {
+        const local = localStorage.getItem("cart");
+        if (local) {
+          try {
+            const parsed = JSON.parse(local);
+            if (Array.isArray(parsed)) return parsed as CartItem[];
+          } catch {
+            return [];
+          }
+        }
+      }
+      return [];
+    }
+    try {
+      const res = await fetch(`/api/cart/${userId}`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      if (Array.isArray(data)) return data as CartItem[];
+      if (data && Array.isArray(data.cart)) return data.cart as CartItem[];
+      return [];
+    } catch {
+      return [];
+    }
   },
 );
 
@@ -129,9 +151,13 @@ const cartSlice = createSlice({
         fetchCart.fulfilled,
         (state, action: PayloadAction<CartItem[]>) => {
           state.loading = false;
-          state.cart = action.payload;
+          state.cart = Array.isArray(action.payload) ? action.payload : [];
         },
       )
+      .addCase(fetchCart.rejected, (state) => {
+        state.loading = false;
+        state.cart = [];
+      })
       .addCase(addToCart.fulfilled, (state, action) => {
         if (Array.isArray(action.payload)) state.cart = action.payload;
       })

@@ -1,5 +1,5 @@
 "use client";
-import { heroProps } from "@/app/(root)/(home)/@hero_section/page";
+import { heroProps } from "../../types/hero-types";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useCustomSearchParams } from "@/modules/shared/navigation/set-search-params";

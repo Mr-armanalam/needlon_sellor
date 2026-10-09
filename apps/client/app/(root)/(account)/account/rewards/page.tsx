@@ -1,5 +1,6 @@
 import RewardsView from "@/modules/rewards/view/rewards-view";
 import { cookies } from "next/headers";
+import { getApiBaseUrl } from "@/lib/get-api-url";
 
 export type Rewards = {
   id: string;
@@ -16,23 +17,24 @@ export type Rewards = {
 
 const page = async () => {
   const cookie = await cookies();
-  const response = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/rewards`, {
-    cache: "no-store",
-    headers: {
-      Cookie: cookie.toString(),
-    },
-  });
+  let allRewards: Rewards[] = [];
 
-  if (!response.ok) {
-    return (
-      <div className="px-8 py-4 text-red-500">
-        Something went wrong!
-      </div>
-    );
+  try {
+    const baseUrl = await getApiBaseUrl();
+    const response = await fetch(`${baseUrl}/api/rewards`, {
+      cache: "no-store",
+      headers: {
+        Cookie: cookie.toString(),
+      },
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      allRewards = result?.rewards || [];
+    }
+  } catch (error) {
+    console.warn("Rewards page fetch fallback:", (error as Error).message);
   }
-
-  const result = await response.json();
-  const allRewards: Rewards[] = response.status !== 200 ? [] : result?.rewards;
 
   return (
     <div className="px-8 ">
