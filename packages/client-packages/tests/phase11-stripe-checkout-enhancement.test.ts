@@ -1,5 +1,5 @@
 import assert from "node:assert";
-import { mapCartToLineItems } from "../client-modules/checkout/services/map-cart-to-line-items";
+import { mapCartToLineItems } from "../client-modules/checkout/services/map-cart-to-line-items.ts";
 
 async function runStripeCheckoutEnhancementTests() {
   console.log("--> Running Phase 11: Production-Grade Stripe Checkout Enhancement Tests...");
