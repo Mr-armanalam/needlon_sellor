@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const userId = body.userId || "mock-user";
     const addrObj = body.data || body;
+    const editingAddressId = body.editingAddressId || addrObj.id;
 
     const dto = {
       fullName: addrObj.fullName || addrObj.name || "Customer",
@@ -32,11 +33,37 @@ export async function POST(req: NextRequest) {
       isDefault: Boolean(addrObj.isDefault),
     };
 
+    if (editingAddressId) {
+      const updated = await AddressService.updateAddress(userId, editingAddressId, dto);
+      return NextResponse.json({ success: true, address: updated }, { status: 200 });
+    }
+
     const inserted = await AddressService.addAddress(userId, dto);
     return NextResponse.json({ success: true, address: inserted }, { status: 200 });
   } catch (error) {
     console.error("POST_ADDRESS_ERROR:", error);
-    return NextResponse.json({ success: false, message: "Failed to add address" }, { status: 500 });
+    return NextResponse.json({ success: false, message: "Failed to save address" }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const body = await req.json().catch(() => ({}));
+    const { userId = "mock-user", addressId, action } = body;
+
+    if (!addressId) {
+      return NextResponse.json({ success: false, message: "Address ID required" }, { status: 400 });
+    }
+
+    if (action === "setDefault") {
+      await AddressService.setDefaultAddress(userId, addressId);
+      return NextResponse.json({ success: true }, { status: 200 });
+    }
+
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (error) {
+    console.error("PATCH_ADDRESS_ERROR:", error);
+    return NextResponse.json({ success: false, message: "Failed to update address" }, { status: 500 });
   }
 }
 

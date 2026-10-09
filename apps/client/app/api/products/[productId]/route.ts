@@ -23,7 +23,9 @@ export const GET = async (
     // Transformation: Convert array of pairs to a single clean object
     // Result: { "Color": "Red", "Material": "Cotton" }
     const productFilterData = rawFilters.reduce((acc, curr) => {
-      acc[curr.groupName] = curr.optionValue;
+      if (curr.groupName) {
+        acc[curr.groupName] = curr.optionValue ?? "";
+      }
       return acc;
     }, {} as Record<string, string>);
 

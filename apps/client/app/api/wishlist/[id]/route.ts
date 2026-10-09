@@ -1,22 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { MOCK_PRODUCTS, MOCK_WISHLIST_ITEMS } from "@/lib/mock-data-provider";
+import { WishlistService } from "@/modules/account/services/wishlist-service";
 
-export const GET = async (
+export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) => {
-  const mockTransformed = MOCK_WISHLIST_ITEMS.map((wi) => {
-    const p = MOCK_PRODUCTS.find((p) => p.id === wi.productId) || MOCK_PRODUCTS[0];
-    return {
-      id: wi.id,
-      productId: p.id,
-      name: p.name,
-      price: p.price,
-      quantity: wi.quantity,
-      size: wi.size,
-      image: p.image,
-      updatedAt: new Date(),
-    };
-  });
-  return NextResponse.json(mockTransformed, { status: 200 });
-};
+) {
+  try {
+    const { id } = await params;
+    const items = await WishlistService.getWishlist(id);
+    return NextResponse.json(items, { status: 200 });
+  } catch (error) {
+    console.error("GET_WISHLIST_BY_ID_ERROR:", error);
+    return NextResponse.json({ error: "Failed to fetch wishlist" }, { status: 500 });
+  }
+}

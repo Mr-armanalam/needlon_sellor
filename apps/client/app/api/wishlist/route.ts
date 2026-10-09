@@ -16,13 +16,22 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const { userId = "mock-user", productId, action = "toggle" } = body;
+    const { userId = "mock-user", productId, action = "toggle", exists } = body;
 
-    if (action === "remove" && productId) {
-      await WishlistService.removeFromWishlist(userId, productId);
-      return NextResponse.json({ removed: true }, { status: 200 });
+    // 1. Guest items synchronization
+    if (body.items || body.guestItems || body.syncItems) {
+      const itemsToSync = body.items || body.guestItems || body.syncItems;
+      const syncResult = await WishlistService.syncGuestWishlist(userId, itemsToSync);
+      return NextResponse.json({ ...syncResult }, { status: 200 });
     }
 
+    // 2. Explicit remove action
+    if ((action === "remove" || exists === true) && productId) {
+      await WishlistService.removeFromWishlist(userId, productId);
+      return NextResponse.json({ success: true, removed: true }, { status: 200 });
+    }
+
+    // 3. Toggle wishlist
     if (productId) {
       const result = await WishlistService.toggleWishlist(userId, productId);
       return NextResponse.json({ success: true, ...result }, { status: 200 });

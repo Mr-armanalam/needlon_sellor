@@ -15,6 +15,21 @@ export interface CreateAddressDto {
   isDefault?: boolean;
 }
 
+export interface UpdateAddressDto extends Partial<CreateAddressDto> {}
+
+export function mapAddressToUi(addr: any) {
+  if (!addr) return null;
+  return {
+    ...addr,
+    name: addr.fullName,
+    address: addr.addressLine1,
+    locality: addr.addressLine2 || "",
+    pincode: addr.postalCode,
+    landmark: addr.addressLine2 || "",
+    alternate_phone: "",
+  };
+}
+
 export const AddressService = {
   async getUserAddresses(userId: string) {
     if (!process.env.DATABASE_URL) {
@@ -25,7 +40,7 @@ export const AddressService = {
         .select()
         .from(userAddressesTable)
         .where(eq(userAddressesTable.userId, userId));
-      return addresses;
+      return addresses.map(mapAddressToUi);
     } catch (error) {
       console.warn("User addresses DB table unavailable, falling back:", (error as Error).message);
       return [];
@@ -34,7 +49,8 @@ export const AddressService = {
 
   async addAddress(userId: string, dto: CreateAddressDto) {
     if (!process.env.DATABASE_URL) {
-      return { id: "mock-addr-id", userId, ...dto, isDefault: dto.isDefault ?? false };
+      const mock = { id: "mock-addr-id", userId, ...dto, isDefault: dto.isDefault ?? false };
+      return mapAddressToUi(mock);
     }
 
     try {
@@ -62,10 +78,54 @@ export const AddressService = {
         })
         .returning();
 
-      return inserted;
+      return mapAddressToUi(inserted);
     } catch (error) {
       console.warn("Add address DB query fallback:", (error as Error).message);
-      return { id: "mock-addr-id", userId, ...dto, isDefault: dto.isDefault ?? false };
+      const mock = { id: "mock-addr-id", userId, ...dto, isDefault: dto.isDefault ?? false };
+      return mapAddressToUi(mock);
+    }
+  },
+
+  async updateAddress(userId: string, addressId: string, dto: UpdateAddressDto) {
+    if (!process.env.DATABASE_URL) {
+      const mock = { id: addressId, userId, ...dto };
+      return mapAddressToUi(mock);
+    }
+
+    try {
+      if (dto.isDefault) {
+        await db
+          .update(userAddressesTable)
+          .set({ isDefault: false })
+          .where(eq(userAddressesTable.userId, userId));
+      }
+
+      const updateData: Record<string, any> = {
+        updatedAt: new Date(),
+      };
+
+      if (dto.fullName !== undefined) updateData.fullName = dto.fullName;
+      if (dto.phone !== undefined) updateData.phone = dto.phone;
+      if (dto.addressLine1 !== undefined) updateData.addressLine1 = dto.addressLine1;
+      if (dto.addressLine2 !== undefined) updateData.addressLine2 = dto.addressLine2;
+      if (dto.city !== undefined) updateData.city = dto.city;
+      if (dto.state !== undefined) updateData.state = dto.state;
+      if (dto.postalCode !== undefined) updateData.postalCode = dto.postalCode;
+      if (dto.country !== undefined) updateData.country = dto.country;
+      if (dto.addressType !== undefined) updateData.addressType = dto.addressType;
+      if (dto.isDefault !== undefined) updateData.isDefault = dto.isDefault;
+
+      const [updated] = await db
+        .update(userAddressesTable)
+        .set(updateData)
+        .where(and(eq(userAddressesTable.id, addressId), eq(userAddressesTable.userId, userId)))
+        .returning();
+
+      return mapAddressToUi(updated);
+    } catch (error) {
+      console.warn("Update address DB fallback:", (error as Error).message);
+      const mock = { id: addressId, userId, ...dto };
+      return mapAddressToUi(mock);
     }
   },
 
@@ -96,7 +156,7 @@ export const AddressService = {
 
       await db
         .update(userAddressesTable)
-        .set({ isDefault: true })
+        .set({ isDefault: true, updatedAt: new Date() })
         .where(and(eq(userAddressesTable.id, addressId), eq(userAddressesTable.userId, userId)));
       return true;
     } catch (error) {
