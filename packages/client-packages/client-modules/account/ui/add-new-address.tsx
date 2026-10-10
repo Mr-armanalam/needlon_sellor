@@ -56,8 +56,8 @@ export type AddressFormData = z.infer<typeof FormSchema> & { id?: string };
 type Props = {
   editingAddress?: AddressFormData | null;
   clearEditing?: () => void;
-  accordionValue: string | undefined;
-  setAccordionValue: (state: string | undefined) => void;
+  accordionValue: string[];
+  setAccordionValue: (state: string[]) => void;
 };
 
 const AddNewAddress = ({
@@ -67,7 +67,7 @@ const AddNewAddress = ({
   accordionValue,
 }: Props) => {
   const { data: session } = useSession();
-  const userId = session?.user.id;
+  const userId = session?.user?.id;
   const queryClient = useQueryClient();
 
 
@@ -87,37 +87,54 @@ const AddNewAddress = ({
   });
 
   const clearAddressForm = () => {
-    form.reset();
+    form.reset({
+      name: "",
+      phone: "",
+      pincode: "",
+      locality: "",
+      address: "",
+      city: "",
+      state: "",
+      landmark: "",
+      alternate_phone: "",
+    });
     clearEditing?.();
-    setAccordionValue(undefined);
+    setAccordionValue([]);
   };
 
   useEffect(() => {
     if (editingAddress) {
-      form.reset(editingAddress);
-      setAccordionValue("item-1");
-    } else {
-      form.reset();
-      setAccordionValue(undefined);
+      form.reset({
+        name: editingAddress.name || "",
+        phone: editingAddress.phone || "",
+        pincode: editingAddress.pincode || "",
+        locality: editingAddress.locality || "",
+        address: editingAddress.address || "",
+        city: editingAddress.city || "",
+        state: editingAddress.state || "",
+        landmark: editingAddress.landmark || "",
+        alternate_phone: editingAddress.alternate_phone || "",
+      });
+      setAccordionValue(["item-1"]);
     }
   }, [editingAddress, form, setAccordionValue]);
 
   const addOrUpdateMutation = useMutation({
     mutationFn: addOrUpdateAddressApi,
     onSuccess: () => {
-      toast.success("Address saved successfully!");
+      toast.success(editingAddress?.id ? "Address updated successfully!" : "Address saved successfully!");
       queryClient.invalidateQueries({
         queryKey: ["addresses", userId],
       });
       clearAddressForm();
     },
-    onError: () => {
-      toast.error("Something went wrong while saving the address.");
+    onError: (err: any) => {
+      toast.error(err?.message || "Something went wrong while saving the address.");
     },
   });
 
   const onSubmit = async (data: z.infer<typeof FormSchema>) => {
-    const userId = session?.user.id;
+    const userId = session?.user?.id;
     if (!userId) return toast.error("You must be logged in to save address.");
 
     try {
@@ -130,12 +147,6 @@ const AddNewAddress = ({
         },
         editingAddressId: editingAddress?.id,
       });
-
-      toast.success("Address saved successfully!");
-      queryClient.invalidateQueries({
-        queryKey: ['addresses', userId]
-      })
-      clearAddressForm();
     } catch (error) {
       console.error(error);
       toast.error("Something went wrong while saving the address.");
@@ -152,15 +163,32 @@ const AddNewAddress = ({
     staleTime: Infinity,
   });
 
+  const handleAccordionChange = (val: any) => {
+    const nextVal = Array.isArray(val) ? val : val ? [val] : [];
+    setAccordionValue(nextVal);
+    if (nextVal.length === 0 && editingAddress) {
+      clearEditing?.();
+      form.reset({
+        name: "",
+        phone: "",
+        pincode: "",
+        locality: "",
+        address: "",
+        city: "",
+        state: "",
+        landmark: "",
+        alternate_phone: "",
+      });
+    }
+  };
+
   return (
     <Accordion
       className="border bg-stone-100 dark:bg-black rounded-xs px-3"
-      {...({
-        type: "single",
-        collapsible: true,
-        value: accordionValue,
-        onValueChange: setAccordionValue,
-      } as any)}
+      type="single"
+      collapsible
+      value={accordionValue}
+      onValueChange={handleAccordionChange}
     >
       <AccordionItem value="item-1">
         <AccordionTrigger className="justify-start cursor-pointer text-blue-700 hover:no-underline flex items-center gap-x-2">
@@ -230,7 +258,7 @@ const AddNewAddress = ({
                   <FormItem>
                     <Select
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      value={field.value || ""}
                     >
                       <FormControl>
                         <SelectTrigger className="min-h-11 border-none shadow-sm focus-visible:ring-1 bg-white rounded-xs w-full">

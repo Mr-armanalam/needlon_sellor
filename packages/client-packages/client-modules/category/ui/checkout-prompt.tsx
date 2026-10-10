@@ -27,7 +27,7 @@ const CheckoutPrompt = ({
   );
 
   useEffect(() => {
-    dispatch(fetchCart(session?.user.id ?? ''));
+    dispatch(fetchCart(session?.user?.id ?? ''));
   }, [dispatch, session]);
   
 
@@ -66,7 +66,7 @@ const CheckoutPrompt = ({
                 onClick={() =>
                   dispatch(
                     removeFromCart({
-                      userId: session?.user.id,
+                      userId: session?.user?.id,
                       productId: item.productId ?? '',
                       size: item.size,
                     })

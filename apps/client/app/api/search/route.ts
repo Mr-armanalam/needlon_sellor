@@ -1,33 +1,24 @@
 import { NextResponse } from "next/server";
-import { MOCK_PRODUCTS, MOCK_CATEGORIES } from "@/lib/mock-data-provider";
+import { SearchService } from "@/modules/home/services/search-service";
+import { auth } from "@/auth";
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const query = searchParams.get("q")?.trim() || "";
+  try {
+    const { searchParams } = new URL(req.url);
+    const query = searchParams.get("q")?.trim() || "";
 
-  const lowerQ = query.toLowerCase();
-  const matched = MOCK_PRODUCTS
-    .filter(p => p.name.toLowerCase().includes(lowerQ) || p.tagName.toLowerCase().includes(lowerQ))
-    .map(p => {
-      const cat = MOCK_CATEGORIES.find(c => c.id === p.categoryId) || MOCK_CATEGORIES[0];
-      return { id: p.id, name: p.name, category: cat.category, subcategory: cat.CatType };
-    });
+    let userId: string | undefined = undefined;
+    try {
+      const session = await auth();
+      userId = session?.user?.id;
+    } catch {
+      // Unauthenticated search is fine
+    }
 
-  const grouped: Record<string, any[]> = {};
-  for (const p of matched) {
-    if (!grouped[p.category]) grouped[p.category] = [];
-    grouped[p.category].push(p);
+    const searchResult = await SearchService.searchStorefront(query, userId);
+    return NextResponse.json({ searchResult });
+  } catch (error) {
+    console.error("SEARCH_API_ERROR:", error);
+    return NextResponse.json({ searchResult: {} }, { status: 500 });
   }
-
-  // If nothing matched, return all mock products grouped
-  if (Object.keys(grouped).length === 0) {
-    MOCK_PRODUCTS.slice(0, 6).forEach(p => {
-      const cat = MOCK_CATEGORIES.find(c => c.id === p.categoryId) || MOCK_CATEGORIES[0];
-      if (!grouped[cat.category]) grouped[cat.category] = [];
-      grouped[cat.category].push({ id: p.id, name: p.name, category: cat.category, subcategory: cat.CatType });
-    });
-  }
-
-  return NextResponse.json({ searchResult: { ...grouped } });
 }
-

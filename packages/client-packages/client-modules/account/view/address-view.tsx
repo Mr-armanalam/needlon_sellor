@@ -14,10 +14,10 @@ import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/h
 const AddressView = () => {
   const { data: session } = useSession();
   const queryClient = useQueryClient();
-  const userId = session?.user.id;
+  const userId = session?.user?.id;
 
   const [editingAddress, setEditingAddress] = useState<AddressFormData | null>(null);
-  const [accordionValue, setAccordionValue] = useState<string | undefined>();
+  const [accordionValue, setAccordionValue] = useState<string[]>([]);
 
   
   const {
@@ -32,7 +32,7 @@ const AddressView = () => {
 
 
   const deleteMutation = useMutation({
-    mutationFn: deleteAddressApi,
+    mutationFn: (id: string) => deleteAddressApi(id, userId),
     onSuccess: () => {
       toast.success("Address deleted successfully");
       queryClient.invalidateQueries({
@@ -50,17 +50,17 @@ const AddressView = () => {
   };
 
   const onEditAddress = (addr: any) => {
-    if (!session?.user.id) return;
-    setAccordionValue("item-1");
+    if (!session?.user?.id) return;
+    setAccordionValue(["item-1"]);
     setEditingAddress({
-      name: addr.name || "",
+      name: addr.name || addr.fullName || "",
       phone: addr.phone || "",
-      pincode: addr.pincode || "",
-      locality: addr.locality || "",
-      address: addr.address || "",
+      pincode: addr.pincode || addr.postalCode || "",
+      locality: addr.locality || addr.addressLine2 || "",
+      address: addr.address || addr.addressLine1 || "",
       city: addr.city || "",
       state: addr.state || "",
-      landmark: addr.landmark || "",
+      landmark: addr.landmark || addr.addressLine2 || "",
       alternate_phone: addr.alternate_phone || "",
       id: addr.id,
     });

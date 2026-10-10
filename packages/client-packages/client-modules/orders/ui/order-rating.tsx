@@ -36,30 +36,44 @@ const OrderRating = ({
   );
 
   useEffect(() => {
-    dispatch(fetchProductReview());
-  }, [dispatch]);
+    if (productId) {
+      dispatch(fetchProductReview(productId));
+    } else {
+      dispatch(fetchProductReview());
+    }
+  }, [dispatch, productId]);
 
   const handleSubmit = async () => {
     if (!rating) return alert("Please select a rating");
 
-    await dispatch(
-      submitReview({
-        productId,
-        orderItemId,
-        rating,
-        comment,
-      })
-    );
+    try {
+      await dispatch(
+        submitReview({
+          productId,
+          orderItemId,
+          rating,
+          comment,
+        })
+      ).unwrap();
 
-    await dispatch(fetchProductReview());
-    alert("Review submitted!");
-    dispatch(clearRatingState());
+      if (productId) {
+        await dispatch(fetchProductReview(productId));
+      } else {
+        await dispatch(fetchProductReview());
+      }
+      alert("Review submitted!");
+      dispatch(clearRatingState());
+    } catch (err: any) {
+      alert(err?.message || "Failed to submit review");
+    }
   };
 
-  // const existingReview = allRating?.find((r) => r.id === ratingId);
   const existingReview = allRating?.find(
-  (r) => r.orderItemId === orderItemId
-);
+    (r) =>
+      r.orderItemId === orderItemId ||
+      (orderItemId && (r as any)?.metadata?.orderItemId === orderItemId) ||
+      (r.productId === productId && (r.orderItemId === orderItemId || (r as any)?.metadata?.orderItemId === orderItemId))
+  );
 
 
   const shouldShowForm = !existingReview;

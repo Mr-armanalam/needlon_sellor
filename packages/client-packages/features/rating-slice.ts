@@ -30,10 +30,11 @@ const initialState: RatingState = {
 // FETCH ALL REVIEWS
 export const fetchProductReview = createAsyncThunk(
   "rating/fetchProductReview",
-  async () => {
-    const response = await fetch("/api/orders/review");
+  async (productId?: string) => {
+    const url = productId ? `/api/orders/review?productId=${encodeURIComponent(productId)}` : "/api/orders/review";
+    const response = await fetch(url);
     const result = await response.json();
-    return result.allreview;
+    return result.allreview || [];
   }
 );
 
@@ -44,6 +45,7 @@ export const submitReview = createAsyncThunk(
     orderItemId: string;
     rating: number;
     comment: string;
+    allowEarlyReview?: boolean;
   }) => {
     const res = await fetch("/api/orders/review", {
       method: "POST",
@@ -51,9 +53,12 @@ export const submitReview = createAsyncThunk(
       body: JSON.stringify(payload),
     });
 
-    if (!res.ok) throw new Error("Failed to submit");
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error || "Failed to submit review");
+    }
 
-    return await res.json(); // returns { review, orderItemId }
+    return data; // returns { review, orderItemId, success }
   }
 );
 

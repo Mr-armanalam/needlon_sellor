@@ -12,11 +12,11 @@ export async function getAddresses(userId: string): Promise<Address[]> {
   return data.addresses;
 }
 
-export async function deleteAddressApi(id: string) {
+export async function deleteAddressApi(id: string, userId?: string) {
   const res = await fetch("/api/addresses", {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id }),
+    body: JSON.stringify({ id, userId }),
   });
 
   const data = await res.json();

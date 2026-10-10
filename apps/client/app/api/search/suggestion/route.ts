@@ -1,15 +1,21 @@
 import { NextResponse } from "next/server";
-import { MOCK_PRODUCTS, MOCK_CATEGORIES } from "@/lib/mock-data-provider";
-
-const MOCK_SUGGESTIONS = MOCK_PRODUCTS.slice(0, 6).map(p => {
-  const cat = MOCK_CATEGORIES.find(c => c.id === p.categoryId) || MOCK_CATEGORIES[0];
-  return { id: p.id, name: p.name, category: cat.category, subcategory: cat.CatType };
-});
+import { SearchService } from "@/modules/home/services/search-service";
+import { auth } from "@/auth";
 
 export async function GET() {
-  return NextResponse.json({
-    recent: [],
-    suggested: MOCK_SUGGESTIONS,
-  }, { status: 200 });
-}
+  try {
+    let userId: string | undefined = undefined;
+    try {
+      const session = await auth();
+      userId = session?.user?.id;
+    } catch {
+      // Unauthenticated is fine
+    }
 
+    const suggestions = await SearchService.getSuggestions(userId);
+    return NextResponse.json(suggestions, { status: 200 });
+  } catch (error) {
+    console.error("SEARCH_SUGGESTION_ERROR:", error);
+    return NextResponse.json({ recent: [], suggested: [] }, { status: 500 });
+  }
+}

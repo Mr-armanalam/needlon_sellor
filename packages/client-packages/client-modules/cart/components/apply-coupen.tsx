@@ -51,7 +51,7 @@ const ApplyCoupon = ({
   async function onSubmit(values: z.infer<typeof formSchema>) {
     const result = await validateCoupon({
       code: values.coupon_code,
-      userId: session?.user.id ?? "",
+      userId: session?.user?.id ?? "",
     });
 
     if (!result.valid) {

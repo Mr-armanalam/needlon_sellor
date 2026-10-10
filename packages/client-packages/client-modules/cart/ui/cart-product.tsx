@@ -16,7 +16,7 @@ type props = {
 
 const CartProduct = ({ cart, currentAddress, setCurrentAddress }: props) => {
   const { data: session } = useSession();
-  const userId = session?.user.id ?? "";
+  const userId = session?.user?.id ?? "";
 
   const { data: addresses = [], isLoading: loading } = useQuery({
     queryKey: ["addresses", userId],

@@ -4,6 +4,8 @@ import { CartItem } from "@/features/cart-slice";
 import React, { useState } from "react";
 import ApplyCoupon from "../components/apply-coupen";
 
+import { useRouter } from "next/navigation";
+
 const PriceDetails = ({
   userId,
   cart,
@@ -12,7 +14,8 @@ const PriceDetails = ({
   currentAddressId?: string;
   userId: string;
   cart: CartItem[];
-}) => {  
+}) => {
+  const router = useRouter();  
   const price = Math.round(
     cart?.reduce((totalPrice, item) => totalPrice + Number(item.price), 0)
   );
@@ -30,40 +33,13 @@ const PriceDetails = ({
     ? couponDiscount.value
     : (price * couponDiscount.percent) / 100;
 
-  const handlePayment = async () => {
-  try {
-    if (!currentAddressId) return;
-
-    // Temporary logic: add shipping charge per product
-    const cartWithShipping = cart.map((item) => ({
-      ...item,
-      shippingCharge: item.shippingCharge ?? 50, 
-    }));
-
-    const response = await fetch("/api/checkout", {
-      method: "POST",
-      cache: "no-cache",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        cartItems: cartWithShipping,
-        percentDiscount: couponDiscount.percent,
-        discountAmount: couponDiscount.value,
-        couponId: couponDiscount.id,
-        price: Math.round(price),
-        mrp_price: Math.round(mrp_price),
-        userId,
-        currentAddressId,
-      }),
-    });
-
-    const { url } = await response.json();
-    window.location.href = url;
-  } catch (error) {
-    console.log(error);
-  }
-};
+  const handlePayment = () => {
+    const params = new URLSearchParams();
+    if (currentAddressId) params.set("addressId", currentAddressId);
+    if (couponDiscount.id) params.set("couponId", couponDiscount.id);
+    if (totalCouponDiscount > 0) params.set("discount", String(totalCouponDiscount));
+    router.push(`/checkout?${params.toString()}`);
+  };
 
 // console.log(couponDiscount, 'coupon');
 

@@ -68,17 +68,23 @@ export interface BestSellerResponse {
 export interface OrderItemProp {
   orderDate: Date;
   orderId: string;
+  rawOrderId?: string;
   shippingAddress: Address;
   paymentMode: string;
   shippingCharge: number;
   podCharge: number;
   priceAtperchage: number;
   productId: string;
+  orderItemId?: string;
   image: string;
   orderProperties?: string;
   itemName: string;
   couponDiscount: number;
   totalPurchasePrice: number;
+  orderStatus?: string;
+  timeline?: any[];
+  shipments?: any[];
+  canCancel?: boolean;
 }
 
 export interface suggestionAndRecentSearch {

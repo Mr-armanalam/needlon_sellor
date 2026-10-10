@@ -3,7 +3,6 @@
 import { db } from "@/db";
 import { usersTable } from "@/db/schema/users";
 import { eq } from "drizzle-orm";
-import { MOCK_USER_INFO } from "@/lib/mock-data-provider";
 
 type props = {
   firstname: string;
@@ -63,19 +62,25 @@ export const getPersonalinfo = async (userId: string) => {
     if (info) {
       return {
         data: {
-          ...info,
+          name: info.name || "",
+          email: info.email || "",
+          phone: info.phone || "",
           gender: (info.gender === "female" ? "female" : "male") as "male" | "female",
         },
         success: true,
       };
     }
-    // Fall through to mock if row not found
   } catch {
-    console.warn("DB failed in getPersonalinfo, returning mock user info");
+    console.warn("DB failed in getPersonalinfo");
   }
 
   return {
-    data: MOCK_USER_INFO,
-    success: true,
+    data: {
+      name: "",
+      email: "",
+      phone: "",
+      gender: "male" as const,
+    },
+    success: false,
   };
 };

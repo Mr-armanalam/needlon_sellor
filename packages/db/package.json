@@ -12,6 +12,7 @@
     "generate": "drizzle-kit generate",
     "migrate": "tsx db/migrate.ts",
     "seed": "tsx scripts/seed-database.ts",
+    "seed:client": "tsx scripts/seed-client-data.ts",
     "check-types": "tsc --noEmit"
   },
   "dependencies": {

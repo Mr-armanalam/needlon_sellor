@@ -7,15 +7,14 @@ import { DetailedProductResponse } from "@/types/product";
 const ProductDescriptionEvent = ({dispatch, userId, productItem}:{dispatch: any, userId?: string, productItem: DetailedProductResponse}) => {
     const { cart } = useAppSelector((state) => state.cart);
 
-   const handleAddToCart = (product: DetailedProductResponse, size: string) => {
-    dispatch(
+   const handleAddToCart = async (product: DetailedProductResponse, size: string) => {
+    await dispatch(
       addToCart({
         userId,
         product: { ...product, size, quantity: 1, updatedAt: new Date(product.updatedAt) },
         size,
       }),
     );
-    dispatch(fetchCart(userId?? ""));
   };
 
     const selectedSize = productItem?.sizes?.at(0) ?? "S";

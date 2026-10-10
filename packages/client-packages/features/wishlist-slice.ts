@@ -4,36 +4,61 @@ import { toast } from "sonner";
 
 const initialState: WishlistState = {
   wishlist: [],
-  guestWishlist: [], // Initialize empty to prevent hydration mismatch
+  guestWishlist: [],
   loading: false,
 };
 
 export const fetchWishlist = createAsyncThunk(
   "wishlist/fetchWishlist",
   async (userId: string) => {
-    const res = await fetch(`/api/wishlist/${userId}`, { cache: "no-store" });
-    if (!res.ok) throw new Error("Failed to fetch wishlist");
-    return (await res.json()) as WishlistItem[];
+    if (!userId) {
+      if (typeof window !== "undefined") {
+        const saved = localStorage.getItem("wishlist");
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) return parsed as WishlistItem[];
+          } catch {
+            return [];
+          }
+        }
+      }
+      return [];
+    }
+
+    try {
+      const res = await fetch(`/api/wishlist/${userId}`, { cache: "no-store" });
+      if (!res.ok) return [];
+      const data = await res.json();
+      if (Array.isArray(data)) return data as WishlistItem[];
+      if (data && Array.isArray(data.items)) return data.items as WishlistItem[];
+      return [];
+    } catch {
+      return [];
+    }
   }
 );
 
- // NEW: Syncs guest items to the database
- 
+// Syncs guest items to the database
 export const syncWishlistWithDB = createAsyncThunk(
   "wishlist/syncWishlist",
   async ({ userId, guestItems }: { userId: string; guestItems: GuestWishlistItem[] }, { dispatch }) => {
-    if (guestItems.length === 0) return;    
+    if (!guestItems || guestItems.length === 0) return;
 
-    const res = await fetch(`/api/wishlist/sync`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, items: guestItems }),
-    });
+    try {
+      const res = await fetch(`/api/wishlist/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, items: guestItems }),
+      });
 
-    if (res.ok) {
-      dispatch(clearGuestWishlist());
-      dispatch(fetchWishlist(userId));
-      toast.success("Wishlist synchronized!");
+      if (res.ok) {
+        dispatch(clearGuestWishlist());
+        dispatch(fetchWishlist(userId));
+        toast.success("Wishlist synchronized!");
+      }
+    } catch (err) {
+      console.warn("Wishlist sync error:", err);
     }
   }
 );
@@ -52,13 +77,12 @@ export const toggleWishlist = createAsyncThunk(
     });
 
     if (!res.ok) throw new Error("Failed to toggle wishlist");
-    
+
     toast.success(exists ? "Removed from wishlist" : "Added to wishlist");
     dispatch(fetchWishlist(userId));
     return { productId, size, exists };
   }
 );
-
 
 const wishlistSlice = createSlice({
   name: "wishlist",
@@ -67,36 +91,55 @@ const wishlistSlice = createSlice({
     setUserId: (state, action) => {
       state.userId = action.payload;
     },
-    // Initialize guest list from localStorage (Call this in a useEffect on mount)
+    // Initialize guest list from localStorage
     initializeGuestWishlist: (state) => {
-      const saved = localStorage.getItem("wishlist");
-      if (saved) state.guestWishlist = JSON.parse(saved);
+      if (typeof window !== "undefined") {
+        const saved = localStorage.getItem("wishlist");
+        if (saved) {
+          try {
+            state.guestWishlist = JSON.parse(saved);
+          } catch {
+            state.guestWishlist = [];
+          }
+        }
+      }
     },
     toggleGuestWishlist: (state, action: PayloadAction<GuestWishlistItem>) => {
       const index = state.guestWishlist.findIndex(
-        (w) => w.productId === action.payload.productId && w.size === action.payload.size
+        (w) => w.productId === action.payload.productId && (w.size === action.payload.size || (!w.size && !action.payload.size))
       );
 
       if (index !== -1) {
         state.guestWishlist.splice(index, 1);
+        toast.success("Removed from wishlist");
       } else {
         state.guestWishlist.push(action.payload);
+        toast.success("Added to wishlist");
       }
-      localStorage.setItem("wishlist", JSON.stringify(state.guestWishlist));
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem("wishlist", JSON.stringify(state.guestWishlist));
+      }
     },
     clearGuestWishlist: (state) => {
       state.guestWishlist = [];
-      localStorage.removeItem("wishlist");
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("wishlist");
+      }
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchWishlist.pending, (state) => { state.loading = true; })
+      .addCase(fetchWishlist.pending, (state) => {
+        state.loading = true;
+      })
       .addCase(fetchWishlist.fulfilled, (state, action) => {
         state.loading = false;
         state.wishlist = action.payload;
       })
-      .addCase(fetchWishlist.rejected, (state) => { state.loading = false; });
+      .addCase(fetchWishlist.rejected, (state) => {
+        state.loading = false;
+      });
   },
 });
 

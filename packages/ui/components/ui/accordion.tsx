@@ -1,16 +1,60 @@
+import * as React from "react"
 import { Accordion as AccordionPrimitive } from "@base-ui/react/accordion"
 
 import { cn } from "@/lib/utils"
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react"
 
-function Accordion({ className, collapsible, ...props }: any) {
-  return (
-    <AccordionPrimitive.Root
-      data-slot="accordion"
-      className={cn("flex w-full flex-col", className)}
-      {...props}
-    />
-  )
+function Accordion({
+  className,
+  collapsible,
+  value,
+  defaultValue,
+  onValueChange,
+  ...props
+}: any) {
+  const normalizedValue = React.useMemo(() => {
+    if (value === undefined) return undefined;
+    if (Array.isArray(value)) return value;
+    if (typeof value === "string") return value ? [value] : [];
+    return [];
+  }, [value]);
+
+  const normalizedDefaultValue = React.useMemo(() => {
+    if (defaultValue === undefined) return undefined;
+    if (Array.isArray(defaultValue)) return defaultValue;
+    if (typeof defaultValue === "string") return defaultValue ? [defaultValue] : [];
+    return [];
+  }, [defaultValue]);
+
+  const handleValueChange = React.useCallback(
+    (nextVal: string[], details: any) => {
+      if (!onValueChange) return;
+      if (typeof value === "string") {
+        onValueChange(nextVal[0] ?? "", details);
+      } else {
+        onValueChange(nextVal, details);
+      }
+    },
+    [onValueChange, value]
+  );
+
+  const rootProps: any = {
+    "data-slot": "accordion",
+    className: cn("flex w-full flex-col", className),
+    ...props,
+  };
+
+  if (normalizedValue !== undefined) {
+    rootProps.value = normalizedValue;
+  }
+  if (normalizedDefaultValue !== undefined) {
+    rootProps.defaultValue = normalizedDefaultValue;
+  }
+  if (onValueChange) {
+    rootProps.onValueChange = handleValueChange;
+  }
+
+  return <AccordionPrimitive.Root {...rootProps} />;
 }
 
 function AccordionItem({ className, ...props }: AccordionPrimitive.Item.Props) {

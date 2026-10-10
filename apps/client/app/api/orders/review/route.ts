@@ -1,24 +1,92 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
+import { ReviewService } from "@/modules/orders/services/review-services";
 
 export const POST = async (req: NextRequest) => {
   try {
-    const { orderItemId, productId, comment, rating } = await req.json();
-    return NextResponse.json({
-      review: {
-        id: "rev-" + Date.now(),
-        orderItemId,
-        productId,
-        rating,
-        comment,
+    const session = await auth();
+    const userId = session?.user?.id;
+    if (!userId && process.env.NODE_ENV === "production") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { orderItemId, productId, comment, rating, title, allowEarlyReview } = await req.json().catch(() => ({}));
+
+    if (!productId || rating === undefined || !comment) {
+      return NextResponse.json(
+        { error: "Product ID, rating, and comment are required" },
+        { status: 400 }
+      );
+    }
+
+    const review = await ReviewService.createReview({
+      orderItemId,
+      productId,
+      userId: userId || "mock-user",
+      rating: Number(rating),
+      comment: String(comment),
+      title,
+      allowEarlyReview: allowEarlyReview ?? true,
+    });
+
+    return NextResponse.json(
+      {
+        review,
+        orderItemId: review.orderItemId || orderItemId,
+        success: true,
       },
-      orderItemId
-    }, { status: 200 });
-  } catch (error) {
-    return NextResponse.json({ error: "Failed to submit review" }, { status: 500 });
+      { status: 200 }
+    );
+  } catch (error: any) {
+    const statusCode = error?.statusCode || 500;
+    return NextResponse.json(
+      { error: error?.message || "Failed to submit review" },
+      { status: statusCode }
+    );
   }
 };
 
-export async function GET() {
-  return NextResponse.json({ allreview: [] }, { status: 200 });
-}
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const productId = searchParams.get("productId");
 
+    if (productId) {
+      const result = await ReviewService.getProductReviews(productId);
+
+      return NextResponse.json(
+        {
+          allreview: result.reviews,
+          averageRating: result.averageRating,
+          reviewCount: result.reviewCount,
+          distribution: result.distribution,
+        },
+        { status: 200 }
+      );
+    }
+
+    // Fallback if productId not specified: return published reviews with metadata mapping
+    const { db } = await import("@needlon/db");
+    const { reviewsTable } = await import("@needlon/db/db/schema/reviews/table");
+    const { eq, desc } = await import("drizzle-orm");
+
+    const rows = await db
+      .select()
+      .from(reviewsTable)
+      .where(eq(reviewsTable.status, "PUBLISHED"))
+      .orderBy(desc(reviewsTable.createdAt))
+      .limit(50);
+
+    return NextResponse.json(
+      {
+        allreview: rows.map((r: any) => ({
+          ...r,
+          orderItemId: (r.metadata as any)?.orderItemId || null,
+        })),
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    return NextResponse.json({ allreview: [] }, { status: 200 });
+  }
+}
