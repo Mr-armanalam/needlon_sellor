@@ -50,7 +50,13 @@ export default function OrderTimeline({ steps }: { steps?: OrderStep[] } = {}) {
     <ol className="relative border-s border-gray-200 dark:border-gray-700">
       {currentSteps.map((order, i) => (
         <li key={i} className="mb-4 ms-4">
-          <div className="absolute w-3 h-3 bg-gray-200 rounded-full mt-1.5 -start-1.5 border border-white dark:border-gray-900 dark:bg-gray-700"></div>
+          <div
+            className={`absolute w-3 h-3 rounded-full mt-1.5 -start-1.5 border border-white dark:border-gray-900 ${
+              order.isActive
+                ? "bg-stone-800 dark:bg-yellow-700"
+                : "bg-gray-200 dark:bg-gray-700"
+            }`}
+          />
           <time className="mt-4 text-stone-800 dark:text-yellow-700 font-semibold text-ms">
             {order.title}{" "}
             <span className="text-xs italic font-mono font-thin text-gray-500">
@@ -62,11 +68,11 @@ export default function OrderTimeline({ steps }: { steps?: OrderStep[] } = {}) {
           </h3>
           {order.details.length > 1 &&
             order.details
-              .slice(1, order.details.length - 1)
+              .slice(1)
               .map((details, index) => (
                 <p
                   key={index}
-                  className="text-xs mb-4 text-gray-500 dark:text-gray-400"
+                  className="text-xs mb-1 text-gray-500 dark:text-gray-400"
                 >
                   {details}
                 </p>

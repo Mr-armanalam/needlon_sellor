@@ -346,6 +346,8 @@ export const OrderRepository = {
     // 1. Placed / Confirmed
     const createdEvent = history.find((h) => h.toStatus === "PENDING" || h.action === "CREATED");
     const confirmedEvent = history.find((h) => h.toStatus === "CONFIRMED" || h.action === "ACCEPTED");
+    const packedEvent = history.find((h) => h.toStatus === "PROCESSING" || h.action === "PACKED");
+    const readyEvent = history.find((h) => h.toStatus === "READY_TO_SHIP" || h.action === "READY_FOR_SHIPMENT");
 
     const confirmedDetails = [
       `Your Order has been placed. ${orderDateStr} - ${format(order.createdAt, "h:mma")}`,
@@ -356,6 +358,16 @@ export const OrderRepository = {
       );
     } else {
       confirmedDetails.push("Seller has received your order and is preparing fulfillment.");
+    }
+    if (packedEvent) {
+      confirmedDetails.push(
+        `Seller has packed your items. ${format(packedEvent.changedAt, "EEE, do MMM ''yy - h:mma")}`
+      );
+    }
+    if (readyEvent) {
+      confirmedDetails.push(
+        `Package is ready for carrier pickup. ${format(readyEvent.changedAt, "EEE, do MMM ''yy - h:mma")}`
+      );
     }
 
     defaultSteps.push({
@@ -403,6 +415,9 @@ export const OrderRepository = {
     } else {
       shippedDetails.push("Item will be dispatched once packaging is complete.");
     }
+    if (shippedEvent?.remarks) {
+      shippedDetails.push(shippedEvent.remarks);
+    }
 
     defaultSteps.push({
       title: "Shipped",
@@ -421,22 +436,38 @@ export const OrderRepository = {
     );
     const isOutForDelivery = ["OUT_FOR_DELIVERY", "DELIVERED", "COMPLETED"].includes(order.status);
 
+    const outForDeliveryDetails = [
+      isOutForDelivery
+        ? "Your item is out for delivery with our local delivery executive."
+        : "Item is in transit towards your delivery address hub.",
+    ];
+    if (outForDeliveryEvent?.remarks) {
+      outForDeliveryDetails.push(outForDeliveryEvent.remarks);
+    }
+
     defaultSteps.push({
       title: "Out For Delivery",
       date: outForDeliveryEvent
         ? format(outForDeliveryEvent.changedAt, "EEE, do MMM ''yy")
         : "Pending dispatch",
-      details: [
-        isOutForDelivery
-          ? "Your item is out for delivery with our local delivery executive."
-          : "Item is in transit towards your delivery address hub.",
-      ],
+      details: outForDeliveryDetails,
       isActive: isOutForDelivery,
     });
 
     // 4. Delivered
-    const deliveredEvent = history.find((h) => h.toStatus === "DELIVERED" || h.action === "DELIVERED");
+    const deliveredEvent = history.find(
+      (h) => h.toStatus === "DELIVERED" || h.toStatus === "COMPLETED" || h.action === "DELIVERED"
+    );
     const isDelivered = ["DELIVERED", "COMPLETED"].includes(order.status);
+
+    const deliveredDetails = [
+      isDelivered
+        ? `Your item was delivered successfully. Enjoy your Needlon fashion!`
+        : "Standard delivery time is 3-5 business days from order confirmation.",
+    ];
+    if (deliveredEvent?.remarks) {
+      deliveredDetails.push(deliveredEvent.remarks);
+    }
 
     defaultSteps.push({
       title: "Delivered",
@@ -447,11 +478,7 @@ export const OrderRepository = {
           : order.expectedDeliveryDate
             ? format(order.expectedDeliveryDate, "EEE, do MMM ''yy")
             : "Expected soon",
-      details: [
-        isDelivered
-          ? `Your item was delivered successfully. Enjoy your Needlon fashion!`
-          : "Standard delivery time is 3-5 business days from order confirmation.",
-      ],
+      details: deliveredDetails,
       isActive: isDelivered,
     });
 

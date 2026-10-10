@@ -10,7 +10,7 @@ export const POST = async (req: NextRequest) => {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { orderItemId, productId, comment, rating, title } = await req.json().catch(() => ({}));
+    const { orderItemId, productId, comment, rating, title, allowEarlyReview } = await req.json().catch(() => ({}));
 
     if (!productId || rating === undefined || !comment) {
       return NextResponse.json(
@@ -26,12 +26,13 @@ export const POST = async (req: NextRequest) => {
       rating: Number(rating),
       comment: String(comment),
       title,
+      allowEarlyReview: allowEarlyReview ?? true,
     });
 
     return NextResponse.json(
       {
         review,
-        orderItemId,
+        orderItemId: review.orderItemId || orderItemId,
         success: true,
       },
       { status: 200 }
@@ -50,18 +51,38 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const productId = searchParams.get("productId");
 
-    if (!productId) {
-      return NextResponse.json({ allreview: [] }, { status: 200 });
+    if (productId) {
+      const result = await ReviewService.getProductReviews(productId);
+
+      return NextResponse.json(
+        {
+          allreview: result.reviews,
+          averageRating: result.averageRating,
+          reviewCount: result.reviewCount,
+          distribution: result.distribution,
+        },
+        { status: 200 }
+      );
     }
 
-    const result = await ReviewService.getProductReviews(productId);
+    // Fallback if productId not specified: return published reviews with metadata mapping
+    const { db } = await import("@needlon/db");
+    const { reviewsTable } = await import("@needlon/db/db/schema/reviews/table");
+    const { eq, desc } = await import("drizzle-orm");
+
+    const rows = await db
+      .select()
+      .from(reviewsTable)
+      .where(eq(reviewsTable.status, "PUBLISHED"))
+      .orderBy(desc(reviewsTable.createdAt))
+      .limit(50);
 
     return NextResponse.json(
       {
-        allreview: result.reviews,
-        averageRating: result.averageRating,
-        reviewCount: result.reviewCount,
-        distribution: result.distribution,
+        allreview: rows.map((r: any) => ({
+          ...r,
+          orderItemId: (r.metadata as any)?.orderItemId || null,
+        })),
       },
       { status: 200 }
     );

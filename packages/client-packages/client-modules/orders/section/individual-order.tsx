@@ -38,7 +38,7 @@ const IndividualOrder = ({
               itemPrice={order?.priceAtperchage}
               image={order?.image}
               properties={order?.orderProperties}
-              orderItemId={order.orderId}
+              orderItemId={order.orderItemId || order.orderId}
               timeline={order?.timeline}
             />
           ))} 

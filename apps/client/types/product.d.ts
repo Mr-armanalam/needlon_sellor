@@ -75,6 +75,7 @@ export interface OrderItemProp {
   podCharge: number;
   priceAtperchage: number;
   productId: string;
+  orderItemId?: string;
   image: string;
   orderProperties?: string;
   itemName: string;
