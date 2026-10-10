@@ -4,7 +4,10 @@ import { CartService } from "@/modules/cart/services/cart-service";
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const userId = searchParams.get("userId") || "mock-user";
+    const userId = searchParams.get("userId");
+    if (!userId) {
+      return NextResponse.json({ success: true, cart: [] }, { status: 200 });
+    }
     const items = await CartService.getCart(userId);
     return NextResponse.json({ success: true, cart: items }, { status: 200 });
   } catch (error) {
@@ -16,18 +19,26 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const userId = body.userId || "mock-user";
+    const userId = body.userId;
+
+    if (!userId) {
+      return NextResponse.json({ success: false, message: "User authentication required" }, { status: 400 });
+    }
 
     // 1. Check for guest cart synchronization
-    if (body.syncItems || body.guestItems) {
-      const itemsToSync = body.syncItems || body.guestItems;
+    if (body.syncItems || body.guestItems || body.items) {
+      const itemsToSync = body.syncItems || body.guestItems || body.items;
       const updatedCart = await CartService.syncGuestCart(userId, itemsToSync);
       return NextResponse.json({ success: true, cart: updatedCart }, { status: 200 });
     }
 
     const cartItem = body.cartItem || body;
-    const productId = cartItem.productId || "p-101";
+    const productId = cartItem.productId || cartItem.id;
     const size = cartItem.size;
+
+    if (!productId) {
+      return NextResponse.json({ success: false, message: "Product ID is required" }, { status: 400 });
+    }
 
     // 2. Check for decrement or removal action
     if (body.removeQuantity) {

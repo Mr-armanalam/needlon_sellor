@@ -157,6 +157,16 @@ export async function POST(req: Request) {
           couponDiscount: String(numDiscount),
           shippingCharge: String(computedShippingCharge),
           brand: "Needlon",
+          cartSummary: JSON.stringify(
+            cartItems.slice(0, 10).map((ci: any) => ({
+              p: ci.productId || ci.id,
+              q: Number(ci.quantity) || 1,
+              s: ci.size || "M",
+              c: ci.color || "",
+              pr: Number(ci.price) || 2499,
+              n: String(ci.name || "").slice(0, 25),
+            }))
+          ),
         },
       };
 

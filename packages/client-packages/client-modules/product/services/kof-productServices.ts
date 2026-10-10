@@ -1,12 +1,11 @@
-import { getMockProductsWithCategory } from "@/lib/mock-data-provider";
 import { ProductRepository } from "../repositories/product-repository";
 import { transformDbProductToDto } from "./product-transformer";
 
 async function fetchDbProducts(filterParams: any = {}) {
-  if (!process.env.DATABASE_URL) return null;
+  if (!process.env.DATABASE_URL) return [];
   try {
     const rows = await ProductRepository.getProducts(filterParams);
-    if (rows.length > 0) {
+    if (rows && rows.length > 0) {
       return await Promise.all(
         rows.map(async (row) => {
           const [images, variants] = await Promise.all([
@@ -18,45 +17,33 @@ async function fetchDbProducts(filterParams: any = {}) {
       );
     }
   } catch (err) {
-    console.warn("kof-productServices DB fallback:", (err as Error).message);
+    console.warn("kof-productServices DB error:", (err as Error).message);
   }
-  return null;
+  return [];
 }
 
 export const ProductService = {
   async getPremium() {
-    const dbRows = await fetchDbProducts({ isFeatured: true, limit: 12 });
-    if (dbRows && dbRows.length > 0) return dbRows;
-    return getMockProductsWithCategory().filter((p) => p.product.isPremium);
+    return await fetchDbProducts({ isFeatured: true, limit: 12 });
   },
 
   async getTrending() {
-    const dbRows = await fetchDbProducts({ limit: 12, sort: "popular" });
-    if (dbRows && dbRows.length > 0) return dbRows;
-    return getMockProductsWithCategory();
+    return await fetchDbProducts({ limit: 12, sort: "popular" });
   },
 
   async getBestSeller() {
-    const dbRows = await fetchDbProducts({ limit: 12, sort: "popular" });
-    if (dbRows && dbRows.length > 0) return dbRows;
-    return getMockProductsWithCategory();
+    return await fetchDbProducts({ limit: 12, sort: "popular" });
   },
 
   async getNewIn() {
-    const dbRows = await fetchDbProducts({ limit: 12, sort: "newest" });
-    if (dbRows && dbRows.length > 0) return dbRows;
-    return getMockProductsWithCategory();
+    return await fetchDbProducts({ limit: 12, sort: "newest" });
   },
 
   async getRecommendation() {
-    const dbRows = await fetchDbProducts({ limit: 12 });
-    if (dbRows && dbRows.length > 0) return dbRows;
-    return getMockProductsWithCategory();
+    return await fetchDbProducts({ limit: 12 });
   },
 
   async getFiltered(filters?: any) {
-    const dbRows = await fetchDbProducts({ ...filters, limit: 20 });
-    if (dbRows && dbRows.length > 0) return dbRows;
-    return getMockProductsWithCategory();
+    return await fetchDbProducts({ ...filters, limit: 20 });
   },
 };

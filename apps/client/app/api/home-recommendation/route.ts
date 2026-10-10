@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import * as recoService from "@/modules/home/services/recommendationServices";
 import { buildUserPreferenceVector } from "@/lib/recommendation-item";
-import { MOCK_PRODUCTS } from "@/lib/mock-data-provider";
 
 export async function GET() {
   try {
@@ -18,13 +17,13 @@ export async function GET() {
           recoService.getNewArrivals(),
         ]);
         return NextResponse.json({
-          recommended: recommended.length ? recommended : MOCK_PRODUCTS,
-          youMayLike: youMayLike.length ? youMayLike : MOCK_PRODUCTS.slice(0, 6),
+          recommended: recommended || [],
+          youMayLike: youMayLike || [],
         });
       } catch {
         return NextResponse.json({
-          recommended: MOCK_PRODUCTS,
-          youMayLike: MOCK_PRODUCTS.slice(0, 6),
+          recommended: [],
+          youMayLike: [],
         });
       }
     }
@@ -42,26 +41,25 @@ export async function GET() {
         recoService.getTopRated(),
       ]);
 
+      const finalRecommended = (personalizedRecs.length > 0 ? personalizedRecs : (topRated.length > 0 ? topRated : trending)) || [];
+      const finalYouMayLike = (personalizedLike.length > 0 ? personalizedLike : arrivals) || [];
+
       return NextResponse.json({
-        recommended: (personalizedRecs.length > 0 ? personalizedRecs : topRated).length
-          ? (personalizedRecs.length > 0 ? personalizedRecs : topRated)
-          : MOCK_PRODUCTS,
-        youMayLike: (personalizedLike.length > 0 ? personalizedLike : arrivals).length
-          ? (personalizedLike.length > 0 ? personalizedLike : arrivals)
-          : MOCK_PRODUCTS.slice(0, 6),
+        recommended: finalRecommended,
+        youMayLike: finalYouMayLike,
       });
     } catch {
+      const fallbackTrending = await recoService.getTrendingProducts();
       return NextResponse.json({
-        recommended: MOCK_PRODUCTS,
-        youMayLike: MOCK_PRODUCTS.slice(0, 6),
+        recommended: fallbackTrending || [],
+        youMayLike: [],
       });
     }
-
   } catch (error) {
-    console.warn("RECOMMENDATION_API_ERROR, returning mock:", error);
+    console.error("RECOMMENDATION_API_ERROR:", error);
     return NextResponse.json({
-      recommended: MOCK_PRODUCTS,
-      youMayLike: MOCK_PRODUCTS.slice(0, 6),
-    });
+      recommended: [],
+      youMayLike: [],
+    }, { status: 500 });
   }
 }

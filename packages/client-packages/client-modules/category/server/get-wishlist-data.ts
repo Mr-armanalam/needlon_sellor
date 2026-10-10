@@ -1,6 +1,11 @@
 "use server";
-import { MOCK_WISHLIST_ITEMS } from "@/lib/mock-data-provider";
+import { WishlistService } from "@/modules/account/services/wishlist-service";
 
 export const getWishlistData = async (userId: string) => {
-  return { message: "success", status: 200, data: MOCK_WISHLIST_ITEMS };
+  try {
+    const items = await WishlistService.getWishlist(userId);
+    return { message: "success", status: 200, data: items };
+  } catch (error) {
+    return { message: "error", status: 500, data: [] };
+  }
 };

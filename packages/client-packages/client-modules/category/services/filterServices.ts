@@ -3,10 +3,6 @@ import { categoriesTable } from "@needlon/db/db/schema/catalog/categories/table"
 import { categoryAttributesTable } from "@needlon/db/db/schema/catalog/category-attributes";
 import { categoryAttributeOptionsTable } from "@needlon/db/db/schema/catalog/category-attribute-options";
 import { eq, and, ilike, asc } from "drizzle-orm";
-import {
-  DEFAULT_MOCK_CATEGORIES as MOCK_CATEGORIES,
-  DEFAULT_MOCK_FILTER_GROUPS as MOCK_FILTER_GROUPS,
-} from "../../../data/mock-catalog-fallback";
 
 export interface FilterOptionDTO {
   id: string;
@@ -48,22 +44,16 @@ export async function getCategoryIdByName(categoryName: string): Promise<string>
 
       if (catBySlug) return catBySlug.id;
     } catch (err) {
-      console.warn("getCategoryIdByName DB fallback:", (err as Error).message);
+      console.warn("getCategoryIdByName DB error:", (err as Error).message);
     }
   }
 
-  // Fallback to mock categories
-  const mockCat = MOCK_CATEGORIES.find(
-    (c) =>
-      c.category.toLowerCase().includes(categoryName.toLowerCase()) ||
-      c.CatType.toLowerCase().includes(categoryName.toLowerCase())
-  );
-  return mockCat?.id ?? MOCK_CATEGORIES[0].id;
+  return "";
 }
 
 /** Fetches all filter groups and their options for a specific category */
 export async function getCategoryFilters(categoryId: string): Promise<FilterGroupDTO[]> {
-  if (process.env.DATABASE_URL) {
+  if (process.env.DATABASE_URL && categoryId) {
     try {
       const attributes = await db
         .select()
@@ -76,7 +66,7 @@ export async function getCategoryFilters(categoryId: string): Promise<FilterGrou
         )
         .orderBy(asc(categoryAttributesTable.displayOrder));
 
-      if (attributes.length > 0) {
+      if (attributes && attributes.length > 0) {
         const groups: FilterGroupDTO[] = [];
 
         for (const attr of attributes) {
@@ -101,15 +91,12 @@ export async function getCategoryFilters(categoryId: string): Promise<FilterGrou
           });
         }
 
-        if (groups.length > 0) {
-          return groups;
-        }
+        return groups;
       }
     } catch (err) {
-      console.warn("getCategoryFilters DB fallback:", (err as Error).message);
+      console.warn("getCategoryFilters DB error:", (err as Error).message);
     }
   }
 
-  // Fallback to mock filter groups
-  return MOCK_FILTER_GROUPS;
+  return [];
 }

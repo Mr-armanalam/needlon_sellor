@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { OrderService } from "@/modules/orders/services/orderServices";
-import { MOCK_ORDER_DETAIL } from "@/lib/mock-data-provider";
 
 export async function GET(
   req: NextRequest,
@@ -30,8 +29,7 @@ export async function GET(
       );
     }
     console.error("ORDER_GET_BY_ID_ERROR:", error);
-    // Fallback gracefully in case of mock IDs or unseeded dev database
-    return NextResponse.json(MOCK_ORDER_DETAIL, { status: 200 });
+    return NextResponse.json({ error: "Failed to retrieve order" }, { status: 500 });
   }
 }
 

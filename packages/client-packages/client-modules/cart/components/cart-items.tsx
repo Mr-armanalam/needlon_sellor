@@ -32,7 +32,7 @@ const CartItems = ({
 }: cartItemProps) => {
   const { wishlist } = useAppSelector((state) => state.wishlist);
   const { data: session } = useSession();
-  const userId = session?.user.id;
+  const userId = session?.user?.id;
   const router = useRouter();
 
   const dispatch = useAppDispatch();

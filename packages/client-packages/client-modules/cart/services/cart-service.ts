@@ -6,7 +6,6 @@ import { pricingTable } from "@needlon/db/db/schema/catalog/products/pricing/tab
 import { inventoryTable } from "@needlon/db/db/schema/catalog/products/inventory/table";
 import { productImagesTable } from "@needlon/db/db/schema/catalog/products/product-images/table";
 import { eq, and, desc, asc, inArray } from "drizzle-orm";
-import { DEFAULT_MOCK_PRODUCTS } from "../../../data/mock-catalog-fallback";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function isValidUuid(id: string): boolean {
@@ -44,7 +43,7 @@ export const CartService = {
    */
   async getCart(userId: string): Promise<CartItemDto[]> {
     if (!process.env.DATABASE_URL || !isValidUuid(userId)) {
-      return this.getMockCart(userId);
+      return [];
     }
 
     try {
@@ -147,27 +146,8 @@ export const CartService = {
       });
     } catch (error) {
       console.warn("Get cart DB query fallback:", (error as Error).message);
-      return this.getMockCart(userId);
+      return [];
     }
-  },
-
-  getMockCart(userId: string): CartItemDto[] {
-    return DEFAULT_MOCK_PRODUCTS.slice(0, 2).map((p, idx) => ({
-      id: `mock-ci-${idx + 1}`,
-      userId,
-      productId: p.id,
-      quantity: 1,
-      size: p.sizes?.[0] || "M",
-      name: p.name,
-      price: p.price,
-      mrp_price: p.mrp_price,
-      image: p.image,
-      modalImage: p.modalImage?.[0] || p.image,
-      stockQuantity: p.quantity ?? 10,
-      inStock: true,
-      shippingCharge: p.price >= 1999 ? 0 : 49,
-      updatedAt: new Date(),
-    }));
   },
 
   /**
@@ -175,7 +155,7 @@ export const CartService = {
    */
   async addToCart(userId: string, dto: AddToCartDto) {
     if (!process.env.DATABASE_URL || !isValidUuid(userId)) {
-      return { id: "mock-cart-item", userId, ...dto, success: true, created: true };
+      return { success: false, created: false, message: "Valid user ID required" };
     }
 
     try {
@@ -261,8 +241,8 @@ export const CartService = {
 
       return { success: true, created: true, item: inserted };
     } catch (error) {
-      console.warn("Add to cart DB query fallback:", (error as Error).message);
-      return { id: "mock-cart-item", userId, ...dto, success: true, created: true };
+      console.warn("Add to cart DB query error:", (error as Error).message);
+      return { success: false, created: false, message: (error as Error).message };
     }
   },
 

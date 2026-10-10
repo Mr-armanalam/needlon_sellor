@@ -25,7 +25,7 @@ const initialState: CartState = {
   loading: false,
 };
 
-// ✅ Fetch cart from server
+// ✅ Fetch cart from server or local storage
 export const fetchCart = createAsyncThunk(
   "cart/fetchCart",
   async (userId: string) => {
@@ -67,25 +67,66 @@ export const addToCart = createAsyncThunk(
     }: { userId?: string; product: CartItem; size: string },
     { dispatch },
   ) => {
+    const targetProductId = product.productId || product.id;
+
     if (userId) {
       const res = await fetch(`/api/cart`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId,
-          cartItem: { productId: product.id, size, quantity: 1 },
+          cartItem: { productId: targetProductId, size, quantity: 1 },
           addQuantity: 1,
         }),
       });
       const data = await res.json();
-      if (data.created) toast("Item added to the cart");
-      dispatch(fetchCart(userId));
+      if (data.created || data.success) toast.success("Item added to cart");
+
+      const fetchRes = await fetch(`/api/cart/${userId}`);
+      if (fetchRes.ok) {
+        const cartData = await fetchRes.json();
+        return Array.isArray(cartData) ? cartData : (cartData.cart || []);
+      }
+      return [];
     } else {
-      const local = localStorage.getItem("cart");
-      const localCart: CartItem[] = local ? JSON.parse(local) : [];
-      const updated = [...localCart, { ...product, size, quantity: 1 }];
-      localStorage.setItem("cart", JSON.stringify(updated));
-      toast("Item added locally");
+      let localCart: CartItem[] = [];
+      if (typeof window !== "undefined") {
+        const local = localStorage.getItem("cart");
+        if (local) {
+          try {
+            localCart = JSON.parse(local);
+          } catch {
+            localCart = [];
+          }
+        }
+      }
+
+      const existingIndex = localCart.findIndex(
+        (i) => (i.productId === targetProductId || i.id === targetProductId) && i.size === size
+      );
+
+      let updated: CartItem[];
+      if (existingIndex > -1) {
+        updated = localCart.map((it, idx) =>
+          idx === existingIndex ? { ...it, quantity: (Number(it.quantity) || 1) + 1 } : it
+        );
+      } else {
+        updated = [
+          ...localCart,
+          {
+            ...product,
+            id: product.id || targetProductId,
+            productId: targetProductId,
+            size,
+            quantity: 1,
+          },
+        ];
+      }
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem("cart", JSON.stringify(updated));
+      }
+      toast.success("Item added to cart locally");
       return updated;
     }
   },
@@ -112,25 +153,64 @@ export const removeFromCart = createAsyncThunk(
           removeQuantity: 1,
         }),
       });
-      toast("Item removed from the cart");
-      dispatch(fetchCart(userId));
-    } else {
-      const local = localStorage.getItem("cart");
-      if (local) {
-        const parsed: CartItem[] = JSON.parse(local);
-        const updated = parsed
-          .map((item) =>
-            item.productId === productId && item.size === size
-              ? { ...item, quantity: item.quantity - 1 }
-              : item,
-          )
-          .filter((item) => item.quantity > 0);
-        localStorage.setItem("cart", JSON.stringify(updated));
-        toast("Item removed locally");
-        return updated;
+      toast.success("Item removed from cart");
+      const fetchRes = await fetch(`/api/cart/${userId}`);
+      if (fetchRes.ok) {
+        const cartData = await fetchRes.json();
+        return Array.isArray(cartData) ? cartData : (cartData.cart || []);
       }
+      return [];
+    } else {
+      if (typeof window !== "undefined") {
+        const local = localStorage.getItem("cart");
+        if (local) {
+          const parsed: CartItem[] = JSON.parse(local);
+          const updated = parsed
+            .map((item) =>
+              (item.productId === productId || item.id === productId) && item.size === size
+                ? { ...item, quantity: item.quantity - 1 }
+                : item,
+            )
+            .filter((item) => item.quantity > 0);
+          localStorage.setItem("cart", JSON.stringify(updated));
+          toast.success("Item removed from cart locally");
+          return updated;
+        }
+      }
+      return [];
     }
   },
+);
+
+// ✅ Synchronize guest cart with DB on login
+export const syncCartWithDB = createAsyncThunk(
+  "cart/syncCartWithDB",
+  async (
+    { userId, guestItems }: { userId: string; guestItems: CartItem[] },
+    { dispatch }
+  ) => {
+    if (!guestItems || guestItems.length === 0) return [];
+    try {
+      const res = await fetch(`/api/cart/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, items: guestItems }),
+      });
+      if (res.ok) {
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("cart");
+        }
+        toast.success("Cart synchronized!");
+        const cartData = await res.json();
+        const updated = Array.isArray(cartData.cart) ? cartData.cart : [];
+        dispatch(fetchCart(userId));
+        return updated;
+      }
+    } catch (err) {
+      console.warn("Cart sync error:", err);
+    }
+    return [];
+  }
 );
 
 // ✅ Slice
@@ -140,6 +220,18 @@ const cartSlice = createSlice({
   reducers: {
     clearCart: (state) => {
       state.cart = [];
+    },
+    initializeGuestCart: (state) => {
+      if (typeof window !== "undefined") {
+        const local = localStorage.getItem("cart");
+        if (local) {
+          try {
+            state.cart = JSON.parse(local);
+          } catch {
+            state.cart = [];
+          }
+        }
+      }
     },
   },
   extraReducers: (builder) => {
@@ -163,9 +255,14 @@ const cartSlice = createSlice({
       })
       .addCase(removeFromCart.fulfilled, (state, action) => {
         if (Array.isArray(action.payload)) state.cart = action.payload;
+      })
+      .addCase(syncCartWithDB.fulfilled, (state, action) => {
+        if (Array.isArray(action.payload) && action.payload.length > 0) {
+          state.cart = action.payload;
+        }
       });
   },
 });
 
-export const { clearCart } = cartSlice.actions;
+export const { clearCart, initializeGuestCart } = cartSlice.actions;
 export default cartSlice.reducer;

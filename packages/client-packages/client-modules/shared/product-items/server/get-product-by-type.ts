@@ -1,18 +1,22 @@
-import { MOCK_PRODUCTS } from "@/lib/mock-data-provider";
+import { ProductService } from "@/modules/product/services/kof-productServices";
 
 export async function getProductByType({
   type,
 }: {
   type: "premium" | "recommend" | "user_like" | null;
 }) {
-  switch (type) {
-    case "premium":
-      return MOCK_PRODUCTS.filter((p) => p.isPremium);
-    case "recommend":
-      return MOCK_PRODUCTS.slice(0, 4);
-    case "user_like":
-      return MOCK_PRODUCTS.slice(2, 6);
-    default:
-      return MOCK_PRODUCTS;
-  }
+  const result = await (async () => {
+    switch (type) {
+      case "premium":
+        return await ProductService.getPremium();
+      case "recommend":
+        return await ProductService.getRecommendation();
+      case "user_like":
+        return await ProductService.getTrending();
+      default:
+        return await ProductService.getBestSeller();
+    }
+  })();
+
+  return (result || []).map((item: any) => item.product || item);
 }

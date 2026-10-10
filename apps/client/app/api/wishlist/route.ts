@@ -4,7 +4,10 @@ import { WishlistService } from "@/modules/account/services/wishlist-service";
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const userId = searchParams.get("userId") || "mock-user";
+    const userId = searchParams.get("userId");
+    if (!userId) {
+      return NextResponse.json({ success: true, items: [] }, { status: 200 });
+    }
     const items = await WishlistService.getWishlist(userId);
     return NextResponse.json({ success: true, items }, { status: 200 });
   } catch (error) {
@@ -16,7 +19,11 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const { userId = "mock-user", productId, action = "toggle", exists } = body;
+    const { userId, productId, action = "toggle", exists } = body;
+
+    if (!userId) {
+      return NextResponse.json({ error: "User authentication required" }, { status: 400 });
+    }
 
     // 1. Guest items synchronization
     if (body.items || body.guestItems || body.syncItems) {

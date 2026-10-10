@@ -31,15 +31,14 @@ const CategoryView = () => {
   const { data: session } = useSession();
   const dispatch = useAppDispatch();
 
-  const handleAddToCart = (product: ProductData, size: string) => {
-    dispatch(
+  const handleAddToCart = async (product: ProductData, size: string) => {
+    await dispatch(
       addToCart({
-        userId: session?.user.id,
+        userId: session?.user?.id,
         product: { ...product, size, quantity: 1 },
         size,
       })
     );
-    dispatch(fetchCart(session?.user.id ?? ""));
     setOpen(true);
   };
 

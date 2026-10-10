@@ -2,8 +2,9 @@ import React from "react";
 import { Metadata } from "next";
 import SubcatSearch from "@/modules/home/components/hero-components/subcat-search";
 import HeroSlider from "@/modules/home/components/hero-components/hero-slider";
-import { MOCK_HERO_ITEMS, MOCK_SUB_CAT_SEARCH_ITEMS } from "@/lib/mock-data-provider";
-import { getApiBaseUrl } from "@/lib/get-api-url";
+import { HeroBannerService } from "@/modules/home/services/hero-banner-service";
+import { SearchService } from "@/modules/home/services/search-service";
+import { heroProps } from "@/modules/home/types/hero-types";
 
 export const dynamic = "force-dynamic";
 
@@ -12,36 +13,20 @@ export const metadata: Metadata = {
   description: "A fashionable clothing tailoring service",
 };
 
-import { heroProps } from "@/modules/home/types/hero-types";
-
 const page = async () => {
-  let tailoringServices: heroProps[] = MOCK_HERO_ITEMS;
-  let subCatSearches: any[] = MOCK_SUB_CAT_SEARCH_ITEMS;
+  let tailoringServices: heroProps[] = [];
+  let subCatSearches: any[] = [];
 
   try {
-    const baseUrl = await getApiBaseUrl();
-    const heroItemResponse = await fetch(`${baseUrl}/api/hero-items`, { cache: "no-store" });
-    if (heroItemResponse.ok) {
-      const heroItemResult = await heroItemResponse.json();
-      if (heroItemResult?.items) {
-        tailoringServices = heroItemResult.items;
-      }
-    }
+    tailoringServices = (await HeroBannerService.getActiveHeroBanners()) as heroProps[];
   } catch (error) {
-    console.warn("Failed to fetch hero items, using fallback mock data:", (error as Error).message);
+    console.warn("Failed to fetch hero items:", (error as Error).message);
   }
 
   try {
-    const baseUrl = await getApiBaseUrl();
-    const subcatItemResponse = await fetch(`${baseUrl}/api/sub-cat-search`, { cache: "no-store" });
-    if (subcatItemResponse.ok) {
-      const subcatItemResult = await subcatItemResponse.json();
-      if (subcatItemResult?.items) {
-        subCatSearches = subcatItemResult.items;
-      }
-    }
+    subCatSearches = await SearchService.getSubCatSearchItems();
   } catch (error) {
-    console.warn("Failed to fetch sub-cat items, using fallback mock data:", (error as Error).message);
+    console.warn("Failed to fetch sub-cat items:", (error as Error).message);
   }
 
   return (

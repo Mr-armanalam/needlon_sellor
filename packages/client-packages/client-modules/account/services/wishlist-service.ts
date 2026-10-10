@@ -5,7 +5,6 @@ import { productVariantsTable } from "@needlon/db/db/schema/catalog/products/pro
 import { pricingTable } from "@needlon/db/db/schema/catalog/products/pricing/table";
 import { productImagesTable } from "@needlon/db/db/schema/catalog/products/product-images/table";
 import { eq, and, desc, asc, inArray } from "drizzle-orm";
-import { DEFAULT_MOCK_PRODUCTS } from "../../../data/mock-catalog-fallback";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function isValidUuid(id: string): boolean {
@@ -29,7 +28,7 @@ export const WishlistService = {
    */
   async getWishlist(userId: string): Promise<WishlistItemDto[]> {
     if (!process.env.DATABASE_URL || !isValidUuid(userId)) {
-      return this.getMockWishlist(userId);
+      return [];
     }
 
     try {
@@ -105,22 +104,9 @@ export const WishlistService = {
         };
       });
     } catch (error) {
-      console.warn("Get wishlist DB query fallback:", (error as Error).message);
-      return this.getMockWishlist(userId);
+      console.warn("Get wishlist DB query error:", (error as Error).message);
+      return [];
     }
-  },
-
-  getMockWishlist(userId: string): WishlistItemDto[] {
-    return DEFAULT_MOCK_PRODUCTS.slice(0, 2).map((p, idx) => ({
-      id: `mock-wl-${idx + 1}`,
-      productId: p.id,
-      name: p.name,
-      price: p.price,
-      quantity: 1,
-      size: p.sizes?.[0] || "M",
-      image: p.image,
-      updatedAt: new Date(),
-    }));
   },
 
   /**
@@ -128,7 +114,7 @@ export const WishlistService = {
    */
   async toggleWishlist(userId: string, productId: string) {
     if (!process.env.DATABASE_URL || !isValidUuid(userId) || !isValidUuid(productId)) {
-      return { added: true, removed: false };
+      return { added: false, removed: false };
     }
 
     try {

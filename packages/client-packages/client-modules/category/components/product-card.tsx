@@ -50,7 +50,7 @@ const ProductCard = ({
   const { data: session } = useSession();
   const userId = session?.user.id;
 
-  const wishlistItems = wishlist.length > 0 ? wishlist : guestWishlist;
+  const wishlistItems = userId ? wishlist : guestWishlist;
 
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [hoverSide, setHoverSide] = useState<"left" | "right" | null>(null);
@@ -76,7 +76,7 @@ const ProductCard = ({
   ) => {
     if (userId) {
       const exists = wishlist.some(
-        (item) => item.productId === productId && item.size === size,
+        (item) => item.productId === productId && (item.size === size || (!item.size && !size)),
       );
       dispatch(toggleWishlist({ userId, productId, size, exists }));
     } else {

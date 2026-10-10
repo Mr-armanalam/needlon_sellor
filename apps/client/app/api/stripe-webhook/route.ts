@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { OrderCreationService } from "@/modules/orders/services/order-creation-service";
 import { CartService } from "@/modules/cart/services/cart-service";
+import { db } from "@needlon/db";
+import { orderPayments } from "@needlon/db/db/schema/orders/order-payments/table";
+import { eq } from "drizzle-orm";
 import Stripe from "stripe";
 
 export async function POST(req: NextRequest) {
@@ -26,16 +29,48 @@ export async function POST(req: NextRequest) {
     // Handle checkout session completion
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
+
+      // 1. Check idempotency: avoid double-creating orders
+      if (process.env.DATABASE_URL) {
+        const [existingPayment] = await db
+          .select({ id: orderPayments.id })
+          .from(orderPayments)
+          .where(eq(orderPayments.gatewayPaymentId, session.id))
+          .limit(1);
+
+        if (existingPayment) {
+          return NextResponse.json({ received: true, alreadyProcessed: true }, { status: 200 });
+        }
+      }
+
       const metadata = session.metadata || {};
       const userId = metadata.userId;
       const addressId = metadata.addressId;
       const couponCode = metadata.couponCode;
       const couponDiscount = Number(metadata.couponDiscount) || 0;
 
-      // Retrieve buyer cart items
+      // Retrieve buyer cart items from DB or metadata fallback
       let cartItems: any[] = [];
       if (userId) {
         cartItems = await CartService.getCart(userId);
+      }
+
+      if ((!cartItems || cartItems.length === 0) && metadata.cartSummary) {
+        try {
+          const parsed = JSON.parse(metadata.cartSummary);
+          if (Array.isArray(parsed)) {
+            cartItems = parsed.map((it: any) => ({
+              productId: it.p,
+              quantity: it.q,
+              size: it.s,
+              color: it.c,
+              price: it.pr,
+              name: it.n,
+            }));
+          }
+        } catch {
+          // ignore parsing error
+        }
       }
 
       await OrderCreationService.createOrderFromCheckoutSession({

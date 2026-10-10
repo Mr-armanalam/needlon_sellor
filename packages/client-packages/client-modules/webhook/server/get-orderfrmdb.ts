@@ -5,23 +5,19 @@ import { orders } from "@needlon/db/db/schema/orders/table";
 import { orderItems } from "@needlon/db/db/schema/orders/order-items/table";
 import { orderPayments } from "@needlon/db/db/schema/orders/order-payments/table";
 import { eq, or } from "drizzle-orm";
+import { OrderCreationService } from "@/modules/orders/services/order-creation-service";
+import { CartService } from "@/modules/cart/services/cart-service";
 
 export const getOrderFromDB = async (sessionId: string) => {
   if (!process.env.DATABASE_URL || !sessionId) {
     return {
-      line_items: {
-        data: [{ quantity: 1, description: "Classic Oxford Cotton Shirt" }],
-      },
-      Payment: {
-        status: "paid",
-        paymentAmount: 2499,
-        orderId: "ord-mock-001",
-      },
+      line_items: null,
+      Payment: null,
     };
   }
 
   try {
-    // 1. Search for payment record by session ID or transaction ID
+    // 1. Search for payment record by session ID or transaction ID in DB
     const [paymentRecord] = await db
       .select()
       .from(orderPayments)
@@ -63,7 +59,7 @@ export const getOrderFromDB = async (sessionId: string) => {
       };
     }
 
-    // 4. If record not yet found and session is from Stripe, retrieve directly from Stripe
+    // 4. Self-Healing: If record not in DB yet and session is from Stripe, verify and create order directly
     const stripeKey = process.env.STRIPE_SECRET_KEY;
     if (sessionId.startsWith("cs_") && stripeKey && !stripeKey.includes("placeholder") && stripeKey.startsWith("sk_")) {
       try {
@@ -71,24 +67,94 @@ export const getOrderFromDB = async (sessionId: string) => {
         const stripe = new Stripe(stripeKey, { apiVersion: "2024-12-18.acacia" as any });
         const session = await stripe.checkout.sessions.retrieve(sessionId, { expand: ["line_items"] });
 
-        if (session) {
-          const items = session.line_items?.data || [];
-          return {
-            line_items: {
-              data: items.map((it) => ({
-                quantity: it.quantity || 1,
-                description: it.description || "Needlon Tailored Item",
-              })),
-            },
-            Payment: {
-              status: session.payment_status === "paid" ? "paid" : "pending",
-              paymentAmount: (session.amount_total || 0) / 100,
-              orderId: session.id.slice(-10).toUpperCase(),
-            },
-          };
+        if (session && session.payment_status === "paid") {
+          const metadata = session.metadata || {};
+          const userId = metadata.userId;
+          const addressId = metadata.addressId;
+          const couponCode = metadata.couponCode;
+          const couponDiscount = Number(metadata.couponDiscount) || 0;
+
+          let cartItems: any[] = [];
+          if (metadata.cartSummary) {
+            try {
+              const parsed = JSON.parse(metadata.cartSummary);
+              if (Array.isArray(parsed)) {
+                cartItems = parsed.map((it: any) => ({
+                  productId: it.p,
+                  quantity: it.q,
+                  size: it.s,
+                  color: it.c,
+                  price: it.pr,
+                  name: it.n,
+                }));
+              }
+            } catch {
+              // ignore parse errors
+            }
+          }
+
+          if (cartItems.length === 0 && userId) {
+            cartItems = await CartService.getCart(userId);
+          }
+
+          if (cartItems.length === 0 && session.line_items?.data) {
+            cartItems = session.line_items.data.map((li: any) => ({
+              productId: li.id,
+              quantity: li.quantity || 1,
+              price: (li.amount_total || 249900) / 100 / (li.quantity || 1),
+              name: li.description || "Needlon Tailored Product",
+            }));
+          }
+
+          // Atomically persist order into PostgreSQL
+          await OrderCreationService.createOrderFromCheckoutSession({
+            sessionId: session.id,
+            buyerId: userId || "guest-buyer",
+            buyerAddressId: addressId,
+            cartItems,
+            couponCode,
+            couponDiscount,
+            paymentMethod: "CARD",
+            paymentGateway: "STRIPE",
+            currency: (session.currency || "INR").toUpperCase(),
+          });
+
+          // Fetch the newly created record
+          const [newPayment] = await db
+            .select()
+            .from(orderPayments)
+            .where(eq(orderPayments.gatewayPaymentId, session.id))
+            .limit(1);
+
+          if (newPayment) {
+            const [newOrder] = await db
+              .select()
+              .from(orders)
+              .where(eq(orders.id, newPayment.orderId))
+              .limit(1);
+
+            const newItems = await db
+              .select()
+              .from(orderItems)
+              .where(eq(orderItems.orderId, newPayment.orderId));
+
+            return {
+              line_items: {
+                data: newItems.map((item) => ({
+                  quantity: item.quantity,
+                  description: `${item.productName}${item.variantName ? ` (${item.variantName})` : ""}`,
+                })),
+              },
+              Payment: {
+                status: "paid",
+                paymentAmount: Number(newPayment.amount),
+                orderId: newOrder?.orderNumber || newPayment.orderId,
+              },
+            };
+          }
         }
       } catch (stripeErr: any) {
-        console.warn("Direct Stripe session retrieval warning:", stripeErr.message);
+        console.warn("Direct Stripe session reconciliation warning:", stripeErr.message);
       }
     }
 
@@ -120,28 +186,15 @@ export const getOrderFromDB = async (sessionId: string) => {
       };
     }
 
-    // Default presentation fallback if ID is test/mock
     return {
-      line_items: {
-        data: [{ quantity: 1, description: "Needlon Bespoke Linen Attire" }],
-      },
-      Payment: {
-        status: "paid",
-        paymentAmount: 2499,
-        orderId: sessionId,
-      },
+      line_items: null,
+      Payment: null,
     };
   } catch (err) {
-    console.warn("getOrderFromDB query fallback:", (err as Error).message);
+    console.warn("getOrderFromDB error:", (err as Error).message);
     return {
-      line_items: {
-        data: [{ quantity: 1, description: "Classic Oxford Cotton Shirt" }],
-      },
-      Payment: {
-        status: "paid",
-        paymentAmount: 2499,
-        orderId: "ORD-MOCK-FALLBACK",
-      },
+      line_items: null,
+      Payment: null,
     };
   }
 };

@@ -3,11 +3,6 @@ import { productsTable } from "@needlon/db/db/schema/catalog/products/table";
 import { categoriesTable } from "@needlon/db/db/schema/catalog/categories/table";
 import { clientSearchHistoryTable } from "@needlon/db/db/schema/client/search-history";
 import { eq, ilike, or, desc, sql, and } from "drizzle-orm";
-import {
-  DEFAULT_MOCK_PRODUCTS as MOCK_PRODUCTS,
-  DEFAULT_MOCK_CATEGORIES as MOCK_CATEGORIES,
-  DEFAULT_MOCK_SUB_CAT_SEARCH_ITEMS as MOCK_SUB_CAT_SEARCH_ITEMS,
-} from "../../../data/mock-catalog-fallback";
 
 export interface SearchResultItem {
   id: string;
@@ -29,7 +24,7 @@ export const SearchService = {
           .where(
             and(
               eq(clientSearchHistoryTable.userId, userId),
-              ilike(clientSearchHistoryTable.query, trimmedQuery)
+              eq(clientSearchHistoryTable.query, trimmedQuery)
             )
           )
           .limit(1);
@@ -38,7 +33,7 @@ export const SearchService = {
           await db
             .update(clientSearchHistoryTable)
             .set({
-              searchCount: existing.searchCount + 1,
+              searchCount: sql`${clientSearchHistoryTable.searchCount} + 1`,
               lastSearchedAt: new Date(),
             })
             .where(eq(clientSearchHistoryTable.id, existing.id));
@@ -46,16 +41,14 @@ export const SearchService = {
           await db.insert(clientSearchHistoryTable).values({
             userId,
             query: trimmedQuery,
-            searchCount: 1,
-            lastSearchedAt: new Date(),
           });
         }
       } catch (err) {
-        console.warn("Log search history DB fallback:", (err as Error).message);
+        console.warn("Search history DB log warning:", (err as Error).message);
       }
     }
 
-    // 2. Query products in database
+    // 2. Query products & categories
     if (process.env.DATABASE_URL && trimmedQuery) {
       try {
         const rows = await db
@@ -72,56 +65,31 @@ export const SearchService = {
               eq(productsTable.status, "PUBLISHED"),
               or(
                 ilike(productsTable.name, `%${trimmedQuery}%`),
-                ilike(productsTable.slug, `%${trimmedQuery}%`),
+                ilike(productsTable.description, `%${trimmedQuery}%`),
                 ilike(categoriesTable.name, `%${trimmedQuery}%`)
               )
             )
           )
           .limit(30);
 
-        if (rows.length > 0) {
-          const grouped: Record<string, SearchResultItem[]> = {};
-          for (const row of rows) {
-            const cat = row.categoryName || "General";
-            if (!grouped[cat]) grouped[cat] = [];
-            grouped[cat].push({
-              id: row.id,
-              name: row.name,
-              category: cat,
-              subcategory: row.categorySlug || cat,
-            });
-          }
-          return grouped;
+        const grouped: Record<string, SearchResultItem[]> = {};
+        for (const row of rows) {
+          const cat = row.categoryName || "General";
+          if (!grouped[cat]) grouped[cat] = [];
+          grouped[cat].push({
+            id: row.id,
+            name: row.name,
+            category: cat,
+            subcategory: row.categorySlug || cat,
+          });
         }
+        return grouped;
       } catch (err) {
-        console.warn("SearchStorefront DB fallback:", (err as Error).message);
+        console.warn("SearchStorefront DB query error:", (err as Error).message);
       }
     }
 
-    // 3. Fallback to mock search
-    const lowerQ = trimmedQuery.toLowerCase();
-    const matched = MOCK_PRODUCTS
-      .filter((p) => p.name.toLowerCase().includes(lowerQ) || p.tagName?.toLowerCase().includes(lowerQ))
-      .map((p) => {
-        const cat = MOCK_CATEGORIES.find((c) => c.id === p.categoryId) || MOCK_CATEGORIES[0];
-        return { id: p.id, name: p.name, category: cat.category, subcategory: cat.CatType };
-      });
-
-    const grouped: Record<string, SearchResultItem[]> = {};
-    for (const p of matched) {
-      if (!grouped[p.category]) grouped[p.category] = [];
-      grouped[p.category].push(p);
-    }
-
-    if (Object.keys(grouped).length === 0) {
-      MOCK_PRODUCTS.slice(0, 6).forEach((p) => {
-        const cat = MOCK_CATEGORIES.find((c) => c.id === p.categoryId) || MOCK_CATEGORIES[0];
-        if (!grouped[cat.category]) grouped[cat.category] = [];
-        grouped[cat.category].push({ id: p.id, name: p.name, category: cat.category, subcategory: cat.CatType });
-      });
-    }
-
-    return grouped;
+    return {};
   },
 
   async getSuggestions(userId?: string) {
@@ -140,7 +108,7 @@ export const SearchService = {
 
         recentSearches = recentRows.map((r) => r.query);
       } catch (err) {
-        console.warn("Get recent searches DB fallback:", (err as Error).message);
+        console.warn("Get recent searches DB query error:", (err as Error).message);
       }
     }
 
@@ -169,15 +137,8 @@ export const SearchService = {
           }));
         }
       } catch (err) {
-        console.warn("Get suggested items DB fallback:", (err as Error).message);
+        console.warn("Get suggested items DB query error:", (err as Error).message);
       }
-    }
-
-    if (suggestedItems.length === 0) {
-      suggestedItems = MOCK_PRODUCTS.slice(0, 6).map((p) => {
-        const cat = MOCK_CATEGORIES.find((c) => c.id === p.categoryId) || MOCK_CATEGORIES[0];
-        return { id: p.id, name: p.name, category: cat.category, subcategory: cat.CatType };
-      });
     }
 
     return {
@@ -208,10 +169,10 @@ export const SearchService = {
           }));
         }
       } catch (err) {
-        console.warn("GetSubCatSearchItems DB fallback:", (err as Error).message);
+        console.warn("GetSubCatSearchItems DB query error:", (err as Error).message);
       }
     }
 
-    return MOCK_SUB_CAT_SEARCH_ITEMS;
+    return [];
   },
 };

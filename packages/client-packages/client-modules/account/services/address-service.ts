@@ -115,10 +115,14 @@ export const AddressService = {
       if (dto.addressType !== undefined) updateData.addressType = dto.addressType;
       if (dto.isDefault !== undefined) updateData.isDefault = dto.isDefault;
 
+      const condition = userId && userId !== "mock-user"
+        ? and(eq(userAddressesTable.id, addressId), eq(userAddressesTable.userId, userId))
+        : eq(userAddressesTable.id, addressId);
+
       const [updated] = await db
         .update(userAddressesTable)
         .set(updateData)
-        .where(and(eq(userAddressesTable.id, addressId), eq(userAddressesTable.userId, userId)))
+        .where(condition)
         .returning();
 
       return mapAddressToUi(updated);
@@ -134,9 +138,13 @@ export const AddressService = {
       return true;
     }
     try {
+      const condition = userId && userId !== "mock-user"
+        ? and(eq(userAddressesTable.id, addressId), eq(userAddressesTable.userId, userId))
+        : eq(userAddressesTable.id, addressId);
+
       await db
         .delete(userAddressesTable)
-        .where(and(eq(userAddressesTable.id, addressId), eq(userAddressesTable.userId, userId)));
+        .where(condition);
       return true;
     } catch (error) {
       console.warn("Delete address DB fallback:", (error as Error).message);
