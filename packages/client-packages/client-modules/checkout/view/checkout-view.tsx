@@ -27,6 +27,8 @@ interface CheckoutViewProps {
   userName?: string;
   initialAddressId?: string;
   initialCouponId?: string;
+  initialCouponCode?: string;
+  initialDiscount?: number;
   addresses: Address[];
 }
 
@@ -37,6 +39,8 @@ export default function CheckoutView({
   userName,
   initialAddressId,
   initialCouponId,
+  initialCouponCode,
+  initialDiscount,
   addresses = [],
 }: CheckoutViewProps) {
   // 1. Address Resolution
@@ -72,8 +76,13 @@ export default function CheckoutView({
   const retailDiscount = Math.max(0, mrpTotal - subtotal);
 
   // 3. Coupon Handling
-  const [couponCode, setCouponCode] = useState(initialCouponId ? "WELCOME20" : "");
+  const [couponCode, setCouponCode] = useState(
+    initialCouponCode || (initialCouponId ? "COUPON" : "")
+  );
   const [couponDiscount, setCouponDiscount] = useState<number>(() => {
+    if (typeof initialDiscount === "number" && initialDiscount > 0) {
+      return initialDiscount;
+    }
     if (initialCouponId) return Math.round(subtotal * 0.1);
     return 0;
   });
@@ -375,6 +384,7 @@ export default function CheckoutView({
               userId={userId}
               addressId={currentAddress?.id}
               couponId={initialCouponId}
+              couponCode={couponCode}
               discountAmount={couponDiscount}
               userEmail={userEmail}
               shippingCharge={shippingCharge}

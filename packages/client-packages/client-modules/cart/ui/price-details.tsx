@@ -37,6 +37,7 @@ const PriceDetails = ({
     const params = new URLSearchParams();
     if (currentAddressId) params.set("addressId", currentAddressId);
     if (couponDiscount.id) params.set("couponId", couponDiscount.id);
+    if (couponDiscount.code) params.set("couponCode", couponDiscount.code);
     if (totalCouponDiscount > 0) params.set("discount", String(totalCouponDiscount));
     router.push(`/checkout?${params.toString()}`);
   };

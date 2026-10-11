@@ -98,7 +98,7 @@ export const RewardService = {
         description: p.description || "Special platform reward offer",
         points: Number(p.discountValue) * 10,
         status: "active",
-        expiresAt: p.endDate || new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
+        expiresAt: p.endsAt || new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
         coupon_code: p.couponCode || null,
         createdAt: p.createdAt,
       }));
@@ -108,7 +108,7 @@ export const RewardService = {
         activeRewards.push({
           id: `milestone-${loyaltyAccount.id}`,
           userId,
-          coupon_id: null,
+          coupon_id: "",
           title: `${loyaltyAccount.tier} Tier Milestone Bonus`,
           description: `Current loyalty points balance: ${loyaltyAccount.pointsBalance} pts`,
           points: loyaltyAccount.pointsBalance,

@@ -8,7 +8,8 @@ interface props {
   payment_method: string;
   shippingCharge: number;
   pod_charge: number;
-  itemPrice: number;
+  itemPrice?: number;
+  itemsSubtotal?: number;
   couponDiscount: number;
   totalPurchasePrice: number;
   noOfItem: number;
@@ -21,10 +22,16 @@ const OrderDetails = ({
   shippingCharge,
   pod_charge,
   itemPrice,
+  itemsSubtotal,
   totalPurchasePrice,
   couponDiscount,
   noOfItem,
 }: props) => {
+  const displaySubtotal =
+    typeof itemsSubtotal === "number"
+      ? itemsSubtotal
+      : (noOfItem || 1) * (Number(itemPrice) || 0);
+
   return (
     <div className="md:px-1 mb-4 dark:text-white/70 text-gray-900">
       <div className="flex items-center text-sm gap-x-4">
@@ -51,27 +58,27 @@ const OrderDetails = ({
           <div className="text-xs flex flex-col gap-y">
             <div className="flex border-b py-1 border-gray-900 justify-between items-center">
               <p>Item({noOfItem}) Subtotal:</p>
-              <p>{noOfItem * itemPrice}</p>
+              <p>₹{displaySubtotal}</p>
             </div>
-            <div className="flex border-b py-1 border-gray-900  justify-between items-center">
-              <p>Shipping({noOfItem}):</p>
-              <p>{noOfItem * shippingCharge}</p>
+            <div className="flex border-b py-1 border-gray-900 justify-between items-center">
+              <p>Shipping:</p>
+              <p>{shippingCharge === 0 ? "FREE" : `₹${shippingCharge}`}</p>
             </div>
-            {couponDiscount !==0 && (
-              <div className="flex border-b py-1 border-gray-900  justify-between items-center">
+            {couponDiscount !== 0 && (
+              <div className="flex border-b py-1 border-gray-900 justify-between items-center">
                 <p>Coupon Discount:</p>
-                <p className="text-green-500">-{couponDiscount}</p>
+                <p className="text-green-600 font-semibold">-₹{couponDiscount}</p>
               </div>
             )}
-            {pod_charge !==0 && (
-              <div className="flex border-b py-1 border-gray-900  justify-between items-center">
+            {pod_charge !== 0 && (
+              <div className="flex border-b py-1 border-gray-900 justify-between items-center">
                 <p>Cash/Pay on Delivery fee:</p>
-                <p>{pod_charge}</p>
+                <p>₹{pod_charge}</p>
               </div>
             )}
-            <div className="flex justify-between py-1 items-center">
-              <p className="font-semibold">Total:</p>
-              <p>{totalPurchasePrice}</p>
+            <div className="flex justify-between py-1 items-center font-bold">
+              <p>Total:</p>
+              <p>₹{totalPurchasePrice}</p>
             </div>
           </div>
         </div>

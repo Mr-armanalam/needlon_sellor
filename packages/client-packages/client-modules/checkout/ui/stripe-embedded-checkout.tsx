@@ -10,6 +10,7 @@ interface StripeEmbeddedCheckoutWidgetProps {
   userId: string;
   addressId?: string;
   couponId?: string;
+  couponCode?: string;
   discountAmount?: number;
   userEmail?: string;
   shippingCharge?: number;
@@ -20,6 +21,7 @@ export function StripeEmbeddedCheckoutWidget({
   userId,
   addressId,
   couponId,
+  couponCode,
   discountAmount = 0,
   userEmail,
   shippingCharge = 0,
@@ -64,6 +66,7 @@ export function StripeEmbeddedCheckoutWidget({
           userId,
           currentAddressId: addressId,
           couponId,
+          couponCode,
           discountAmount,
           userEmail,
           shippingCharge,

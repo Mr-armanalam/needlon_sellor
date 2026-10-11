@@ -16,9 +16,25 @@ export interface CustomerReviewItem {
   date: string;
 }
 
+export interface CustomerMeasurementItem {
+  id: string;
+  orderId?: string | null;
+  gender: string;
+  garmentType: string;
+  unit: string;
+  essentialMeasurements: Record<string, any>;
+  postureSpecifics: Record<string, any>;
+  fitPreference?: string;
+  tailorNotes?: string;
+  source: string;
+  status: string;
+  date: string;
+}
+
 export interface CustomerDetailsData {
   history: CustomerHistoryItem[];
   reviews: CustomerReviewItem[];
+  measurements?: CustomerMeasurementItem[];
 }
 
 export function useCustomerDetails(buyerId?: string) {

@@ -3,7 +3,8 @@ import { orders } from "@/db/schema/orders/table";
 import { reviewsTable } from "@/db/schema/reviews";
 import { productsTable } from "@/db/schema/catalog/products/table";
 import { usersTable } from "@/db/schema/users";
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { customerMeasurementsTable } from "@/db/schema/customization/measurements";
+import { and, eq, isNull, or, sql } from "drizzle-orm";
 
 export async function getSellerCustomersData(sellerId: string, search?: string) {
   const conditions = [
@@ -79,7 +80,36 @@ export async function getCustomerDetailsRepo(sellerId: string, buyerId: string) 
     .where(and(eq(reviewsTable.sellerId, sellerId), eq(reviewsTable.buyerId, buyerId), isNull(reviewsTable.deletedAt)))
     .orderBy(sql`${reviewsTable.createdAt} DESC`)
     .limit(10);
-    
+
+  let measurements: any[] = [];
+  try {
+    measurements = await db
+      .select({
+        id: customerMeasurementsTable.id,
+        orderId: customerMeasurementsTable.orderId,
+        gender: customerMeasurementsTable.gender,
+        garmentType: customerMeasurementsTable.garmentType,
+        measurementUnit: customerMeasurementsTable.measurementUnit,
+        essentialMeasurements: customerMeasurementsTable.essentialMeasurements,
+        postureSpecifics: customerMeasurementsTable.postureSpecifics,
+        fitPreference: customerMeasurementsTable.fitPreference,
+        tailorNotes: customerMeasurementsTable.tailorNotes,
+        source: customerMeasurementsTable.source,
+        status: customerMeasurementsTable.status,
+        createdAt: customerMeasurementsTable.createdAt,
+      })
+      .from(customerMeasurementsTable)
+      .where(
+        and(
+          eq(customerMeasurementsTable.userId, buyerId),
+          eq(customerMeasurementsTable.sellerId, sellerId)
+        )
+      )
+      .orderBy(sql`${customerMeasurementsTable.createdAt} DESC`)
+      .limit(10);
+  } catch (err) {
+    console.warn("Could not fetch bespoke measurements for customer:", err);
+  }
     
   return {
     history: customerOrders.map((o) => ({
@@ -95,6 +125,20 @@ export async function getCustomerDetailsRepo(sellerId: string, buyerId: string) 
       comment: r.comment || "No comment provided.",
       product: r.productName || "Purchased Product",
       date: r.date ? new Date(r.date).toLocaleDateString() : "N/A",
+    })),
+    measurements: measurements.map((m) => ({
+      id: m.id,
+      orderId: m.orderId,
+      gender: m.gender,
+      garmentType: m.garmentType,
+      unit: m.measurementUnit,
+      essentialMeasurements: m.essentialMeasurements,
+      postureSpecifics: m.postureSpecifics,
+      fitPreference: m.fitPreference,
+      tailorNotes: m.tailorNotes,
+      source: m.source,
+      status: m.status,
+      date: m.createdAt ? new Date(m.createdAt).toLocaleDateString() : "N/A",
     })),
   };
 }

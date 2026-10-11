@@ -12,7 +12,12 @@ export const metadata = {
 export default async function CheckoutPage({
   searchParams,
 }: {
-  searchParams: Promise<{ addressId?: string; couponId?: string }>;
+  searchParams: Promise<{
+    addressId?: string;
+    couponId?: string;
+    couponCode?: string;
+    discount?: string;
+  }>;
 }) {
   const session = await auth();
   const userId = session?.user?.id;
@@ -21,7 +26,7 @@ export default async function CheckoutPage({
     redirect("/auth?callbackUrl=/checkout");
   }
 
-  const { addressId, couponId } = await searchParams;
+  const { addressId, couponId, couponCode, discount } = await searchParams;
 
   const [cart, addresses] = await Promise.all([
     fetchCartSSR(userId),
@@ -37,6 +42,8 @@ export default async function CheckoutPage({
         userName={session.user.name || ""}
         initialAddressId={addressId}
         initialCouponId={couponId}
+        initialCouponCode={couponCode}
+        initialDiscount={discount ? Number(discount) : undefined}
         addresses={addresses as any}
       />
     </div>

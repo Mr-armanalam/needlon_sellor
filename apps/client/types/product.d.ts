@@ -14,6 +14,7 @@ export interface productDataType {
   averageRating: string;
   reviewCount: number;
   isPremium: boolean;
+  isCustomizable?: boolean;
   createdAt: Date | null;
   updatedAt: Date | null;
 }
@@ -35,6 +36,7 @@ export interface ClientProductItem {
   averageRating: string;
   reviewCount: number;
   isPremium: boolean;
+  isCustomizable?: boolean;
   seasonType?: string;
 }
 
@@ -191,6 +193,7 @@ export interface DetailedProductResponse {
   salesCount: number;
   reviewCount: number;
   isPremium: boolean;
+  isCustomizable?: boolean;
   createdAt: string; // ISO Date string
   updatedAt: string; // ISO Date string
   category: DetailedCategory;

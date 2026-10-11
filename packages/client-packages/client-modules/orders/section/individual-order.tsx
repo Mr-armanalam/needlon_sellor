@@ -9,6 +9,10 @@ const IndividualOrder = ({
   orderItem: OrderItemProp[] | null;
 }) => {
   const firstOrder = orderItem?.[0];
+  const itemsSubtotal = (orderItem || []).reduce(
+    (sum, item) => sum + (Number(item?.priceAtperchage) || 0),
+    0
+  );
 
   return (
     <div className="md:px-6 max-md:max-w-[100vw] px-3 overflow-y-scroll no-scrollbar">
@@ -26,6 +30,7 @@ const IndividualOrder = ({
             pod_charge={firstOrder.podCharge}
             payment_method={firstOrder.paymentMode}
             itemPrice={firstOrder.priceAtperchage}
+            itemsSubtotal={itemsSubtotal}
             totalPurchasePrice={firstOrder.totalPurchasePrice}
             couponDiscount={firstOrder.couponDiscount}
           />

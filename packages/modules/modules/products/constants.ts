@@ -23,6 +23,8 @@ export const DEFAULT_FORM_DATA = {
     estimatedDeliveryWindow: '3 - 5 business days delivery timeline',
     searchKeywords: 'handloom, chikankari, festive kurti, cotton apparel',
     customVisibility: 'PUBLIC' as const,
+    isCustomizable: true,
+    hasExistingOrders: false,
     mediaUrls: [] as string[],
 };
 
