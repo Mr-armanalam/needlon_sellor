@@ -4,6 +4,7 @@ import {
   MapPinHouse,
   PackageOpenIcon,
   ReceiptIndianRupee,
+  Ruler,
   ShoppingBagIcon,
   User,
 } from "lucide-react";
@@ -15,6 +16,13 @@ export const accountNavData = [
     icon: <User size={15} />,
     name: "Your Profile",
     description: "Do you want to update your profile ?",
+  },
+  {
+    label: 'measurements',
+    url: "/account/measurements",
+    icon: <Ruler size={15} />,
+    name: "My Measurements",
+    description: "In-store & online bespoke metrics",
   },
   {
     label: 'address',

@@ -17,5 +17,6 @@ export interface CustomerItemResponseDto {
   totalOrders: number;
   totalSpent: string;
   lastOrderAt: string;
+  isWalkIn?: boolean;
 }
 

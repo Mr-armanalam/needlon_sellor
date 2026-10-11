@@ -19,6 +19,6 @@ export async function PATCH(req: NextRequest) {
     const body = await req.json();
     const validated = connectCarrierSchema.parse(body);
     const updated = await connectCarrierService(validated);
-    return successResponse(updated, "Carrier partner updated successfully");
+    return successResponse(updated);
   });
 }

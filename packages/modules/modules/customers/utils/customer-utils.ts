@@ -6,6 +6,7 @@ export interface CustomerDisplayItem {
   clv: string;
   totalOrders: number;
   isRepeat: boolean;
+  isWalkIn?: boolean;
 }
 
 /**

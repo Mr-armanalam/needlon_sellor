@@ -1,7 +1,13 @@
 'use client';
-import React from 'react';
-import { MapPin, MessageSquare, Star, ShoppingBag, Calendar, Scissors, Ruler } from 'lucide-react';
+import React, { useState } from 'react';
+import { MapPin, MessageSquare, Star, ShoppingBag, Calendar, Scissors, Ruler, Plus, ShieldCheck } from 'lucide-react';
 import { useCustomerDetails } from '../hooks/use-customer-details';
+import RecordMeasurementModal from '../components/record-measurement-modal';
+import CreateInStoreOrderModal from '../components/create-in-store-order-modal';
+import UpdateTailoringStageModal from '../components/update-tailoring-stage-modal';
+import ChatPermissionModal from '../components/chat-permission-modal';
+import ScheduleFittingModal from '../components/schedule-fitting-modal';
+import OrderHandoverModal from '../components/order-handover-modal';
 
 export interface CustomerDetailProps {
   customer: {
@@ -17,7 +23,16 @@ export interface CustomerDetailProps {
 }
 
 export default function CustomerDetail({ customer, onOpenChat }: CustomerDetailProps) {
-  const { data, loading } = useCustomerDetails(customer?.id);
+  const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
+  const [isInStoreOrderOpen, setIsInStoreOrderOpen] = useState(false);
+  const [isUpdateStageOpen, setIsUpdateStageOpen] = useState(false);
+  const [selectedOrderForStage, setSelectedOrderForStage] = useState<any>(null);
+  const [isFittingModalOpen, setIsFittingModalOpen] = useState(false);
+  const [selectedOrderForFitting, setSelectedOrderForFitting] = useState<any>(null);
+  const [isHandoverModalOpen, setIsHandoverModalOpen] = useState(false);
+  const [selectedOrderForHandover, setSelectedOrderForHandover] = useState<any>(null);
+  const [isChatPermissionModalOpen, setIsChatPermissionModalOpen] = useState(false);
+  const { data, loading, refetch } = useCustomerDetails(customer?.id);
 
   if (!customer) {
     return (
@@ -52,7 +67,7 @@ export default function CustomerDetail({ customer, onOpenChat }: CustomerDetailP
 
         {/* Primary Action Button: Communication Pivot Hook */}
         <button 
-          onClick={onOpenChat}
+          onClick={() => setIsChatPermissionModalOpen(true)}
           className="bg-blue-600 text-white font-medium text-sm px-4 py-2 rounded-xl shadow-sm shadow-blue-600/10 hover:bg-blue-700 transition-all flex items-center justify-center gap-2 self-start sm:self-center cursor-pointer"
         >
           <MessageSquare className="w-4 h-4" /> Message Customer
@@ -110,11 +125,21 @@ export default function CustomerDetail({ customer, onOpenChat }: CustomerDetailP
               <Scissors className="w-3.5 h-3.5 text-neutral-800" />
               Bespoke Measurements & Tailoring Specs
             </h3>
-            {data.measurements && data.measurements.length > 0 && (
-              <span className="text-[10px] font-semibold px-2 py-0.5 bg-neutral-100 text-neutral-700 rounded-md">
-                {data.measurements.length} Profile{data.measurements.length > 1 ? "s" : ""}
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {data.measurements && data.measurements.length > 0 && (
+                <span className="text-[10px] font-semibold px-2 py-0.5 bg-neutral-100 text-neutral-700 rounded-md">
+                  {data.measurements.length} Profile{data.measurements.length > 1 ? "s" : ""}
+                </span>
+              )}
+              <button
+                onClick={() => setIsRecordModalOpen(true)}
+                className="px-2.5 py-1 rounded-lg bg-neutral-900 hover:bg-black text-white text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer shadow-xs"
+                title="Record new bespoke physical measurement"
+              >
+                <Plus className="w-3 h-3" />
+                <span>Record</span>
+              </button>
+            </div>
           </div>
 
           {loading ? (
@@ -122,8 +147,17 @@ export default function CustomerDetail({ customer, onOpenChat }: CustomerDetailP
               Loading tailoring metrics...
             </div>
           ) : !data.measurements || data.measurements.length === 0 ? (
-            <div className="p-4 text-xs text-gray-400 text-center bg-white rounded-xl border border-gray-100 shadow-sm">
-              No bespoke measurements recorded for this customer yet.
+            <div className="p-6 text-center bg-white rounded-xl border border-gray-100 shadow-sm space-y-2">
+              <p className="text-xs text-gray-400">
+                No bespoke measurements recorded for this customer yet.
+              </p>
+              <button
+                onClick={() => setIsRecordModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 text-xs font-semibold transition-all cursor-pointer"
+              >
+                <Scissors className="w-3.5 h-3.5" />
+                Record First Measurement
+              </button>
             </div>
           ) : (
             <div className="space-y-3">
@@ -219,7 +253,17 @@ export default function CustomerDetail({ customer, onOpenChat }: CustomerDetailP
 
         {/* Order Log History Ledger */}
         <div className="space-y-3">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">Recent Order Log</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">Recent Order Log</h3>
+            <button
+              onClick={() => setIsInStoreOrderOpen(true)}
+              className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer shadow-xs"
+              title="Create in-store custom tailored order"
+            >
+              <ShoppingBag className="w-3 h-3" />
+              <span>+ In-Store Order</span>
+            </button>
+          </div>
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
             {loading ? (
               <div className="p-4 text-xs text-neutral-400 text-center">Loading order history...</div>
@@ -228,11 +272,79 @@ export default function CustomerDetail({ customer, onOpenChat }: CustomerDetailP
                 No recent order history found for this customer.
               </div>
             ) : (
-              history.map((order) => (
+              history.map((order: any) => (
                 <div key={order.id} className="p-4 flex items-center justify-between text-xs">
                   <div className="space-y-1">
-                    <p className="font-semibold text-gray-900">{order.id}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-gray-900">{order.id}</p>
+                      {order.source === 'IN_STORE' && (
+                        <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          In-Store Atelier
+                        </span>
+                      )}
+                    </div>
                     <p className="text-gray-400 flex items-center gap-1"><Calendar className="w-3 h-3" /> {order.date}</p>
+                    
+                    {/* Tailoring Milestone Status */}
+                    {order.tailoringStage && (
+                      <div className="flex items-center gap-2 pt-1 flex-wrap">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-neutral-900 text-white flex items-center gap-1">
+                          <Scissors className="w-2.5 h-2.5" />
+                          {order.tailoringStage.replace(/_/g, ' ')}
+                        </span>
+                        <button
+                          onClick={() => {
+                            setSelectedOrderForStage({
+                              id: order.orderId,
+                              orderNumber: order.id,
+                              stage: order.tailoringStage,
+                              notes: order.tailoringNotes,
+                            });
+                            setIsUpdateStageOpen(true);
+                          }}
+                          className="text-[10px] text-blue-600 hover:text-blue-800 font-bold hover:underline cursor-pointer"
+                        >
+                          Milestone
+                        </button>
+                        <span className="text-gray-300">•</span>
+                        <button
+                          onClick={() => {
+                            setSelectedOrderForFitting({
+                              id: order.orderId,
+                              orderNumber: order.id,
+                            });
+                            setIsFittingModalOpen(true);
+                          }}
+                          className="text-[10px] text-purple-600 hover:text-purple-800 font-bold hover:underline cursor-pointer"
+                        >
+                          Schedule Fitting
+                        </button>
+                        {order.status !== 'COMPLETED' && (
+                          <>
+                            <span className="text-gray-300">•</span>
+                            <button
+                              onClick={() => {
+                                setSelectedOrderForHandover({
+                                  id: order.orderId,
+                                  orderNumber: order.id,
+                                  total: order.total,
+                                  paymentStatus: order.paymentStatus || 'PAID',
+                                });
+                                setIsHandoverModalOpen(true);
+                              }}
+                              className="text-[10px] text-emerald-600 hover:text-emerald-800 font-bold hover:underline cursor-pointer"
+                            >
+                              Handover
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
+                    {order.tailoringNotes && (
+                      <p className="text-[11px] text-amber-800 bg-amber-50/60 px-2 py-0.5 rounded border border-amber-200/50 mt-1">
+                        Note: {order.tailoringNotes}
+                      </p>
+                    )}
                   </div>
                   <div className="text-right space-y-1">
                     <p className="font-bold text-gray-900">{order.total}</p>
@@ -249,6 +361,83 @@ export default function CustomerDetail({ customer, onOpenChat }: CustomerDetailP
         </div>
 
       </div>
+
+      {/* In-Store Bespoke Measurement Intake Modal */}
+      <RecordMeasurementModal
+        isOpen={isRecordModalOpen}
+        onClose={() => setIsRecordModalOpen(false)}
+        customerId={customer.id}
+        customerName={customer.name}
+        onMeasurementSaved={refetch}
+      />
+
+      {/* In-Store Bespoke Order Creation Modal */}
+      <CreateInStoreOrderModal
+        isOpen={isInStoreOrderOpen}
+        onClose={() => setIsInStoreOrderOpen(false)}
+        customerId={customer.id}
+        customerName={customer.name}
+        measurements={data.measurements || []}
+        onOrderCreated={refetch}
+      />
+
+      {/* Update Tailoring Milestone Modal */}
+      {selectedOrderForStage && (
+        <UpdateTailoringStageModal
+          isOpen={isUpdateStageOpen}
+          onClose={() => {
+            setIsUpdateStageOpen(false);
+            setSelectedOrderForStage(null);
+          }}
+          orderId={selectedOrderForStage.id}
+          orderNumber={selectedOrderForStage.orderNumber}
+          currentStage={selectedOrderForStage.stage}
+          currentNotes={selectedOrderForStage.notes}
+          onStageUpdated={refetch}
+        />
+      )}
+
+      {/* Privacy Chat Permission Gate Modal */}
+      <ChatPermissionModal
+        isOpen={isChatPermissionModalOpen}
+        onClose={() => setIsChatPermissionModalOpen(false)}
+        buyerId={customer.id}
+        customerName={customer.name}
+        onProceedToChat={onOpenChat}
+      />
+
+      {/* Schedule In-Store Trial Fitting Modal */}
+      {selectedOrderForFitting && (
+        <ScheduleFittingModal
+          isOpen={isFittingModalOpen}
+          onClose={() => {
+            setIsFittingModalOpen(false);
+            setSelectedOrderForFitting(null);
+          }}
+          orderId={selectedOrderForFitting.id}
+          orderNumber={selectedOrderForFitting.orderNumber}
+          customerId={customer.id}
+          customerName={customer.name}
+          onScheduled={refetch}
+        />
+      )}
+
+      {/* Complete In-Store Garment Handover Modal */}
+      {selectedOrderForHandover && (
+        <OrderHandoverModal
+          isOpen={isHandoverModalOpen}
+          onClose={() => {
+            setIsHandoverModalOpen(false);
+            setSelectedOrderForHandover(null);
+          }}
+          orderId={selectedOrderForHandover.id}
+          orderNumber={selectedOrderForHandover.orderNumber}
+          customerName={customer.name}
+          totalAmount={selectedOrderForHandover.total}
+          paymentStatus={selectedOrderForHandover.paymentStatus}
+          onHandoverCompleted={refetch}
+        />
+      )}
     </div>
   );
 }

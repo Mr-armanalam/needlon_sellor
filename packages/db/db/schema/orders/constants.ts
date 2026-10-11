@@ -51,7 +51,22 @@ export const orderSourceEnum =
     "IOS",
     "ADMIN",
     "API",
+    "IN_STORE",
   ]);
+
+export const TAILORING_STAGES = [
+  "ORDER_PLACED",
+  "MEASUREMENT_VERIFIED",
+  "PATTERN_DRAFTING",
+  "IN_CUTTING",
+  "TRIAL_FITTING",
+  "FINAL_STITCH",
+  "QUALITY_INSPECTION",
+  "READY_FOR_PICKUP",
+  "COMPLETED",
+] as const;
+
+export type TailoringStage = (typeof TAILORING_STAGES)[number];
 
 /* ============================================================================
  * Currency

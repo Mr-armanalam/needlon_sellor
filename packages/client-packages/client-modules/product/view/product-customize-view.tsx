@@ -21,6 +21,7 @@ import { DetailedProductResponse } from "@/types/product";
 import { addToCart } from "@/features/cart-slice";
 import { useAppDispatch } from "@/store/store";
 import { useSession } from "next-auth/react";
+import { submitOnlineCustomerMeasurementAction } from "../../account/server/measurements-controller";
 import {
   BESPOKE_CONFIG,
   formatFieldLabel,
@@ -127,6 +128,22 @@ export default function ProductCustomizeView({
         size: `Custom Fit (${activeGarmentConfig.label})`,
       })
     );
+
+    // 3. Persist to customer_measurements table in database
+    submitOnlineCustomerMeasurementAction({
+      userId,
+      customerEmail: session?.user?.email || undefined,
+      customerName: session?.user?.name || undefined,
+      productId: productData.id,
+      sellerId: (productData as any).sellerId || (productData as any).storeId || undefined,
+      gender,
+      garmentType: garmentKey,
+      measurementUnit: unit,
+      essentialMeasurements: essentialValues,
+      postureSpecifics: postureValues,
+      fitPreference,
+      tailorNotes,
+    }).catch((err) => console.warn("Online measurement sync notice:", err));
 
     setSubmitted(true);
     setTimeout(() => {
