@@ -1,18 +1,27 @@
-// --- BESPOKE DATA TAXONOMY SCHEMA ---
+// --- BESPOKE DATA TAXONOMY SCHEMA & VISUAL MEASUREMENT GUIDES ---
+
+export const SUPABASE_STORAGE_GUIDES_URL =
+  "https://pwkubxblrpjjffvwufor.supabase.co/storage/v1/object/public/bespoke-measurements/guides";
+
+export interface GarmentConfig {
+  label: string;
+  diagramFile: string;
+  cdnUrl: string;
+  fallbackUrl: string;
+  essential_measurements: string[];
+  bespoke_and_posture_specifics: string[];
+}
+
 export const BESPOKE_CONFIG: Record<
   string,
-  Record<
-    string,
-    {
-      label: string;
-      essential_measurements: string[];
-      bespoke_and_posture_specifics: string[];
-    }
-  >
+  Record<string, GarmentConfig>
 > = {
   menswear: {
     shirt: {
       label: "Bespoke Shirt",
+      diagramFile: "mens_shirt_40.png",
+      cdnUrl: `${SUPABASE_STORAGE_GUIDES_URL}/mens_shirt_40.png`,
+      fallbackUrl: "/images/measurements/mens_shirt_40.png",
       essential_measurements: [
         "neck_circumference",
         "chest_circumference",
@@ -37,6 +46,9 @@ export const BESPOKE_CONFIG: Record<
     },
     pant: {
       label: "Bespoke Trouser / Pant",
+      diagramFile: "mans_pants_40.png",
+      cdnUrl: `${SUPABASE_STORAGE_GUIDES_URL}/mans_pants_40.png`,
+      fallbackUrl: "/images/measurements/mans_pants_40.png",
       essential_measurements: [
         "waist_circumference",
         "hip_seat_circumference",
@@ -58,6 +70,9 @@ export const BESPOKE_CONFIG: Record<
     },
     safari_suit_jacket: {
       label: "Safari Suit & Jacket",
+      diagramFile: "mens_safari_36.png",
+      cdnUrl: `${SUPABASE_STORAGE_GUIDES_URL}/mens_safari_36.png`,
+      fallbackUrl: "/images/measurements/mens_safari_36.png",
       essential_measurements: [
         "neck_circumference",
         "shoulder_width",
@@ -80,6 +95,9 @@ export const BESPOKE_CONFIG: Record<
     },
     jacket_blazer: {
       label: "Bespoke Blazer / Formal Jacket",
+      diagramFile: "mens_blazer_39.png",
+      cdnUrl: `${SUPABASE_STORAGE_GUIDES_URL}/mens_blazer_39.png`,
+      fallbackUrl: "/images/measurements/mens_blazer_39.png",
       essential_measurements: [
         "chest_circumference",
         "waist_circumference",
@@ -103,6 +121,9 @@ export const BESPOKE_CONFIG: Record<
     },
     coat_overcoat: {
       label: "Bespoke Overcoat / Greatcoat",
+      diagramFile: "mens_overcoat_36.png",
+      cdnUrl: `${SUPABASE_STORAGE_GUIDES_URL}/mens_overcoat_36.png`,
+      fallbackUrl: "/images/measurements/mens_overcoat_36.png",
       essential_measurements: [
         "chest_circumference_over_suit",
         "waist_circumference_over_suit",
@@ -125,6 +146,9 @@ export const BESPOKE_CONFIG: Record<
     },
     waistcoat: {
       label: "Tailored Waistcoat / Nehru Vest",
+      diagramFile: "mens_waistcoat_36.png",
+      cdnUrl: `${SUPABASE_STORAGE_GUIDES_URL}/mens_waistcoat_36.png`,
+      fallbackUrl: "/images/measurements/mens_waistcoat_36.png",
       essential_measurements: [
         "chest_circumference",
         "waist_stomach_circumference",
@@ -142,6 +166,9 @@ export const BESPOKE_CONFIG: Record<
     },
     kurta: {
       label: "Artisanal Tailored Kurta",
+      diagramFile: "mens_kurta_38.png",
+      cdnUrl: `${SUPABASE_STORAGE_GUIDES_URL}/mens_kurta_38.png`,
+      fallbackUrl: "/images/measurements/mens_kurta_38.png",
       essential_measurements: [
         "collar_neck_circumference",
         "chest_circumference",
@@ -164,6 +191,9 @@ export const BESPOKE_CONFIG: Record<
     },
     khandress_kurta_pathani: {
       label: "Pathani Suit & Khan Dress",
+      diagramFile: "mens_khandress_37.png",
+      cdnUrl: `${SUPABASE_STORAGE_GUIDES_URL}/mens_khandress_37.png`,
+      fallbackUrl: "/images/measurements/mens_khandress_37.png",
       essential_measurements: [
         "collar_neck_circumference",
         "chest_circumference",
@@ -188,6 +218,9 @@ export const BESPOKE_CONFIG: Record<
   womenswear: {
     shirt: {
       label: "Women's Bespoke Shirt / Blouse",
+      diagramFile: "womens_shirt_5_40.png",
+      cdnUrl: `${SUPABASE_STORAGE_GUIDES_URL}/womens_shirt_5_40.png`,
+      fallbackUrl: "/images/measurements/womens_shirt_5_40.png",
       essential_measurements: [
         "neck_circumference",
         "upper_bust_circumference",
@@ -214,6 +247,9 @@ export const BESPOKE_CONFIG: Record<
     },
     pant: {
       label: "Women's Bespoke Trouser / Pant",
+      diagramFile: "womens_pants_40.png",
+      cdnUrl: `${SUPABASE_STORAGE_GUIDES_URL}/womens_pants_40.png`,
+      fallbackUrl: "/images/measurements/womens_pants_40.png",
       essential_measurements: [
         "natural_waist_circumference",
         "high_hip_circumference",
@@ -236,6 +272,9 @@ export const BESPOKE_CONFIG: Record<
     },
     lehenga: {
       label: "Bridal & Occasion Lehenga",
+      diagramFile: "womens_lahanga_40.png",
+      cdnUrl: `${SUPABASE_STORAGE_GUIDES_URL}/womens_lahanga_40.png`,
+      fallbackUrl: "/images/measurements/womens_lahanga_40.png",
       essential_measurements: [
         "waist_wear_point_circumference",
         "high_hip_circumference",
@@ -253,6 +292,9 @@ export const BESPOKE_CONFIG: Record<
     },
     blouse_saree_lehenga: {
       label: "Saree / Lehenga Blouse (Choli)",
+      diagramFile: "womens_blouse_41.png",
+      cdnUrl: `${SUPABASE_STORAGE_GUIDES_URL}/womens_blouse_41.png`,
+      fallbackUrl: "/images/measurements/womens_blouse_41.png",
       essential_measurements: [
         "upper_bust_circumference",
         "bust_circumference",
@@ -277,6 +319,9 @@ export const BESPOKE_CONFIG: Record<
     },
     ladies_jacket: {
       label: "Women's Tailored Jacket / Blazer",
+      diagramFile: "womens_jacket_40.png",
+      cdnUrl: `${SUPABASE_STORAGE_GUIDES_URL}/womens_jacket_40.png`,
+      fallbackUrl: "/images/measurements/womens_jacket_40.png",
       essential_measurements: [
         "upper_bust_circumference",
         "bust_circumference",
@@ -302,6 +347,9 @@ export const BESPOKE_CONFIG: Record<
     },
     ladies_coat: {
       label: "Women's Bespoke Coat / Trench",
+      diagramFile: "womens_coat_36.png",
+      cdnUrl: `${SUPABASE_STORAGE_GUIDES_URL}/womens_coat_36.png`,
+      fallbackUrl: "/images/measurements/womens_coat_36.png",
       essential_measurements: [
         "bust_circumference_over_garment",
         "waist_circumference_over_garment",
@@ -353,3 +401,14 @@ export const FIELD_HINTS: Record<string, string> = {
   front_neck_depth: "From shoulder seam down to bottom of front neckline curve.",
   back_neck_depth: "From shoulder seam down to lowest point of back blouse cut.",
 };
+
+// Resolver function for garment diagram
+export function getGarmentDiagram(gender: string, garmentKey: string) {
+  const genderMap = BESPOKE_CONFIG[gender] || BESPOKE_CONFIG.menswear;
+  const config = genderMap[garmentKey] || genderMap[Object.keys(genderMap)[0]];
+  return {
+    cdnUrl: config?.cdnUrl || `${SUPABASE_STORAGE_GUIDES_URL}/mens_shirt_40.png`,
+    fallbackUrl: config?.fallbackUrl || "/images/measurements/mens_shirt_40.png",
+    label: config?.label || "Bespoke Garment",
+  };
+}

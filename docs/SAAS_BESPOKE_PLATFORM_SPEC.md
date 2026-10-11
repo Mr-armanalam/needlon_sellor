@@ -118,3 +118,23 @@ CREATE TABLE customer_measurements (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ```
+
+---
+
+## 5. Visual Measurement Guide Asset Storage Architecture
+
+### Decision Matrix: Storage Analysis
+1. **Package Folder (`packages/client-packages/measurment_image`)**:
+   - *Status*: Anti-pattern for production serving.
+   - *Issue*: Bundle size inflation (~12MB raster data), not directly web-accessible over HTTP, degrades web performance.
+2. **Database Table as Binary/BLOB**:
+   - *Status*: Anti-pattern for static raster diagrams.
+   - *Issue*: Storing multi-megabyte binary images directly in PostgreSQL exhausts connection pools, bloats database cache and backups, and lacks CDN edge caching.
+3. **Supabase Object Storage Bucket (`bespoke-measurements`)**:
+   - *Status*: **Primary Production Architecture**.
+   - *Benefits*: Decoupled storage, global edge CDN caching via `pwkubxblrpjjffvwufor.supabase.co`, fast LCP metrics, zero bundle bloat.
+   - *Bucket*: `bespoke-measurements/guides/{filename}.png` (public CDN delivery).
+4. **Local Public Fallback Directory (`apps/client/public/images/measurements`)**:
+   - *Status*: **High-Availability Secondary Fallback**.
+   - *Benefits*: Guarantees zero 404 errors in offline development environments or if external network access to Supabase is temporarily interrupted.
+

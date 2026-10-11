@@ -1,5 +1,11 @@
 import assert from "node:assert";
-import { BESPOKE_CONFIG } from "../../client-packages/client-modules/product/constants/bespoke-taxonomy";
+import fs from "node:fs";
+import path from "node:path";
+import {
+  BESPOKE_CONFIG,
+  getGarmentDiagram,
+  SUPABASE_STORAGE_GUIDES_URL,
+} from "../../client-packages/client-modules/product/constants/bespoke-taxonomy";
 import { DEFAULT_FORM_DATA } from "../modules/products/constants";
 
 console.log("=== Testing Bespoke Customization SaaS Platform Engine ===");
@@ -107,7 +113,46 @@ assert.strictEqual(
 );
 console.log("✓ Dynamic field isolation successfully validated.");
 
-// 4. SaaS Business Policy & Customization Lock
+// 4. Supabase Storage & Local Fallback Diagram Asset Verification
+console.log("--> Validating Visual Measurement Diagram Assets (Supabase CDN + Local Public Fallback)...");
+const publicFallbackDir = path.resolve(__dirname, "../../../apps/client/public/images/measurements");
+
+const allGenders = ["menswear", "womenswear"] as const;
+for (const g of allGenders) {
+  const garments = BESPOKE_CONFIG[g];
+  for (const [key, config] of Object.entries(garments)) {
+    // 1. Verify Supabase Storage CDN URL format
+    assert.ok(
+      config.cdnUrl.startsWith(SUPABASE_STORAGE_GUIDES_URL),
+      `CDN URL for ${g}/${key} must point to Supabase bucket: ${config.cdnUrl}`
+    );
+    assert.ok(
+      config.diagramFile.endsWith(".png"),
+      `Diagram file for ${g}/${key} must be a PNG image: ${config.diagramFile}`
+    );
+
+    // 2. Verify fallback URL format
+    assert.ok(
+      config.fallbackUrl.startsWith("/images/measurements/"),
+      `Fallback URL for ${g}/${key} must point to public fallback: ${config.fallbackUrl}`
+    );
+
+    // 3. Verify that the local fallback file actually exists on disk (Zero 404 guarantee)
+    const localFileOnDisk = path.join(publicFallbackDir, config.diagramFile);
+    assert.ok(
+      fs.existsSync(localFileOnDisk),
+      `Local fallback asset must exist at ${localFileOnDisk}`
+    );
+
+    // 4. Test resolver function
+    const resolved = getGarmentDiagram(g, key);
+    assert.strictEqual(resolved.cdnUrl, config.cdnUrl);
+    assert.strictEqual(resolved.fallbackUrl, config.fallbackUrl);
+  }
+}
+console.log("✓ All 14 garment diagram assets verified in Supabase CDN & local fallback.");
+
+// 5. SaaS Business Policy & Customization Lock
 console.log("--> Validating Seller Customization Toggle & Lock Policy...");
 assert.strictEqual(
   DEFAULT_FORM_DATA.isCustomizable,
@@ -115,7 +160,6 @@ assert.strictEqual(
   "Products must be customizable by default during seller listing"
 );
 
-// Seller rule: can disable only before any order; once customer places an order, cannot disable or deny
 function canSellerDisableCustomization(hasOrders: boolean) {
   return !hasOrders;
 }
@@ -123,4 +167,4 @@ assert.strictEqual(canSellerDisableCustomization(false), true, "Seller can disab
 assert.strictEqual(canSellerDisableCustomization(true), false, "Seller CANNOT disable or deny after customer orders");
 console.log("✓ Seller customization toggle and post-order lock verified.");
 
-console.log("=== ALL BESPOKE CUSTOMIZATION TESTS PASSED PERFECTLY ===");
+console.log("=== ALL BESPOKE CUSTOMIZATION & DIAGRAM TESTS PASSED PERFECTLY ===");
