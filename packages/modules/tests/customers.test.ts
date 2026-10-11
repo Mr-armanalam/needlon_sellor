@@ -43,12 +43,13 @@ async function runCustomerTests() {
     // 4. Test Customer Deduplication Function
     console.log("--> Testing Customer Deduplication Helper...");
     const rawList = [
-      { id: "cust-1", name: "A", avatar: "", location: "", clv: "0", totalOrders: 1, isRepeat: false },
-      { id: "cust-1", name: "A Dup", avatar: "", location: "", clv: "0", totalOrders: 1, isRepeat: false },
-      { id: "cust-2", name: "B", avatar: "", location: "", clv: "0", totalOrders: 1, isRepeat: false },
+      { id: "cust-1", name: "A", avatar: "", location: "", clv: "0", totalOrders: 1, isRepeat: false, isWalkIn: true },
+      { id: "cust-1", name: "A Dup", avatar: "", location: "", clv: "0", totalOrders: 1, isRepeat: false, isWalkIn: true },
+      { id: "cust-2", name: "B", avatar: "", location: "", clv: "0", totalOrders: 1, isRepeat: false, isWalkIn: false },
     ];
     const deduped = deduplicateCustomers(rawList);
     if (deduped.length !== 2) throw new Error(`Deduplication failed, expected 2 items but got ${deduped.length}`);
+    if (deduped[0].isWalkIn !== true) throw new Error("Expected isWalkIn to be true on deduped customer");
     console.log("✓ Customer deduplication unit test passed.");
 
   } catch (err: any) {

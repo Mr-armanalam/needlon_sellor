@@ -177,6 +177,12 @@ export const orders = pgTable(
       .default("PENDING"),
 
     /**
+     * Bespoke Tailoring Lifecycle Stage (null for ready-to-wear)
+     */
+    tailoringStage: varchar("tailoring_stage", { length: 50 }),
+    tailoringNotes: text("tailoring_notes"),
+
+    /**
      * ------------------------------------------------------------------------
      * Payment Status
      * ------------------------------------------------------------------------

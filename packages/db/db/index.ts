@@ -41,6 +41,11 @@ import * as helpSchema from "./schema/help";
 import * as feedbackSchema from "./schema/feedback";
 import * as clientSchema from "./schema/client";
 import { customerMeasurementsTable } from "./schema/customization/measurements";
+import { fittingAppointmentsTable } from "./schema/customization/fitting-appointments";
+import { sellerCustomers } from "./schema/seller/seller-customers";
+import { chatPermissions } from "./schema/messaging/chat-permissions";
+
+export { sellerCustomers, chatPermissions, customerMeasurementsTable, fittingAppointmentsTable };
 
 export const schema = {
   ...ordersSchema,
@@ -48,6 +53,9 @@ export const schema = {
   ...feedbackSchema,
   ...clientSchema,
   customerMeasurementsTable,
+  fittingAppointmentsTable,
+  sellerCustomers,
+  chatPermissions,
   reviewsTable: reviewsTable,
   users: usersTable.usersTable,
   passwordResetToken: passwordResetToken.passwordResetTokens,

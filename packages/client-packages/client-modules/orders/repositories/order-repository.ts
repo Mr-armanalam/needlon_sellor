@@ -340,8 +340,41 @@ export const OrderRepository = {
    * Build structured timeline steps from order history and shipments
    */
   buildTimeline(order: any, history: any[], shipments: any[]): OrderTimelineStep[] {
-    const defaultSteps: OrderTimelineStep[] = [];
     const orderDateStr = format(order.createdAt, "EEE, do MMM ''yy");
+
+    // Bespoke In-Store & Custom Tailoring Milestone Tracking
+    if (order.tailoringStage) {
+      const BESPOKE_STAGES = [
+        { key: "ORDER_PLACED", label: "Commission Placed", desc: "Bespoke commission confirmed with tailor atelier." },
+        { key: "MEASUREMENT_VERIFIED", label: "Measurements Verified", desc: "Measurements verified by Master Cutter." },
+        { key: "PATTERN_DRAFTING", label: "Pattern Drafting", desc: "Individual paper pattern drafted according to body posture." },
+        { key: "IN_CUTTING", label: "Precision Cutting", desc: "Fabric marked & cut by master shears." },
+        { key: "TRIAL_FITTING", label: "Trial / Baste Fitting", desc: "Baste garment prepared for fitting review." },
+        { key: "FINAL_STITCH", label: "Hand-Stitching & Assembly", desc: "Final stitching, buttonholes, and lining assembly." },
+        { key: "QUALITY_INSPECTION", label: "Quality Inspection", desc: "Master tailor final inspection & steam pressing." },
+        { key: "READY_FOR_PICKUP", label: "Ready for Pickup", desc: "Garment packaged and ready at atelier counter." },
+        { key: "COMPLETED", label: "Delivered & Complete", desc: "Bespoke garment handed over to customer." },
+      ];
+
+      const currentIdx = BESPOKE_STAGES.findIndex((s) => s.key === order.tailoringStage);
+      const effectiveIdx = currentIdx >= 0 ? currentIdx : 0;
+
+      return BESPOKE_STAGES.map((s, idx) => {
+        const isCurrent = idx === effectiveIdx;
+        const details = [s.desc];
+        if (isCurrent && order.tailoringNotes) {
+          details.push(`Tailor Atelier Note: ${order.tailoringNotes}`);
+        }
+        return {
+          title: s.label,
+          date: idx <= effectiveIdx ? orderDateStr : "Pending",
+          details,
+          isActive: idx <= effectiveIdx,
+        };
+      });
+    }
+
+    const defaultSteps: OrderTimelineStep[] = [];
 
     // 1. Placed / Confirmed
     const createdEvent = history.find((h) => h.toStatus === "PENDING" || h.action === "CREATED");
