@@ -110,10 +110,10 @@ const FilterDrawer: React.FC<FilterDrawerProps> = ({
       {/* Main Drawer */}
       <div
         ref={drawerRef}
-        className="relative w-full max-w-85 bg-white dark:bg-black dark:border-l h-full shadow-2xl translate-x-full flex flex-col"
+        className="relative w-full max-w-85 bg-white dark:bg-stone-950 border-l border-transparent dark:border-stone-800 h-full shadow-2xl translate-x-full flex flex-col"
       >
         {/* Header */}
-        <div className="p-6 border-b">
+        <div className="p-6 border-b dark:border-stone-800">
           <div className="flex justify-between items-center mb-1">
             <h2 className="text-xl font-bold flex items-center gap-2">
               <Filter size={20} />
@@ -121,7 +121,7 @@ const FilterDrawer: React.FC<FilterDrawerProps> = ({
             </h2>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-slate-100 rounded-full transition-all"
+              className="p-2 hover:bg-slate-100 dark:hover:bg-stone-800 rounded-full transition-all"
             >
               <X size={20} />
             </button>
@@ -200,17 +200,17 @@ const FilterDrawer: React.FC<FilterDrawerProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-6 border-t bg-slate-50 dark:bg-yellow-700 grid grid-cols-2 gap-4">
+        <div className="p-6 border-t dark:border-stone-800 bg-slate-50 dark:bg-stone-900 grid grid-cols-2 gap-4">
           <button
             onClick={clearAll}
-            className="flex items-center justify-center gap-2 text-sm font-semibold text-slate-600 dark:text-white cursor-pointer hover:text-slate-900"
+            className="flex items-center justify-center gap-2 text-sm font-semibold text-slate-600 dark:text-stone-300 cursor-pointer hover:text-slate-900 dark:hover:text-white"
           >
             <RotateCcw size={16} />
             Reset
           </button>
           <button
             onClick={onClose}
-            className="bg-black cursor-pointer text-white py-3 rounded-lg font-bold text-sm hover:bg-slate-800 transition-colors shadow-lg"
+            className="bg-black dark:bg-[#D4AF37] dark:text-black cursor-pointer text-white py-3 rounded-lg font-bold text-sm hover:bg-slate-800 dark:hover:bg-[#c49f27] transition-colors shadow-lg"
           >
             Apply Filters
           </button>

@@ -180,7 +180,7 @@ const ProductCard = ({
       <p className="mt-4 md:px-4 md:text-xl text-zinc-600 dark:text-gray-100 font-garamond font-semibold">
         {name}
       </p>
-      <p className="font-semibold text-gray-500 md:px-4">${price}</p>
+      <p className="font-semibold text-gray-500 dark:text-stone-300 md:px-4">${price}</p>
     </div>
   );
 };

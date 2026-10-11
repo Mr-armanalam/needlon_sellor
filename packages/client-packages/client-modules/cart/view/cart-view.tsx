@@ -35,7 +35,7 @@ const CartView = ({ cart, userId }: CartViewProps) => {
 
         <Link
           href={"/"}
-          className="cursor-pointer border rounded-md px-3.5 py-2 text-sm dark:text-white text-gray-700 font-semibold hover:bg-stone-100 border-stone-300"
+          className="cursor-pointer border rounded-md px-3.5 py-2 text-sm dark:text-white text-gray-700 font-semibold hover:bg-stone-100 dark:hover:bg-stone-800 border-stone-300 dark:border-stone-700"
         >
           Shop now
         </Link>
@@ -45,7 +45,7 @@ const CartView = ({ cart, userId }: CartViewProps) => {
 
   return (
     <main className="grid gap-4 my-6 xl:grid-cols-3">
-      <div className="col-span-2 h-fit rounded shadow-sm">
+      <div className="col-span-2 h-fit rounded shadow-sm border border-transparent dark:border-stone-800">
         <CartProduct
           cart={cart}
           currentAddress={currentAddress}
@@ -53,7 +53,7 @@ const CartView = ({ cart, userId }: CartViewProps) => {
         />
       </div>
 
-      <div className="xl:col-span-1 max-sm:flex max-sm:ml-1 max-sm:w-85 xl:mx-2 h-fit rounded shadow-sm dark:bg-black bg-white">
+      <div className="xl:col-span-1 max-sm:flex max-sm:ml-1 max-sm:w-85 xl:mx-2 h-fit rounded shadow-sm dark:bg-stone-900 bg-white border border-transparent dark:border-stone-800">
         <PriceDetails
           currentAddressId={currentAddress?.id}
           userId={userId}

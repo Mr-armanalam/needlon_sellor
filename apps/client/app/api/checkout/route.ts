@@ -24,6 +24,7 @@ export async function POST(req: Request) {
       userEmail,
       discountAmount = 0,
       couponId,
+      couponCode,
       price,
       shippingCharge: explicitShippingCharge,
       embedded = false,
@@ -78,16 +79,17 @@ export async function POST(req: Request) {
 
     // 2. Validate Coupon if provided
     let verifiedCouponCode: string | undefined = undefined;
-    if (process.env.DATABASE_URL && couponId) {
+    const lookupCoupon = couponCode || couponId;
+    if (process.env.DATABASE_URL && lookupCoupon) {
       const [promo] = await db
         .select()
         .from(promotions)
         .where(
           and(
             eq(promotions.status, "ACTIVE"),
-            isValidUuid(couponId)
-              ? eq(promotions.id, couponId)
-              : eq(promotions.couponCode, String(couponId).toUpperCase())
+            isValidUuid(lookupCoupon)
+              ? eq(promotions.id, lookupCoupon)
+              : eq(promotions.couponCode, String(lookupCoupon).toUpperCase())
           )
         )
         .limit(1);
@@ -95,6 +97,8 @@ export async function POST(req: Request) {
       if (promo) {
         verifiedCouponCode = promo.couponCode || undefined;
       }
+    } else if (lookupCoupon) {
+      verifiedCouponCode = String(lookupCoupon).toUpperCase();
     }
 
     // 3. Process Checkout (Live Stripe vs Sandbox Fulfillment)

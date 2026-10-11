@@ -74,7 +74,7 @@ const DisplayOrders = ({ loading, orders }: props) => {
                     <div className="md:hidden text-sm" >
                       <p>Placed | Prepaid</p>
                     </div>
-                    <p className="absolute md:bottom-6 md:right-4 text-stone-500 text-xs ">
+                    <p className="absolute md:bottom-6 md:right-4 text-stone-500 dark:text-stone-400 text-xs ">
                       Delivery expected on{" "}
                       {format(String(order.createdAt), "dd MMMM")}
                     </p>

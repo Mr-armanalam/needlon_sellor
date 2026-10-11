@@ -30,7 +30,7 @@ type props = {
 const OrderStatus = ({
   image,
   itemPrice,
-  size = "s",
+  size,
   properties,
   itemName,
   productId,
@@ -39,6 +39,19 @@ const OrderStatus = ({
 }: props) => {
   const router = useRouter();
   const isMobile = useIsMobile();
+
+  const formattedProperties = (() => {
+    if (properties && size) {
+      if (properties.toLowerCase().includes(size.toLowerCase())) {
+        return properties;
+      }
+      return `Size: ${size} • ${properties}`;
+    }
+    if (properties) return properties;
+    if (size) return `Size: ${size}`;
+    return null;
+  })();
+
   return (
     <div className="border dark:bg-white/6 bg-white rounded-sm mt-0.5 mx-1">
       <div className="m-4 flex gap-x-4 ">
@@ -61,9 +74,11 @@ const OrderStatus = ({
           <h2 className="text-xl line-clamp-2 dark:text-white text-gray-900 font-semibold">
             {itemName}
           </h2>
-          <p className="text-sm">
-            {size && `size: ${size}`} {properties}
-          </p>
+          {formattedProperties && (
+            <p className="text-sm dark:text-stone-300 text-stone-600">
+              {formattedProperties}
+            </p>
+          )}
           <p className="font-medium dark:text-white/70 text-stone-700 mt-2">₹ {itemPrice}</p>
           <div className="flex max-md:items-center md:gap-x-6">
             <Button
