@@ -175,6 +175,7 @@ export const productsTable = pgTable(
         shortDescription: varchar("short_description"),
         description: varchar("description"),
         isFeatured: boolean("is_featured").default(false),
+        isCustomizable: boolean("is_customizable").default(true).notNull(),
         publishedAt: timestamp("published_at", { withTimezone: true }),
 
         // metadata: jsonb("metadata"),

@@ -90,6 +90,8 @@ function useAddProductWizardInternal() {
                             estimatedDeliveryWindow: data.estimatedDeliveryWindow || '3 - 5 business days delivery timeline',
                             searchKeywords: data.searchKeywords || 'handloom, chikankari, festive kurti, cotton apparel',
                             customVisibility: data.customVisibility || 'PUBLIC',
+                            isCustomizable: data.isCustomizable !== false,
+                            hasExistingOrders: Boolean((data.orderCount && data.orderCount > 0) || (data.salesCount && data.salesCount > 0)),
                             mediaUrls: data.mediaUrls || [],
                         });
                     }
