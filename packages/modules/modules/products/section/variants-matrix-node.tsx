@@ -4,9 +4,14 @@ import {
     AGE_GROUP_OPTIONS,
     FIT_OPTIONS,
     GENDER_OPTIONS,
-    OCCASION_OPTIONS, SLEEVES_OPTIONS, STANDARD_COLORS, STANDARD_FABRICS,
-    STANDARD_SIZES
+    OCCASION_OPTIONS,
+    SLEEVES_OPTIONS,
+    STANDARD_COLORS,
+    STANDARD_FABRICS,
+    STANDARD_SIZES,
+    isBottomWearSubcategory
 } from "@/modules/products/constants";
+import { Plus, Trash2 } from "lucide-react";
 
 const VariantsMatrixNode = () => {
     const {formData, handleInputChange, handleToggleSize} = useAddProductWizard();
@@ -60,6 +65,90 @@ const VariantsMatrixNode = () => {
             setIsCustomFabric(false);
             handleInputChange('fabricMaterial', val);
         }
+    };
+
+    // Bottom wear detection for Sleeves Style
+    const isBottomWear = React.useMemo(() => {
+        return isBottomWearSubcategory(formData.subcategory);
+    }, [formData.subcategory]);
+
+    const [isCustomSleeves, setIsCustomSleeves] = React.useState<boolean>(() => {
+        return Boolean(formData.sleevesStyle && !SLEEVES_OPTIONS.includes(formData.sleevesStyle));
+    });
+
+    React.useEffect(() => {
+        if (formData.sleevesStyle && !SLEEVES_OPTIONS.includes(formData.sleevesStyle)) {
+            setIsCustomSleeves(true);
+        }
+    }, [formData.sleevesStyle]);
+
+    const isSleevesCustomActive = isCustomSleeves || (Boolean(formData.sleevesStyle) && !SLEEVES_OPTIONS.includes(formData.sleevesStyle));
+    const selectSleevesValue = isSleevesCustomActive 
+        ? 'Custom' 
+        : (formData.sleevesStyle || 'None / Not Applicable');
+
+    const handleSleevesSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const val = e.target.value;
+        if (val === 'Custom') {
+            setIsCustomSleeves(true);
+            if (SLEEVES_OPTIONS.includes(formData.sleevesStyle)) {
+                handleInputChange('sleevesStyle', '');
+            }
+        } else {
+            setIsCustomSleeves(false);
+            handleInputChange('sleevesStyle', val);
+        }
+    };
+
+    // Fit Type Hybrid Handling (Formal Fits: Tailored, Classic, Modern + Custom)
+    const [isCustomFit, setIsCustomFit] = React.useState<boolean>(() => {
+        return Boolean(formData.fitType && !FIT_OPTIONS.includes(formData.fitType));
+    });
+
+    React.useEffect(() => {
+        if (formData.fitType && !FIT_OPTIONS.includes(formData.fitType)) {
+            setIsCustomFit(true);
+        }
+    }, [formData.fitType]);
+
+    const isFitCustomActive = isCustomFit || (Boolean(formData.fitType) && !FIT_OPTIONS.includes(formData.fitType));
+    const selectFitValue = isFitCustomActive ? 'Custom' : (formData.fitType || FIT_OPTIONS[0]);
+
+    const handleFitSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const val = e.target.value;
+        if (val === 'Custom') {
+            setIsCustomFit(true);
+            if (FIT_OPTIONS.includes(formData.fitType)) {
+                handleInputChange('fitType', '');
+            }
+        } else {
+            setIsCustomFit(false);
+            handleInputChange('fitType', val);
+        }
+    };
+
+    // Custom Garment Properties
+    const customAttributes: Array<{ name: string; value: string }> = Array.isArray(formData.customAttributes)
+        ? formData.customAttributes
+        : [];
+
+    const handleAddCustomProperty = () => {
+        handleInputChange('customAttributes', [...customAttributes, { name: '', value: '' }]);
+    };
+
+    const handleUpdateCustomProperty = (index: number, field: 'name' | 'value', value: string) => {
+        const updated = customAttributes.map((attr, idx) => {
+            if (idx === index) {
+                return { ...attr, [field]: value };
+            }
+            return attr;
+        });
+        handleInputChange('customAttributes', updated);
+    };
+
+    const handleRemoveCustomProperty = (index: number) => {
+        const updated = customAttributes.filter((_, idx) => idx !== index);
+        handleInputChange('customAttributes', updated);
     };
 
     return (
@@ -155,34 +244,62 @@ const VariantsMatrixNode = () => {
                     )}
                 </div>
 
-                {/* Sleeves Style Dropdown */}
+                {/* Sleeves Style Hybrid */}
                 <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Sleeves Style</label>
+                    <div className="flex items-center justify-between">
+                        <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
+                            Sleeves Style
+                        </label>
+                        {isBottomWear && (
+                            <span className="text-[10px] font-medium text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/50">
+                                Not applicable for bottom wear
+                            </span>
+                        )}
+                    </div>
                     <select
-                        value={formData.sleevesStyle || SLEEVES_OPTIONS[0]}
-                        onChange={(e) => handleInputChange('sleevesStyle', e.target.value)}
+                        value={selectSleevesValue}
+                        onChange={handleSleevesSelectChange}
                         className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all cursor-pointer"
                     >
                         {SLEEVES_OPTIONS.map(sl => <option key={sl} value={sl}>{sl}</option>)}
-                        {formData.sleevesStyle && !SLEEVES_OPTIONS.includes(formData.sleevesStyle) && (
-                            <option value={formData.sleevesStyle}>{formData.sleevesStyle}</option>
-                        )}
+                        <option value="Custom">Custom Sleeve Style...</option>
                     </select>
+                    {isSleevesCustomActive && (
+                        <input
+                            type="text"
+                            placeholder="Type custom sleeve style (e.g. Bell Sleeve, Raglan Sleeve, French Cuff)..."
+                            value={formData.sleevesStyle}
+                            onChange={(e) => handleInputChange('sleevesStyle', e.target.value)}
+                            className="w-full p-2 bg-white border border-neutral-200/80 rounded-lg text-[12px] outline-none mt-1 focus:border-neutral-900 transition-all"
+                        />
+                    )}
                 </div>
 
-                {/* Fit Type Dropdown (Guarded against vanishing defaults) */}
+                {/* Fit Type Hybrid (Includes Formal Wear Fits: Tailored, Classic, Modern Fit & Custom) */}
                 <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Fit Type</label>
+                    <div className="flex items-center justify-between">
+                        <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
+                            Fit Type
+                        </label>
+                        <span className="text-[10px] text-neutral-400">Formal & Regular Fits</span>
+                    </div>
                     <select
-                        value={formData.fitType || FIT_OPTIONS[0]}
-                        onChange={(e) => handleInputChange('fitType', e.target.value)}
+                        value={selectFitValue}
+                        onChange={handleFitSelectChange}
                         className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all cursor-pointer"
                     >
                         {FIT_OPTIONS.map(ft => <option key={ft} value={ft}>{ft}</option>)}
-                        {formData.fitType && !FIT_OPTIONS.includes(formData.fitType) && (
-                            <option value={formData.fitType}>{formData.fitType}</option>
-                        )}
+                        <option value="Custom">Custom Fit Type...</option>
                     </select>
+                    {isFitCustomActive && (
+                        <input
+                            type="text"
+                            placeholder="Type custom fit type (e.g. Tailored Slim Fit, Classic Tuxedo Fit)..."
+                            value={formData.fitType}
+                            onChange={(e) => handleInputChange('fitType', e.target.value)}
+                            className="w-full p-2 bg-white border border-neutral-200/80 rounded-lg text-[12px] outline-none mt-1 focus:border-neutral-900 transition-all"
+                        />
+                    )}
                 </div>
 
                 {/* Occasion Focus Dropdown */}
@@ -220,6 +337,55 @@ const VariantsMatrixNode = () => {
                         {AGE_GROUP_OPTIONS.map(ag => <option key={ag} value={ag}>{ag}</option>)}
                     </select>
                 </div>
+            </div>
+
+            {/* Custom Properties Section */}
+            <div className="flex flex-col gap-3 pt-4 border-t border-neutral-200/60 mt-1">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h4 className="text-[13px] font-semibold text-neutral-900">Custom Garment Properties</h4>
+                        <p className="text-[11px] text-neutral-400">Add bespoke specifications (e.g. Waist Rise, Pattern, Lapel Style, Closure, Length).</p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleAddCustomProperty}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-[12px] font-medium rounded-lg transition-all shadow-sm cursor-pointer"
+                    >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add Custom Property</span>
+                    </button>
+                </div>
+
+                {customAttributes.length > 0 && (
+                    <div className="flex flex-col gap-2.5">
+                        {customAttributes.map((attr, idx) => (
+                            <div key={idx} className="flex items-center gap-2">
+                                <input
+                                    type="text"
+                                    placeholder="Property Name (e.g. Waist Rise, Pattern, Lapel)"
+                                    value={attr.name}
+                                    onChange={(e) => handleUpdateCustomProperty(idx, 'name', e.target.value)}
+                                    className="flex-1 p-2.5 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[12px] outline-none focus:bg-white focus:border-neutral-900 transition-all"
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Property Value (e.g. Mid Rise, Solid, Peak Lapel)"
+                                    value={attr.value}
+                                    onChange={(e) => handleUpdateCustomProperty(idx, 'value', e.target.value)}
+                                    className="flex-1 p-2.5 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[12px] outline-none focus:bg-white focus:border-neutral-900 transition-all"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => handleRemoveCustomProperty(idx)}
+                                    className="p-2 text-neutral-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-all cursor-pointer"
+                                    title="Remove property"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );

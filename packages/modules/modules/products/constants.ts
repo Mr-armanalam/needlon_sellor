@@ -22,7 +22,7 @@ export const DEFAULT_FORM_DATA = {
     sizesMatrix: '',
     colorsTrack: 'Ivory White',
     fabricMaterial: '100% Chanderi Cotton',
-    sleevesStyle: 'Three-Quarter Sleeve',
+    sleevesStyle: '',
     fitType: 'Straight Regular Fit',
     occasionFocus: 'Festival, Office Wear',
     genderProfile: 'Women',
@@ -58,6 +58,7 @@ export const DEFAULT_FORM_DATA = {
     twitterDescription: '',
     twitterImage: null as string | null,
     mediaUrls: [] as string[],
+    customAttributes: [] as Array<{ name: string; value: string }>,
 };
 
 // Preset Taxonomy Options
@@ -70,8 +71,37 @@ export const CATEGORY_SUBCATEGORY_MAP: Record<string, string[]> = {
 export const STANDARD_SIZES = ['S', 'M', 'L', 'XL', 'XXL', '3XL', 'Free Size'];
 export const STANDARD_COLORS = ['Ivory White', 'Indigo Blue', 'Midnight Black', 'Crimson Red', 'Emerald Green', 'Pastel Pink', 'Mustard Yellow', 'Beige'];
 export const STANDARD_FABRICS = ['100% Chanderi Cotton', 'Pure Silk', 'Organza', 'Rayon', 'Georgette', 'Linen Blend', 'Velvet'];
-export const SLEEVES_OPTIONS = ['Three-Quarter Sleeve', 'Full Sleeve', 'Short Sleeve', 'Sleeveless', 'Cap Sleeve'];
-export const FIT_OPTIONS = ['Straight Regular Fit', 'Slim Fit', 'Oversized Fit', 'Relaxed Fit', 'A-Line Fit'];
+export const SLEEVES_OPTIONS = ['None / Not Applicable', 'Three-Quarter Sleeve', 'Full Sleeve', 'Short Sleeve', 'Sleeveless', 'Cap Sleeve'];
+export const FIT_OPTIONS = [
+    'Straight Regular Fit',
+    'Slim Fit',
+    'Tailored Fit',
+    'Classic Fit',
+    'Modern Fit',
+    'Relaxed Fit',
+    'Oversized Fit',
+    'A-Line Fit',
+    'None / Not Applicable'
+];
+export const BOTTOM_WEAR_SUBCATEGORIES = [
+    'Pants',
+    'Trousers',
+    'Skirts',
+    'Lehanga',
+    'Shorts',
+    'Jeans',
+    'Palazzo',
+    'Salwar',
+    'Churidar',
+    'Dhoti',
+    'Pyjama'
+];
+
+export function isBottomWearSubcategory(subcategory?: string | null): boolean {
+    if (!subcategory) return false;
+    const lower = subcategory.trim().toLowerCase();
+    return BOTTOM_WEAR_SUBCATEGORIES.some(bw => bw.toLowerCase() === lower || lower.includes(bw.toLowerCase()));
+}
 export const OCCASION_OPTIONS = ['Festival, Office Wear', 'Casual Daily Wear', 'Wedding Collection', 'Party Wear', 'Formal Office'];
 export const GENDER_OPTIONS = ['Women', 'Men', 'Unisex', 'Girls', 'Boys'];
 export const AGE_GROUP_OPTIONS = ['Adults (18-45 Years)', 'Teens (13-17 Years)', 'Kids (2-12 Years)', 'Seniors (45+ Years)'];

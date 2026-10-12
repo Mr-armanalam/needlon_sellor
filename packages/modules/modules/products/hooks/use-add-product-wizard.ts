@@ -136,7 +136,7 @@ function useAddProductWizardInternal() {
                             sizesMatrix: data.sizesMatrix || '',
                             colorsTrack: data.colorsTrack || 'Ivory White',
                             fabricMaterial: data.fabricMaterial || '100% Chanderi Cotton',
-                            sleevesStyle: data.sleevesStyle || 'Three-Quarter Sleeve',
+                            sleevesStyle: data.sleevesStyle ?? '',
                             fitType: data.fitType || 'Straight Regular Fit',
                             occasionFocus: data.occasionFocus || 'Festival, Office Wear',
                             genderProfile: data.genderProfile || 'Women',
@@ -172,6 +172,7 @@ function useAddProductWizardInternal() {
                             twitterDescription: data.twitterDescription || '',
                             twitterImage: data.twitterImage || null,
                             mediaUrls: data.mediaUrls || [],
+                            customAttributes: Array.isArray(data.customAttributes) ? data.customAttributes : [],
                         });
                     }
                 })
@@ -368,6 +369,7 @@ function useAddProductWizardInternal() {
                     occasionFocus: formData.occasionFocus,
                     genderProfile: formData.genderProfile,
                     targetAgeGroup: formData.targetAgeGroup,
+                    customAttributes: (formData.customAttributes || []).filter((a: any) => a && a.name?.trim() && a.value?.trim()),
                 });
             } catch (err) {
                 console.error("Failed to sync variants step:", err);

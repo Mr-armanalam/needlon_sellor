@@ -36,11 +36,12 @@ export interface DraftVariantsInput {
   sizesMatrix?: string;
   colorsTrack?: string;
   fabricMaterial?: string;
-  sleevesStyle?: string;
-  fitType?: string;
-  occasionFocus?: string;
-  genderProfile?: string;
-  targetAgeGroup?: string;
+  sleevesStyle?: string | null;
+  fitType?: string | null;
+  occasionFocus?: string | null;
+  genderProfile?: string | null;
+  targetAgeGroup?: string | null;
+  customAttributes?: Array<{ name: string; value: string }>;
   [key: string]: unknown;
 }
 

@@ -198,11 +198,12 @@ export interface UpdateDraftVariantsParams {
   sizesMatrix?: string;
   colorsTrack?: string;
   fabricMaterial?: string;
-  sleevesStyle?: string;
-  fitType?: string;
-  occasionFocus?: string;
-  genderProfile?: string;
-  targetAgeGroup?: string;
+  sleevesStyle?: string | null;
+  fitType?: string | null;
+  occasionFocus?: string | null;
+  genderProfile?: string | null;
+  targetAgeGroup?: string | null;
+  customAttributes?: Array<{ name: string; value: string }>;
   [key: string]: unknown;
 }
 
@@ -548,7 +549,13 @@ export async function updateDraftProductVariants(
       }
     }
 
-    // 4. Upsert garment specs into categoryAttributeOptions, productAttributeValuesTable & productVariantOptionsTable
+    // 4. Upsert or clear garment specs in categoryAttributeOptions, productAttributeValuesTable & productVariantOptionsTable
+    const isNoneOrNull = (val?: unknown) => {
+      if (val === undefined || val === null) return true;
+      const t = String(val).trim().toLowerCase();
+      return t === "" || t === "none" || t === "none / not applicable" || t === "not applicable" || t === "null";
+    };
+
     const effectiveFabric = extraParams?.fabricMaterial ?? (extraParams as any)?.fabric;
     const attributesToSave = [
       { key: "fabric", name: "Fabric Material", val: effectiveFabric },
@@ -560,7 +567,37 @@ export async function updateDraftProductVariants(
     ];
 
     for (const item of attributesToSave) {
-      if (item.val && typeof item.val === "string" && item.val.trim() && effectiveCategoryId) {
+      if (isNoneOrNull(item.val)) {
+        // If explicitly cleared, null, or Not Applicable, remove existing row for this attribute
+        if (effectiveCategoryId) {
+          const [attr] = await db
+            .select({ id: categoryAttributes.id })
+            .from(categoryAttributes)
+            .where(and(
+              eq(categoryAttributes.categoryId, effectiveCategoryId),
+              or(
+                eq(categoryAttributes.attributeKey, item.key),
+                eq(categoryAttributes.name, item.name)
+              )
+            ))
+            .limit(1);
+
+          if (attr) {
+            await db
+              .delete(productAttributeValuesTable)
+              .where(and(
+                eq(productAttributeValuesTable.productId, productId),
+                eq(productAttributeValuesTable.attributeId, attr.id)
+              ));
+            await db
+              .delete(productVariantOptionsTable)
+              .where(and(
+                eq(productVariantOptionsTable.variantId, variant.id),
+                eq(productVariantOptionsTable.attributeId, attr.id)
+              ));
+          }
+        }
+      } else if (item.val && typeof item.val === "string" && item.val.trim() && effectiveCategoryId) {
         const valStr = item.val.trim();
         let [attr] = await db
           .select()
@@ -670,6 +707,150 @@ export async function updateDraftProductVariants(
             });
 
           // Also upsert into productVariantOptionsTable (variant_attributes)
+          if (opt) {
+            await db
+              .insert(productVariantOptionsTable)
+              .values({
+                variantId: variant.id,
+                attributeId: attr.id,
+                attributeOptionId: opt.id,
+                createdBy: sellerId,
+                updatedBy: sellerId,
+              })
+              .onConflictDoUpdate({
+                target: [productVariantOptionsTable.variantId, productVariantOptionsTable.attributeId],
+                set: {
+                  attributeOptionId: opt.id,
+                  updatedBy: sellerId,
+                  updatedAt: new Date(),
+                },
+              });
+          }
+        }
+      }
+    }
+
+    // 5. Upsert custom properties into categoryAttributes, categoryAttributeOptions, productAttributeValuesTable & productVariantOptionsTable
+    const customAttrs = Array.isArray(extraParams?.customAttributes) ? extraParams.customAttributes : [];
+    for (const customItem of customAttrs) {
+      if (customItem && customItem.name && customItem.name.trim() && customItem.value && customItem.value.trim() && effectiveCategoryId) {
+        const attrName = customItem.name.trim();
+        const attrVal = customItem.value.trim();
+        const attrKey = attrName.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "custom_attr";
+
+        let [attr] = await db
+          .select()
+          .from(categoryAttributes)
+          .where(and(
+            eq(categoryAttributes.categoryId, effectiveCategoryId),
+            or(
+              eq(categoryAttributes.attributeKey, attrKey),
+              eq(categoryAttributes.name, attrName)
+            )
+          ))
+          .limit(1);
+
+        if (!attr) {
+          try {
+            const [newAttr] = await db
+              .insert(categoryAttributes)
+              .values({
+                categoryId: effectiveCategoryId,
+                attributeKey: attrKey,
+                name: attrName,
+                slug: attrKey,
+                inputType: "TEXT",
+                dataType: "STRING",
+                systemDefined: false,
+                createdBy: sellerId,
+                updatedBy: sellerId,
+              })
+              .returning();
+            attr = newAttr;
+          } catch {
+            const [existing] = await db
+              .select()
+              .from(categoryAttributes)
+              .where(and(
+                eq(categoryAttributes.categoryId, effectiveCategoryId),
+                or(
+                  eq(categoryAttributes.attributeKey, attrKey),
+                  eq(categoryAttributes.name, attrName)
+                )
+              ))
+              .limit(1);
+            attr = existing;
+          }
+        }
+
+        if (attr) {
+          let [opt] = await db
+            .select()
+            .from(categoryAttributeOptions)
+            .where(and(
+              eq(categoryAttributeOptions.attributeId, attr.id),
+              or(
+                eq(categoryAttributeOptions.value, attrVal),
+                eq(categoryAttributeOptions.label, attrVal),
+                ilike(categoryAttributeOptions.value, attrVal),
+                ilike(categoryAttributeOptions.label, attrVal)
+              )
+            ))
+            .limit(1);
+
+          if (!opt) {
+            try {
+              const [newOpt] = await db
+                .insert(categoryAttributeOptions)
+                .values({
+                  attributeId: attr.id,
+                  value: attrVal,
+                  label: attrVal,
+                  createdBy: sellerId,
+                  updatedBy: sellerId,
+                })
+                .returning();
+              opt = newOpt;
+            } catch {
+              const [existingOpt] = await db
+                .select()
+                .from(categoryAttributeOptions)
+                .where(and(
+                  eq(categoryAttributeOptions.attributeId, attr.id),
+                  or(
+                    eq(categoryAttributeOptions.value, attrVal),
+                    eq(categoryAttributeOptions.label, attrVal),
+                    ilike(categoryAttributeOptions.value, attrVal),
+                    ilike(categoryAttributeOptions.label, attrVal)
+                  )
+                ))
+                .limit(1);
+              opt = existingOpt;
+            }
+          }
+
+          await db
+            .insert(productAttributeValuesTable)
+            .values({
+              productId,
+              attributeId: attr.id,
+              attributeOptionId: opt ? opt.id : null,
+              valueText: attrVal,
+              displayValue: attrVal,
+              createdBy: sellerId,
+              updatedBy: sellerId,
+            })
+            .onConflictDoUpdate({
+              target: [productAttributeValuesTable.productId, productAttributeValuesTable.attributeId],
+              set: {
+                attributeOptionId: opt ? opt.id : null,
+                valueText: attrVal,
+                displayValue: attrVal,
+                updatedBy: sellerId,
+                updatedAt: new Date(),
+              },
+            });
+
           if (opt) {
             await db
               .insert(productVariantOptionsTable)

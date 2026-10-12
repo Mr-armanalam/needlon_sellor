@@ -119,7 +119,19 @@ export const getProductById = async (productId:string, seller:AuthSeller) => {
         )
         .where(eq(productAttributeValuesTable.productId, productId));
 
+    const STANDARD_KEYS = new Set([
+        "fabric", "fabric_material", "fabric material",
+        "sleeves", "sleeves_style", "sleeves style",
+        "fit", "fit_type", "fit type", "women_fit", "mens_fit",
+        "occasion", "occasion_focus", "occasion focus",
+        "gender", "gender_profile", "gender profile",
+        "age_group", "target_age_group", "target age group",
+        "color", "color track", "colors_track", "colors track",
+        "size", "sizes", "sizes_matrix", "sizes matrix"
+    ]);
+
     const attrMap: Record<string, string> = {};
+    const customAttributes: Array<{ name: string; value: string }> = [];
     for (const row of attributeRows) {
         const val = row.value || row.displayValue || "";
         if (row.key && val) {
@@ -127,6 +139,14 @@ export const getProductById = async (productId:string, seller:AuthSeller) => {
         }
         if (row.name && val) {
             attrMap[row.name.toLowerCase()] = val;
+        }
+        const k = (row.key || "").toLowerCase();
+        const n = (row.name || "").toLowerCase();
+        if (!STANDARD_KEYS.has(k) && !STANDARD_KEYS.has(n) && val) {
+            customAttributes.push({
+                name: row.name || row.key || "Property",
+                value: val,
+            });
         }
     }
 
@@ -276,6 +296,7 @@ export const getProductById = async (productId:string, seller:AuthSeller) => {
         customVisibility: product.visibility || "PUBLIC",
         status: product.status,
         mediaUrls: images.map(img => img.imageUrl),
+        customAttributes,
     };
 
     return data;
