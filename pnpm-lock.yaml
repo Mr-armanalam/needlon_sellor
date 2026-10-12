@@ -42,6 +42,9 @@ importers:
       '@needlon/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@needlon/modules':
+        specifier: workspace:*
+        version: link:../../packages/modules
       '@needlon/ui':
         specifier: workspace:*
         version: link:../../packages/ui

@@ -4,7 +4,9 @@ import {useAddProductWizard} from "@/modules/products/hooks/use-add-product-wiza
 import {Scissors, Lock, Info} from "lucide-react";
 
 const BasicInformationNode = () => {
-    const {formData, handleInputChange, setFormData, availableCategories, subcategoryOptions} = useAddProductWizard()
+    const {formData, handleInputChange, setFormData, availableCategories, subcategoryOptions} = useAddProductWizard();
+
+    console.log(availableCategories, subcategoryOptions, 'basic-information-node')
     return (
         <div className="flex flex-col gap-5 animate-fade-in">
             <div className="flex flex-col gap-0.5">
@@ -40,7 +42,7 @@ const BasicInformationNode = () => {
                         value={formData.category}
                         onChange={(e) => {
                             const newCat = e.target.value;
-                            const defaultSub = CATEGORY_SUBCATEGORY_MAP[newCat]?.[0] || 'Kurtis';
+                            const defaultSub = CATEGORY_SUBCATEGORY_MAP[newCat]?.[0] || '';
                             setFormData(prev => ({ ...prev, category: newCat, subcategory: defaultSub }));
                         }}
                         className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all cursor-pointer"

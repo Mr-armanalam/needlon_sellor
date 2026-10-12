@@ -33,12 +33,9 @@ export const DEFAULT_FORM_DATA = {
 
 // Preset Taxonomy Options
 export const CATEGORY_SUBCATEGORY_MAP: Record<string, string[]> = {
-    'Ethnic Wear': ['Kurtis', 'Salwar Suits', 'Lehengas', 'Ethnic Sets', 'Anarkalis', 'Dupattas'],
-    'Western Wear': ['Dresses', 'Tops & Tunics', 'Shirts', 'Jeans & Denim', 'Skirts', 'Trousers'],
-    'Dupattas': ['Chanderi Dupattas', 'Silk Dupattas', 'Cotton Dupattas', 'Bandhani Dupattas'],
-    'Sarees': ['Banarasi Silk', 'Chanderi Saree', 'Linen Saree', 'Chiffon Saree', 'Organza Saree'],
-    'Footwear': ['Juttis', 'Kolhapuris', 'Heels & Sandals', 'Flats'],
-    'Accessories': ['Handbags & Clutches', 'Jewelry', 'Scarves & Stoles'],
+    'Mens Wear': ['Shirt', 'Pants', 'Coat', 'Jackets', 'Sapari', 'Kurta', 'Sherwani', 'Blazer', 'Trousers', 'Khand dress kurta'],
+    'Women Wear': ['Shirts', 'Pants', 'Suit', 'Coat', 'Skirts', 'Lehanga', 'Blouse', 'Kurti', 'Jacket'],
+    'Services': ['Mens wear', 'Women wear', 'Wedding & Wocation wear', 'Alteration & Fitting'],
 };
 
 export const STANDARD_SIZES = ['S', 'M', 'L', 'XL', 'XXL', '3XL', 'Free Size'];
