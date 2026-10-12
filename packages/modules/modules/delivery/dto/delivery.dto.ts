@@ -27,6 +27,7 @@ export const localDeliverySettingsSchema = z.object({
 });
 
 export const pickupHubSchema = z.object({
+  id: z.string().optional(),
   hubName: z.string().min(2, "Hub name is required"),
   address: z.string().min(5, "Address is required"),
   city: z.string().min(2, "City is required"),

@@ -24,6 +24,7 @@ let inMemoryDeliverySettings: {
     freeShippingThreshold: 100.0,
   },
   pickupHub: {
+    id: "hub-main-pimpri",
     hubName: "Needlon Hub Main Warehouse",
     address: "Needlon Hub Main Warehouse Block-C, Industrial Electronics Sector",
     city: "Pimpri-Chinchwad",

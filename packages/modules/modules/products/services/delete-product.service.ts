@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { productsTable as products } from "@/db/schema/catalog/products/table";
 
-export async function deleteProductService(productId: string) {
+export async function deleteProductService(productId: string, sellerId?: string) {
   const [existing] = await db
     .select()
     .from(products)
@@ -26,6 +26,7 @@ export async function deleteProductService(productId: string) {
       deletedAt: new Date(),
       status: "ARCHIVED",
       updatedAt: new Date(),
+      ...(sellerId ? { updatedBy: sellerId } : {}),
     })
     .where(eq(products.id, productId))
     .returning();

@@ -38,7 +38,7 @@ export async function DELETE(
       throw new ForbiddenError("You do not have permission to delete this product.");
     }
 
-    const deleted = await deleteProductService(productId);
+    const deleted = await deleteProductService(productId, seller.id);
     return successResponse(deleted);
   });
 }

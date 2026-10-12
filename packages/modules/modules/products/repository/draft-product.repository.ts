@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or, ilike } from "drizzle-orm";
 import { productsTable } from "@/db/schema/catalog/products/table";
 import { productVariantsTable } from "@/db/schema/catalog/products/product-variants/table";
 import { pricingTable } from "@/db/schema/catalog/products/pricing/table";
@@ -32,7 +32,8 @@ export interface UpdateDraftBasicInfoParams {
 
 export async function updateDraftProductBasicInfo(
   productId: string,
-  input: UpdateDraftBasicInfoParams
+  input: UpdateDraftBasicInfoParams,
+  sellerId?: string
 ) {
   const updateData: any = { updatedAt: new Date() };
   if (input.name) updateData.name = input.name;
@@ -92,6 +93,7 @@ export async function updateDraftProductBasicInfo(
         metaTitle: `${input.name} | Needlon`,
         metaDescription: input.descriptionStory ? input.descriptionStory.slice(0, 160) : undefined,
         updatedAt: new Date(),
+        ...(sellerId ? { updatedBy: sellerId } : {}),
       })
       .where(eq(productSeoTable.productId, productId));
   }
@@ -117,7 +119,8 @@ export async function updateDraftProductPricing(
   productId: string,
   retailPrice?: string | number,
   discountOfferRate?: string | number,
-  extraParams?: Partial<UpdateDraftPricingParams>
+  extraParams?: Partial<UpdateDraftPricingParams>,
+  sellerId?: string
 ) {
   const [variant] = await db
     .select()
@@ -126,6 +129,7 @@ export async function updateDraftProductPricing(
     .limit(1);
 
   if (variant) {
+    const effectiveSellerId = sellerId || extraParams?.sellerId || null;
     const price = retailPrice ? String(retailPrice) : "0.00";
     const discountRate = discountOfferRate !== undefined && discountOfferRate !== null && String(discountOfferRate).trim() !== ""
       ? String(discountOfferRate)
@@ -163,14 +167,30 @@ export async function updateDraftProductPricing(
     if (extraParams?.metadata !== undefined) {
       pricingUpdate.metadata = extraParams.metadata;
     }
-    if (extraParams?.sellerId) {
-      pricingUpdate.updatedBy = extraParams.sellerId;
+    if (effectiveSellerId) {
+      pricingUpdate.updatedBy = effectiveSellerId;
     }
 
-    await db
-      .update(pricingTable)
-      .set(pricingUpdate)
-      .where(eq(pricingTable.variantId, variant.id));
+    const [existing] = await db
+      .select({ id: pricingTable.id })
+      .from(pricingTable)
+      .where(eq(pricingTable.variantId, variant.id))
+      .limit(1);
+
+    if (existing) {
+      await db
+        .update(pricingTable)
+        .set(pricingUpdate)
+        .where(eq(pricingTable.variantId, variant.id));
+    } else {
+      await db
+        .insert(pricingTable)
+        .values({
+          variantId: variant.id,
+          ...pricingUpdate,
+          createdBy: effectiveSellerId,
+        });
+    }
   }
 }
 
@@ -191,7 +211,8 @@ export async function updateDraftProductVariants(
   categoryId: string,
   sizesMatrix?: string,
   colorsTrack?: string,
-  extraParams?: Partial<UpdateDraftVariantsParams>
+  extraParams?: Partial<UpdateDraftVariantsParams>,
+  sellerId?: string
 ) {
   const [variant] = await db
     .select()
@@ -207,12 +228,13 @@ export async function updateDraftProductVariants(
       .set({
         name: variantName,
         updatedAt: new Date(),
+        ...(sellerId ? { updatedBy: sellerId } : {}),
       })
       .where(eq(productVariantsTable.id, variant.id));
 
-    // 2. Link Size & Color in productVariantOptionsTable
-    if (sizesMatrix) {
-      const [sizeAttr] = await db
+    // 2. Link Size in productVariantOptionsTable
+    if (sizesMatrix && categoryId) {
+      let [sizeAttr] = await db
         .select()
         .from(categoryAttributes)
         .where(and(
@@ -221,16 +243,81 @@ export async function updateDraftProductVariants(
         ))
         .limit(1);
 
+      if (!sizeAttr) {
+        const [attrByKey] = await db
+          .select()
+          .from(categoryAttributes)
+          .where(and(
+            eq(categoryAttributes.categoryId, categoryId),
+            eq(categoryAttributes.attributeKey, "size")
+          ))
+          .limit(1);
+        if (attrByKey) sizeAttr = attrByKey;
+      }
+
+      if (!sizeAttr) {
+        const [newSizeAttr] = await db
+          .insert(categoryAttributes)
+          .values({
+            categoryId,
+            attributeKey: "size",
+            name: "Size",
+            slug: "size",
+            inputType: "SELECT",
+            dataType: "STRING",
+            createdBy: sellerId,
+            updatedBy: sellerId,
+          })
+          .returning();
+        sizeAttr = newSizeAttr;
+      }
+
       if (sizeAttr) {
-        const firstSize = sizesMatrix.split(",")[0].trim().toLowerCase();
-        const [opt] = await db
+        const firstSize = sizesMatrix.split(",")[0].trim();
+        let [opt] = await db
           .select()
           .from(categoryAttributeOptions)
           .where(and(
             eq(categoryAttributeOptions.attributeId, sizeAttr.id),
-            eq(categoryAttributeOptions.value, firstSize)
+            or(
+              eq(categoryAttributeOptions.value, firstSize),
+              eq(categoryAttributeOptions.label, firstSize),
+              ilike(categoryAttributeOptions.value, firstSize),
+              ilike(categoryAttributeOptions.label, firstSize)
+            )
           ))
           .limit(1);
+
+        if (!opt) {
+          try {
+            const [newOpt] = await db
+              .insert(categoryAttributeOptions)
+              .values({
+                attributeId: sizeAttr.id,
+                value: firstSize,
+                label: firstSize,
+                createdBy: sellerId,
+                updatedBy: sellerId,
+              })
+              .returning();
+            opt = newOpt;
+          } catch {
+            const [existingOpt] = await db
+              .select()
+              .from(categoryAttributeOptions)
+              .where(and(
+                eq(categoryAttributeOptions.attributeId, sizeAttr.id),
+                or(
+                  eq(categoryAttributeOptions.value, firstSize),
+                  eq(categoryAttributeOptions.label, firstSize),
+                  ilike(categoryAttributeOptions.value, firstSize),
+                  ilike(categoryAttributeOptions.label, firstSize)
+                )
+              ))
+              .limit(1);
+            opt = existingOpt;
+          }
+        }
 
         if (opt) {
           await db
@@ -239,14 +326,24 @@ export async function updateDraftProductVariants(
               variantId: variant.id,
               attributeId: sizeAttr.id,
               attributeOptionId: opt.id,
+              createdBy: sellerId,
+              updatedBy: sellerId,
             })
-            .onConflictDoNothing();
+            .onConflictDoUpdate({
+              target: [productVariantOptionsTable.variantId, productVariantOptionsTable.attributeId],
+              set: {
+                attributeOptionId: opt.id,
+                updatedBy: sellerId,
+                updatedAt: new Date(),
+              },
+            });
         }
       }
     }
 
-    if (colorsTrack) {
-      const [colorAttr] = await db
+    // 3. Link Color in productVariantOptionsTable
+    if (colorsTrack && categoryId) {
+      let [colorAttr] = await db
         .select()
         .from(categoryAttributes)
         .where(and(
@@ -255,16 +352,81 @@ export async function updateDraftProductVariants(
         ))
         .limit(1);
 
+      if (!colorAttr) {
+        const [attrByKey] = await db
+          .select()
+          .from(categoryAttributes)
+          .where(and(
+            eq(categoryAttributes.categoryId, categoryId),
+            eq(categoryAttributes.attributeKey, "color")
+          ))
+          .limit(1);
+        if (attrByKey) colorAttr = attrByKey;
+      }
+
+      if (!colorAttr) {
+        const [newColorAttr] = await db
+          .insert(categoryAttributes)
+          .values({
+            categoryId,
+            attributeKey: "color",
+            name: "Color",
+            slug: "color",
+            inputType: "SELECT",
+            dataType: "STRING",
+            createdBy: sellerId,
+            updatedBy: sellerId,
+          })
+          .returning();
+        colorAttr = newColorAttr;
+      }
+
       if (colorAttr) {
-        const firstColor = colorsTrack.split(",")[0].trim().toLowerCase().replace(" ", "_");
-        const [opt] = await db
+        const firstColor = colorsTrack.split(",")[0].trim();
+        let [opt] = await db
           .select()
           .from(categoryAttributeOptions)
           .where(and(
             eq(categoryAttributeOptions.attributeId, colorAttr.id),
-            eq(categoryAttributeOptions.value, firstColor)
+            or(
+              eq(categoryAttributeOptions.value, firstColor),
+              eq(categoryAttributeOptions.label, firstColor),
+              ilike(categoryAttributeOptions.value, firstColor),
+              ilike(categoryAttributeOptions.label, firstColor)
+            )
           ))
           .limit(1);
+
+        if (!opt) {
+          try {
+            const [newOpt] = await db
+              .insert(categoryAttributeOptions)
+              .values({
+                attributeId: colorAttr.id,
+                value: firstColor,
+                label: firstColor,
+                createdBy: sellerId,
+                updatedBy: sellerId,
+              })
+              .returning();
+            opt = newOpt;
+          } catch {
+            const [existingOpt] = await db
+              .select()
+              .from(categoryAttributeOptions)
+              .where(and(
+                eq(categoryAttributeOptions.attributeId, colorAttr.id),
+                or(
+                  eq(categoryAttributeOptions.value, firstColor),
+                  eq(categoryAttributeOptions.label, firstColor),
+                  ilike(categoryAttributeOptions.value, firstColor),
+                  ilike(categoryAttributeOptions.label, firstColor)
+                )
+              ))
+              .limit(1);
+            opt = existingOpt;
+          }
+        }
 
         if (opt) {
           await db
@@ -273,13 +435,22 @@ export async function updateDraftProductVariants(
               variantId: variant.id,
               attributeId: colorAttr.id,
               attributeOptionId: opt.id,
+              createdBy: sellerId,
+              updatedBy: sellerId,
             })
-            .onConflictDoNothing();
+            .onConflictDoUpdate({
+              target: [productVariantOptionsTable.variantId, productVariantOptionsTable.attributeId],
+              set: {
+                attributeOptionId: opt.id,
+                updatedBy: sellerId,
+                updatedAt: new Date(),
+              },
+            });
         }
       }
     }
 
-    // 3. Upsert garment specs into productAttributeValuesTable
+    // 4. Upsert garment specs into categoryAttributeOptions, productAttributeValuesTable & productVariantOptionsTable
     const attributesToSave = [
       { key: "fabric", name: "Fabric Material", val: extraParams?.fabricMaterial },
       { key: "sleeves", name: "Sleeves Style", val: extraParams?.sleevesStyle },
@@ -290,7 +461,8 @@ export async function updateDraftProductVariants(
     ];
 
     for (const item of attributesToSave) {
-      if (item.val && typeof item.val === "string" && item.val.trim()) {
+      if (item.val && typeof item.val === "string" && item.val.trim() && categoryId) {
+        const valStr = item.val.trim();
         let [attr] = await db
           .select()
           .from(categoryAttributes)
@@ -321,26 +493,103 @@ export async function updateDraftProductVariants(
               slug: item.key,
               inputType: "TEXT",
               dataType: "STRING",
+              createdBy: sellerId,
+              updatedBy: sellerId,
             })
             .returning();
           attr = newAttr;
         }
 
         if (attr) {
+          // Find or create categoryAttributeOptions
+          let [opt] = await db
+            .select()
+            .from(categoryAttributeOptions)
+            .where(and(
+              eq(categoryAttributeOptions.attributeId, attr.id),
+              or(
+                eq(categoryAttributeOptions.value, valStr),
+                eq(categoryAttributeOptions.label, valStr),
+                ilike(categoryAttributeOptions.value, valStr),
+                ilike(categoryAttributeOptions.label, valStr)
+              )
+            ))
+            .limit(1);
+
+          if (!opt) {
+            try {
+              const [newOpt] = await db
+                .insert(categoryAttributeOptions)
+                .values({
+                  attributeId: attr.id,
+                  value: valStr,
+                  label: valStr,
+                  createdBy: sellerId,
+                  updatedBy: sellerId,
+                })
+                .returning();
+              opt = newOpt;
+            } catch {
+              const [existingOpt] = await db
+                .select()
+                .from(categoryAttributeOptions)
+                .where(and(
+                  eq(categoryAttributeOptions.attributeId, attr.id),
+                  or(
+                    eq(categoryAttributeOptions.value, valStr),
+                    eq(categoryAttributeOptions.label, valStr),
+                    ilike(categoryAttributeOptions.value, valStr),
+                    ilike(categoryAttributeOptions.label, valStr)
+                  )
+                ))
+                .limit(1);
+              opt = existingOpt;
+            }
+          }
+
+          // Upsert into productAttributeValuesTable
           await db
             .insert(productAttributeValuesTable)
             .values({
               productId,
               attributeId: attr.id,
-              valueText: item.val.trim(),
+              attributeOptionId: opt ? opt.id : null,
+              valueText: valStr,
+              displayValue: valStr,
+              createdBy: sellerId,
+              updatedBy: sellerId,
             })
             .onConflictDoUpdate({
               target: [productAttributeValuesTable.productId, productAttributeValuesTable.attributeId],
               set: {
-                valueText: item.val.trim(),
+                attributeOptionId: opt ? opt.id : null,
+                valueText: valStr,
+                displayValue: valStr,
+                updatedBy: sellerId,
                 updatedAt: new Date(),
               },
             });
+
+          // Also upsert into productVariantOptionsTable (variant_attributes)
+          if (opt) {
+            await db
+              .insert(productVariantOptionsTable)
+              .values({
+                variantId: variant.id,
+                attributeId: attr.id,
+                attributeOptionId: opt.id,
+                createdBy: sellerId,
+                updatedBy: sellerId,
+              })
+              .onConflictDoUpdate({
+                target: [productVariantOptionsTable.variantId, productVariantOptionsTable.attributeId],
+                set: {
+                  attributeOptionId: opt.id,
+                  updatedBy: sellerId,
+                  updatedAt: new Date(),
+                },
+              });
+          }
         }
       }
     }
@@ -358,7 +607,8 @@ export async function updateDraftProductInventory(
     reservedQuantity?: number | string;
     lastAdjustedAt?: string | Date;
     position?: number | string;
-  }
+  },
+  sellerId?: string
 ) {
   const [variant] = await db
     .select()
@@ -421,7 +671,8 @@ export interface UpdateDraftDeliveryParams {
 export async function updateDraftProductDelivery(
   productId: string,
   packageWeight?: string | number,
-  deliveryMeta?: UpdateDraftDeliveryParams
+  deliveryMeta?: UpdateDraftDeliveryParams,
+  sellerId?: string
 ) {
   const [variant] = await db
     .select()
@@ -446,22 +697,27 @@ export async function updateDraftProductDelivery(
       .set(variantUpdate)
       .where(eq(productVariantsTable.id, variant.id));
 
-    const metadata: Record<string, unknown> = {};
-    if (deliveryMeta?.pickupHubId) metadata.pickupHubId = deliveryMeta.pickupHubId;
-    if (deliveryMeta?.pickupHubAddress) metadata.pickupHubAddress = deliveryMeta.pickupHubAddress;
-    if (deliveryMeta?.shippingPartnerId) metadata.shippingPartnerId = deliveryMeta.shippingPartnerId;
-    if (deliveryMeta?.shippingMethodId) metadata.shippingMethodId = deliveryMeta.shippingMethodId;
-    if (deliveryMeta?.deliveryZone) metadata.deliveryZone = deliveryMeta.deliveryZone;
-    if (deliveryMeta?.deliveryRadiusRange) metadata.deliveryRadiusRange = deliveryMeta.deliveryRadiusRange;
-    if (deliveryMeta?.estimatedDeliveryWindow) metadata.estimatedDeliveryWindow = deliveryMeta.estimatedDeliveryWindow;
+    const metadata: Record<string, unknown> = {
+      packageWeight: weightVal,
+    };
+    if (deliveryMeta?.pickupHubId !== undefined) metadata.pickupHubId = deliveryMeta.pickupHubId;
+    if (deliveryMeta?.pickupHubAddress !== undefined) metadata.pickupHubAddress = deliveryMeta.pickupHubAddress;
+    if (deliveryMeta?.shippingPartnerId !== undefined) metadata.shippingPartnerId = deliveryMeta.shippingPartnerId;
+    if (deliveryMeta?.shippingMethodId !== undefined) metadata.shippingMethodId = deliveryMeta.shippingMethodId;
+    if (deliveryMeta?.deliveryZone !== undefined) metadata.deliveryZone = deliveryMeta.deliveryZone;
+    if (deliveryMeta?.deliveryRadiusRange !== undefined) metadata.deliveryRadiusRange = deliveryMeta.deliveryRadiusRange;
+    if (deliveryMeta?.estimatedDeliveryWindow !== undefined) metadata.estimatedDeliveryWindow = deliveryMeta.estimatedDeliveryWindow;
+
+    const shippingUpdate: Record<string, unknown> = {
+      weight: weightVal,
+      metadata,
+      updatedAt: new Date(),
+      ...(sellerId ? { updatedBy: sellerId } : {}),
+    };
 
     await db
       .update(shippingTable)
-      .set({
-        weight: weightVal,
-        metadata,
-        updatedAt: new Date(),
-      })
+      .set(shippingUpdate)
       .where(eq(shippingTable.variantId, variant.id));
   }
 }
@@ -486,7 +742,8 @@ export async function updateDraftProductSeo(
   productId: string,
   searchKeywords?: string,
   customVisibility?: "PUBLIC" | "PRIVATE" | "UNLISTED",
-  seoOverrides?: Partial<UpdateDraftSeoParams>
+  seoOverrides?: Partial<UpdateDraftSeoParams>,
+  sellerId?: string
 ) {
   const keywords = searchKeywords
     ? searchKeywords.split(",").map((k: string) => k.trim()).filter(Boolean)
@@ -502,7 +759,10 @@ export async function updateDraftProductSeo(
   if (customVisibility) {
     await db
       .update(productsTable)
-      .set({ visibility: customVisibility, updatedAt: new Date() })
+      .set({
+        visibility: customVisibility,
+        updatedAt: new Date(),
+      })
       .where(eq(productsTable.id, productId));
   }
 
@@ -567,6 +827,7 @@ export async function updateDraftProductSeo(
         twitterImage: finalTwitterImage,
         structuredData: finalStructuredData,
         updatedAt: new Date(),
+        ...(sellerId ? { updatedBy: sellerId } : {}),
       })
       .where(eq(productSeoTable.productId, productId));
   } else {
@@ -586,6 +847,8 @@ export async function updateDraftProductSeo(
         twitterDescription: finalTwitterDescription,
         twitterImage: finalTwitterImage,
         structuredData: finalStructuredData,
+        createdBy: sellerId,
+        updatedBy: sellerId,
       });
   }
 
@@ -612,10 +875,21 @@ export async function updateDraftProductSeo(
         .values({
           name: kw,
           slug: tagSlug,
+          createdBy: sellerId,
+          updatedBy: sellerId,
         })
         .onConflictDoNothing()
         .returning();
       tag = newTag;
+    }
+
+    if (!tag) {
+      const [existingTag] = await db
+        .select()
+        .from(productTagsTable)
+        .where(eq(productTagsTable.slug, tagSlug))
+        .limit(1);
+      tag = existingTag;
     }
 
     if (tag) {
@@ -624,6 +898,7 @@ export async function updateDraftProductSeo(
         .values({
           productId,
           tagId: tag.id,
+          createdBy: sellerId,
         })
         .onConflictDoNothing();
     }

@@ -4,6 +4,7 @@ import { successResponse } from "@/modules/shared/api/success-response";
 import { parseBody } from "@/modules/shared/api/parse-body";
 import { updateDraftProductInventoryService } from "@/modules/products/services";
 import { updateInventorySchema } from "@/modules/products/validations/inventory.schema";
+import { getCurrentSellerOrThrow } from "@/modules/seller-profile/services";
 
 interface RouteContext {
   params: Promise<{
@@ -17,8 +18,9 @@ export async function PATCH(
 ) {
   return routeHandler(async () => {
     const { productId } = await params;
+    const seller = await getCurrentSellerOrThrow();
     const body = await parseBody(request, updateInventorySchema);
-    const updated = await updateDraftProductInventoryService(productId, body);
+    const updated = await updateDraftProductInventoryService(productId, body, seller.id);
     return successResponse(updated);
   });
 }

@@ -26,10 +26,10 @@ const DeliveryLogisticsNode = () => {
                             value={formData.pickupHubId || ''}
                             onChange={(e) => {
                                 const hubId = e.target.value;
-                                const selected = pickupHubs.find((h: any) => h.id === hubId);
+                                const selected = pickupHubs.find((h: any) => (h.id || h.hubName || 'hub-main-pimpri') === hubId);
                                 if (selected) {
                                     const addr = [selected.hubName, selected.address, selected.city, selected.pincode].filter(Boolean).join(', ');
-                                    handleInputChange('pickupHubId', selected.id);
+                                    handleInputChange('pickupHubId', selected.id || selected.hubName || 'hub-main-pimpri');
                                     handleInputChange('pickupHubAddress', addr);
                                 } else {
                                     handleInputChange('pickupHubId', '');
@@ -38,11 +38,14 @@ const DeliveryLogisticsNode = () => {
                             className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all cursor-pointer"
                         >
                             <option value="">Select registered boutique hub...</option>
-                            {pickupHubs.map((hub: any) => (
-                                <option key={hub.id} value={hub.id}>
-                                    {hub.hubName} ({hub.city || 'Primary Hub'})
-                                </option>
-                            ))}
+                            {pickupHubs.map((hub: any) => {
+                                const idVal = hub.id || hub.hubName || 'hub-main-pimpri';
+                                return (
+                                    <option key={idVal} value={idVal}>
+                                        {hub.hubName} ({hub.city || 'Primary Hub'})
+                                    </option>
+                                );
+                            })}
                         </select>
                     ) : null}
                     <input

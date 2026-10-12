@@ -107,6 +107,9 @@ const VariantsMatrixNode = () => {
                         className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all cursor-pointer"
                     >
                         {SLEEVES_OPTIONS.map(sl => <option key={sl} value={sl}>{sl}</option>)}
+                        {formData.sleevesStyle && !SLEEVES_OPTIONS.includes(formData.sleevesStyle) && (
+                            <option value={formData.sleevesStyle}>{formData.sleevesStyle}</option>
+                        )}
                     </select>
                 </div>
 
@@ -119,6 +122,9 @@ const VariantsMatrixNode = () => {
                         className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all cursor-pointer"
                     >
                         {FIT_OPTIONS.map(ft => <option key={ft} value={ft}>{ft}</option>)}
+                        {formData.fitType && !FIT_OPTIONS.includes(formData.fitType) && (
+                            <option value={formData.fitType}>{formData.fitType}</option>
+                        )}
                     </select>
                 </div>
 

@@ -104,6 +104,8 @@ export async function createDraftProduct(data: any): Promise<Product> {
             price: "0.00",
             currencyCode: "INR",
             isTaxInclusive: true,
+            createdBy: sellerId,
+            updatedBy: sellerId,
         });
 
         // Create default shipping
@@ -114,6 +116,8 @@ export async function createDraftProduct(data: any): Promise<Product> {
             weightUnit: "KG",
             requiresShipping: true,
             isFreeShipping: false,
+            createdBy: sellerId,
+            updatedBy: sellerId,
         });
 
         // Create default SEO
@@ -124,6 +128,8 @@ export async function createDraftProduct(data: any): Promise<Product> {
             metaTitle: prod.name,
             metaDescription: "",
             metaKeywords: [],
+            createdBy: sellerId,
+            updatedBy: sellerId,
         });
 
         return prod;

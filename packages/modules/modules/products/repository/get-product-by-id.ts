@@ -108,7 +108,9 @@ export const getProductById = async (productId:string, seller:AuthSeller) => {
     const attributeRows = await db
         .select({
             key: categoryAttributesTable.attributeKey,
+            name: categoryAttributesTable.name,
             value: productAttributeValuesTable.valueText,
+            displayValue: productAttributeValuesTable.displayValue,
         })
         .from(productAttributeValuesTable)
         .leftJoin(
@@ -119,8 +121,12 @@ export const getProductById = async (productId:string, seller:AuthSeller) => {
 
     const attrMap: Record<string, string> = {};
     for (const row of attributeRows) {
-        if (row.key && row.value) {
-            attrMap[row.key] = row.value;
+        const val = row.value || row.displayValue || "";
+        if (row.key && val) {
+            attrMap[row.key.toLowerCase()] = val;
+        }
+        if (row.name && val) {
+            attrMap[row.name.toLowerCase()] = val;
         }
     }
 
@@ -209,17 +215,17 @@ export const getProductById = async (productId:string, seller:AuthSeller) => {
         compareAtPrice: pricing?.compareAtPrice ? String(pricing.compareAtPrice) : "",
         costPrice: pricing?.costPrice ? String(pricing.costPrice) : "",
         minimumAdvertisedPrice: pricing?.minimumAdvertisedPrice ? String(pricing.minimumAdvertisedPrice) : "",
-        effectiveFrom: pricing?.effectiveFrom ? pricing.effectiveFrom.toISOString() : "",
-        effectiveUntil: pricing?.effectiveUntil ? pricing.effectiveUntil.toISOString() : "",
+        effectiveFrom: pricing?.effectiveFrom ? pricing.effectiveFrom.toISOString().slice(0, 10) : "",
+        effectiveUntil: pricing?.effectiveUntil ? pricing.effectiveUntil.toISOString().slice(0, 10) : "",
         isTaxInclusive: pricing?.isTaxInclusive ?? true,
         sizesMatrix,
         colorsTrack,
-        fabricMaterial: attrMap["fabric"] || "",
-        sleevesStyle: attrMap["sleeves"] || "",
-        fitType: attrMap["fit"] || "",
-        occasionFocus: attrMap["occasion"] || "",
-        genderProfile: attrMap["gender"] || "",
-        targetAgeGroup: attrMap["age_group"] || "",
+        fabricMaterial: attrMap["fabric"] || attrMap["fabric_material"] || attrMap["fabric material"] || "",
+        sleevesStyle: attrMap["sleeves"] || attrMap["sleeves_style"] || attrMap["sleeves style"] || "",
+        fitType: attrMap["fit"] || attrMap["fit_type"] || attrMap["fit type"] || attrMap["women_fit"] || attrMap["mens_fit"] || "",
+        occasionFocus: attrMap["occasion"] || attrMap["occasion_focus"] || attrMap["occasion focus"] || "",
+        genderProfile: attrMap["gender"] || attrMap["gender_profile"] || attrMap["gender profile"] || "",
+        targetAgeGroup: attrMap["age_group"] || attrMap["target_age_group"] || attrMap["target age group"] || "",
         boutiqueStockCount: (product.status === "DRAFT" && (!inventory?.quantity || inventory.quantity === 0))
             ? ""
             : String(inventory?.quantity ?? ""),
@@ -234,10 +240,10 @@ export const getProductById = async (productId:string, seller:AuthSeller) => {
         pickupHubAddress,
         shippingPartnerId: (shippingMeta.shippingPartnerId as string) || null,
         shippingMethodId: (shippingMeta.shippingMethodId as string) || null,
-        deliveryZone: (shippingMeta.deliveryZone as string) || "",
-        packageWeight: shipping?.weight || (variant?.weightGrams ? String(variant.weightGrams / 1000) : ""),
-        deliveryRadiusRange,
-        estimatedDeliveryWindow,
+        deliveryZone: (shippingMeta.deliveryZone as string) || "DOMESTIC",
+        packageWeight: (shippingMeta.packageWeight as string) || shipping?.weight || (variant?.weightGrams ? String(variant.weightGrams / 1000) : ""),
+        deliveryRadiusRange: deliveryRadiusRange || "Nationwide Shipping",
+        estimatedDeliveryWindow: estimatedDeliveryWindow || "3 - 5 business days delivery timeline",
         slug: seo?.slug || product.slug,
         metaTitle: seo?.metaTitle || "",
         metaDescription: seo?.metaDescription || "",
