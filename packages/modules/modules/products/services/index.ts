@@ -7,5 +7,4 @@ export * from "./delete-product.service";
 export * from "./create-variant.service";
 export * from "./draft-product.service";
 export * from "./product-image.service";
-
-
+export * from "./upload-product-media.service";

@@ -25,6 +25,8 @@ interface MediaItem {
     fileName: string;
     isPrimary: boolean;
     displayOrder: number;
+    mediaType?: string;
+    storageKey?: string;
 }
 
 
@@ -205,39 +207,37 @@ function useAddProductWizardInternal() {
 
         setIsUploadingMedia(true);
         try {
+            let currentProductId = activeProductId;
+            if (!currentProductId) {
+                const { createDraftProductClient } = await import('../api/product-client');
+                const res = await createDraftProductClient();
+                currentProductId = res?.data?.id || res?.id;
+                if (currentProductId) {
+                    setActiveProductId(currentProductId);
+                }
+            }
+
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
 
-                // Convert File to base64 Data URL for persistent storage in DB
-                const dataUrl = await new Promise<string>((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result as string);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(file);
-                });
+                if (currentProductId) {
+                    const formData = new FormData();
+                    formData.append("file", file);
+                    formData.append("fileName", file.name);
+                    formData.append("mimeType", file.type || "image/jpeg");
+                    formData.append("fileSize", String(file.size));
+                    formData.append("isPrimary", String(mediaAssets.length === 0 && i === 0));
+                    formData.append("displayOrder", String(mediaAssets.length + i));
 
-                if (activeProductId) {
-                    const uploaded = await uploadProductImageClient(activeProductId, {
-                        imageUrl: dataUrl,
-                        fileName: file.name,
-                        mimeType: file.type || "image/jpeg",
-                        fileSize: file.size,
-                    });
+                    const uploaded = await uploadProductImageClient(currentProductId, formData);
                     const newItem = uploaded?.data || uploaded;
-                    setMediaAssets(prev => [...prev, newItem]);
-                } else {
-                    const newItem: MediaItem = {
-                        id: `temp-${Date.now()}-${i}`,
-                        imageUrl: dataUrl,
-                        fileName: file.name,
-                        isPrimary: mediaAssets.length === 0,
-                        displayOrder: mediaAssets.length,
-                    };
-                    setMediaAssets(prev => [...prev, newItem]);
+                    if (newItem) {
+                        setMediaAssets(prev => [...prev, newItem]);
+                    }
                 }
             }
         } catch (err: any) {
-            alert(err.message || "Failed to upload image asset");
+            alert(err.message || "Failed to upload media asset");
         } finally {
             setIsUploadingMedia(false);
             if (fileInputRef.current) fileInputRef.current.value = "";

@@ -1,3 +1,4 @@
+export * from "./constants/media";
 
 export const DEFAULT_FORM_DATA = {
     name: '',

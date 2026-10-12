@@ -28,7 +28,8 @@ export async function findProductImageById(imageId: string) {
 export async function createProductImage(data: CreateProductImageDto) {
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(2, 7);
-  const storageKey = (data as any).storageKey || `media-${timestamp}-${random}`;
+  const storageKey = data.storageKey || (data as any).storagePath || `media-${timestamp}-${random}`;
+  const mediaType = data.mediaType || (data.mimeType && data.mimeType.toLowerCase().startsWith("video/") ? "VIDEO" : "IMAGE");
 
   const [image] = await db
     .insert(productImagesTable)
@@ -36,6 +37,7 @@ export async function createProductImage(data: CreateProductImageDto) {
       productId: data.productId,
       imageUrl: data.imageUrl,
       storageKey,
+      mediaType,
       altText: data.altText || null,
       displayOrder: data.displayOrder ?? 0,
       isPrimary: data.isPrimary ?? false,

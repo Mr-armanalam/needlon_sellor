@@ -8,6 +8,8 @@ export interface CreateProductImageDto {
   fileSize?: number;
   checksum?: string;
   storagePath?: string;
+  storageKey?: string;
+  mediaType?: "IMAGE" | "VIDEO" | string;
   altText?: string;
   displayOrder?: number;
   isPrimary?: boolean;

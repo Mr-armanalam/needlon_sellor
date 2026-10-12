@@ -109,14 +109,30 @@ export async function createWizardProductService({ sellerId, data }: CreateWizar
   // 7. Insert media assets if provided
   const mediaRecords = [];
   if (data.mediaUrls && data.mediaUrls.length > 0) {
+    const { uploadProductMediaDataUrlToSupabase } = await import("./upload-product-media.service");
     for (let i = 0; i < data.mediaUrls.length; i++) {
-      const url = data.mediaUrls[i];
+      let url = data.mediaUrls[i];
+      let storageKey = `image-${i}.jpg`;
+      let mediaType = "IMAGE";
+
+      if (url.startsWith("data:")) {
+        try {
+          const uploadRes = await uploadProductMediaDataUrlToSupabase(product.id, url);
+          url = uploadRes.publicUrl;
+          storageKey = uploadRes.storageKey;
+          mediaType = uploadRes.mediaType;
+        } catch (uErr) {
+          console.warn("Failed uploading wizard media dataUrl to Supabase:", uErr);
+        }
+      }
+
       const [media] = await db
         .insert(productImagesTable)
         .values({
           productId: product.id,
           imageUrl: url,
-          storageKey: `image-${i}.jpg`,
+          storageKey,
+          mediaType,
           displayOrder: i,
           isPrimary: i === 0,
         })
