@@ -4,6 +4,7 @@ import { successResponse } from "@/modules/shared/api/success-response";
 import { parseBody } from "@/modules/shared/api/parse-body";
 import { updateDraftProductSeoService } from "@/modules/products/services";
 import { updateSeoSchema } from "@/modules/products/validations/seo.schema";
+import { getCurrentSellerOrThrow } from "@/modules/seller-profile/services";
 
 interface RouteContext {
   params: Promise<{
@@ -17,8 +18,9 @@ export async function PATCH(
 ) {
   return routeHandler(async () => {
     const { productId } = await params;
+    const seller = await getCurrentSellerOrThrow();
     const body = await parseBody(request, updateSeoSchema);
-    const updated = await updateDraftProductSeoService(productId, body);
+    const updated = await updateDraftProductSeoService(productId, body, seller.id);
     return successResponse(updated);
   });
 }

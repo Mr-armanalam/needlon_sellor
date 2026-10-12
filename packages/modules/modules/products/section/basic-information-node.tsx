@@ -4,7 +4,21 @@ import {useAddProductWizard} from "@/modules/products/hooks/use-add-product-wiza
 import {Scissors, Lock, Info} from "lucide-react";
 
 const BasicInformationNode = () => {
-    const {formData, handleInputChange, setFormData, availableCategories, subcategoryOptions} = useAddProductWizard()
+    const {
+        formData,
+        handleInputChange,
+        availableCategories,
+        categoriesData,
+        filteredSubcategories,
+        verifiedBrands,
+        handleSelectCategory,
+        handleSelectSubcategory,
+        handleSelectBrand,
+        subcategoryOptions
+    } = useAddProductWizard();
+
+    const [isCustomBrand, setIsCustomBrand] = React.useState(!formData.brandId);
+
     return (
         <div className="flex flex-col gap-5 animate-fade-in">
             <div className="flex flex-col gap-0.5">
@@ -23,45 +37,111 @@ const BasicInformationNode = () => {
                     />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Brand Label</label>
-                    <input
-                        type="text"
-                        placeholder="House of Needlon"
-                        value={formData.brandLabel}
-                        onChange={(e) => handleInputChange('brandLabel', e.target.value)}
-                        className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all"
-                    />
+                    <div className="flex items-center justify-between">
+                        <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Brand Label</label>
+                        {verifiedBrands && verifiedBrands.length > 0 && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const nextCustom = !isCustomBrand;
+                                    setIsCustomBrand(nextCustom);
+                                    if (nextCustom) {
+                                        handleInputChange('brandId', '');
+                                    } else if (verifiedBrands[0]) {
+                                        handleSelectBrand(verifiedBrands[0].id, verifiedBrands[0].name);
+                                    }
+                                }}
+                                className="text-[11px] text-neutral-500 hover:text-neutral-900 font-medium transition-colors"
+                            >
+                                {isCustomBrand ? "Select Verified Brand" : "Write Custom Brand"}
+                            </button>
+                        )}
+                    </div>
+                    {!isCustomBrand && verifiedBrands && verifiedBrands.length > 0 ? (
+                        <select
+                            value={formData.brandId || ''}
+                            onChange={(e) => {
+                                const selected = verifiedBrands.find((b: any) => b.id === e.target.value);
+                                if (selected) {
+                                    handleSelectBrand(selected.id, selected.name);
+                                }
+                            }}
+                            className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all cursor-pointer"
+                        >
+                            <option value="">Select a verified brand...</option>
+                            {verifiedBrands.map((b: any) => (
+                                <option key={b.id} value={b.id}>{b.name}</option>
+                            ))}
+                        </select>
+                    ) : (
+                        <input
+                            type="text"
+                            placeholder="e.g. House of Needlon"
+                            value={formData.brandName || formData.brandLabel}
+                            onChange={(e) => {
+                                handleInputChange('brandLabel', e.target.value);
+                                handleInputChange('brandName', e.target.value);
+                            }}
+                            className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all"
+                        />
+                    )}
                 </div>
 
-                {/* Controlled Hybrid Category Dropdown */}
+                {/* Category Dropdown (ID & Name aware) */}
                 <div className="flex flex-col gap-1.5">
                     <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Category</label>
                     <select
-                        value={formData.category}
+                        value={formData.categoryId || formData.category}
                         onChange={(e) => {
-                            const newCat = e.target.value;
-                            const defaultSub = CATEGORY_SUBCATEGORY_MAP[newCat]?.[0] || 'Kurtis';
-                            setFormData(prev => ({ ...prev, category: newCat, subcategory: defaultSub }));
+                            const val = e.target.value;
+                            const matched = categoriesData.find((c: any) => c.id === val || c.name === val);
+                            if (matched) {
+                                handleSelectCategory(matched.id, matched.name);
+                            } else {
+                                handleInputChange('category', val);
+                            }
                         }}
                         className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all cursor-pointer"
                     >
-                        {availableCategories.map(cat => (
-                            <option key={cat} value={cat}>{cat}</option>
-                        ))}
+                        {categoriesData && categoriesData.length > 0 ? (
+                            categoriesData.map((cat: any) => (
+                                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                            ))
+                        ) : (
+                            availableCategories.map(cat => (
+                                <option key={cat} value={cat}>{cat}</option>
+                            ))
+                        )}
                     </select>
                 </div>
 
-                {/* Controlled Hybrid Subcategory Dropdown */}
+                {/* Subcategory Dropdown (FK Relational Subcategory) */}
                 <div className="flex flex-col gap-1.5">
                     <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Subcategory</label>
                     <select
-                        value={formData.subcategory}
-                        onChange={(e) => handleInputChange('subcategory', e.target.value)}
+                        value={formData.subcategoryId || formData.subcategory}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            const matched = filteredSubcategories.find((s: any) => s.id === val || s.name === val);
+                            if (matched) {
+                                handleSelectSubcategory(matched.id, matched.name);
+                            } else {
+                                handleInputChange('subcategory', val);
+                            }
+                        }}
                         className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all cursor-pointer"
                     >
-                        {subcategoryOptions.map(sub => (
-                            <option key={sub} value={sub}>{sub}</option>
-                        ))}
+                        {filteredSubcategories && filteredSubcategories.length > 0 ? (
+                            filteredSubcategories.map((sub: any) => (
+                                <option key={sub.id} value={sub.id}>{sub.name}</option>
+                            ))
+                        ) : subcategoryOptions && subcategoryOptions.length > 0 ? (
+                            subcategoryOptions.map(sub => (
+                                <option key={sub} value={sub}>{sub}</option>
+                            ))
+                        ) : (
+                            <option value="">No subcategories available</option>
+                        )}
                     </select>
                 </div>
 

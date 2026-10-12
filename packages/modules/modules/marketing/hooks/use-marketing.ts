@@ -1,3 +1,4 @@
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import { useState, useEffect, useCallback } from "react";
 import { CouponItemDto, CampaignItemDto, ReferralInfoDto, CreateCouponDto, CreateCampaignDto, CreateReferralDto } from "../dto/marketing.dto";
 
@@ -10,7 +11,7 @@ export function useCoupons() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/seller/marketing/coupons");
+      const res = await apiFetch("/api/seller/marketing/coupons");
       const json = await res.json();
       if (json.success && Array.isArray(json.data)) {
         setCoupons(json.data);
@@ -25,7 +26,7 @@ export function useCoupons() {
   }, []);
 
   const createCoupon = async (dto: CreateCouponDto) => {
-    const res = await fetch("/api/seller/marketing/coupons", {
+    const res = await apiFetch("/api/seller/marketing/coupons", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(dto),
@@ -37,7 +38,7 @@ export function useCoupons() {
   };
 
   const deleteCoupon = async (id: string) => {
-    const res = await fetch(`/api/seller/marketing/coupons?id=${id}`, {
+    const res = await apiFetch(`/api/seller/marketing/coupons?id=${id}`, {
       method: "DELETE",
     });
     const json = await res.json();
@@ -61,7 +62,7 @@ export function useCampaigns() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/seller/marketing/campaigns");
+      const res = await apiFetch("/api/seller/marketing/campaigns");
       const json = await res.json();
       if (json.success && Array.isArray(json.data)) {
         setCampaigns(json.data);
@@ -76,7 +77,7 @@ export function useCampaigns() {
   }, []);
 
   const createCampaign = async (dto: CreateCampaignDto) => {
-    const res = await fetch("/api/seller/marketing/campaigns", {
+    const res = await apiFetch("/api/seller/marketing/campaigns", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(dto),
@@ -103,7 +104,7 @@ export function useReferrals() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/seller/marketing/referrals");
+      const res = await apiFetch("/api/seller/marketing/referrals");
       const json = await res.json();
       if (json.success && json.data) {
         setReferral(json.data);
@@ -118,7 +119,7 @@ export function useReferrals() {
   }, []);
 
   const updateReferral = async (dto: CreateReferralDto) => {
-    const res = await fetch("/api/seller/marketing/referrals", {
+    const res = await apiFetch("/api/seller/marketing/referrals", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(dto),

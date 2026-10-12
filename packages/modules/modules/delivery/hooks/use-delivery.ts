@@ -1,3 +1,4 @@
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import { useState, useEffect, useCallback } from "react";
 import { ShipmentResponseDto, ConnectCarrierDto } from "../dto/delivery.dto";
 
@@ -14,9 +15,9 @@ export function useDelivery(options?: { statusFilter?: string }) {
     setError(null);
     try {
       const [partnersRes, shipmentsRes, settingsRes] = await Promise.all([
-        fetch("/api/seller/delivery/partners"),
-        fetch(`/api/seller/delivery/shipments${options?.statusFilter ? `?status=${options.statusFilter}` : ""}`),
-        fetch("/api/seller/delivery/settings"),
+        apiFetch("/api/seller/delivery/partners"),
+        apiFetch(`/api/seller/delivery/shipments${options?.statusFilter ? `?status=${options.statusFilter}` : ""}`),
+        apiFetch("/api/seller/delivery/settings"),
       ]);
 
       const partnersJson = await partnersRes.json();
@@ -45,7 +46,7 @@ export function useDelivery(options?: { statusFilter?: string }) {
   }, [fetchDeliveryData]);
 
   const connectCarrier = async (dto: ConnectCarrierDto) => {
-    const res = await fetch("/api/seller/delivery/partners", {
+    const res = await apiFetch("/api/seller/delivery/partners", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(dto),
@@ -57,7 +58,7 @@ export function useDelivery(options?: { statusFilter?: string }) {
   };
 
   const updateDeliverySettings = async (type: "LOCAL_RADIUS" | "PICKUP_HUB" | "SHIPPING_ZONE", data: any) => {
-    const res = await fetch("/api/seller/delivery/settings", {
+    const res = await apiFetch("/api/seller/delivery/settings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type, data }),
@@ -69,7 +70,7 @@ export function useDelivery(options?: { statusFilter?: string }) {
   };
 
   const createShipment = async (dto: any) => {
-    const res = await fetch("/api/seller/delivery/shipments", {
+    const res = await apiFetch("/api/seller/delivery/shipments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(dto),
@@ -82,7 +83,7 @@ export function useDelivery(options?: { statusFilter?: string }) {
 
   const updateStatus = async (shipmentId: string, status: string, trackingNumber?: string) => {
     try {
-      const res = await fetch(`/api/seller/delivery/shipments/${shipmentId}`, {
+      const res = await apiFetch(`/api/seller/delivery/shipments/${shipmentId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ shipmentId, status, trackingNumber }),

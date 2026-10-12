@@ -1,5 +1,7 @@
 "use client";
 
+
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import React, { useState } from "react";
 import { 
   Bell, Mail, MessageSquare, Smartphone, ShoppingBag, 
@@ -21,7 +23,7 @@ export default function NotificationsTab() {
   const handleSendTestNotification = async () => {
     setIsSendingTest(true);
     try {
-      const res = await fetch("/api/seller/settings/test-notification", {
+      const res = await apiFetch("/api/seller/settings/test-notification", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -1,3 +1,5 @@
+import { db } from "@/db";
+import { pricingTable } from "@/db/schema/catalog/products/pricing/table";
 import { createProductVariant, getProductVariantBySku, getProduct } from "../repository";
 
 export interface CreateVariantInput {
@@ -37,12 +39,17 @@ export async function createVariantService(input: CreateVariantInput) {
     productId: input.productId,
     sku: input.sku.trim(),
     barcode: input.barcode,
-    price: input.price,
-    compareAtPrice: input.compareAtPrice,
-    costPrice: input.costPrice,
     weightGrams: input.weightGrams,
     status: input.status ?? "ACTIVE",
     position: input.position ?? 0,
+  });
+
+  await db.insert(pricingTable).values({
+    variantId: variant.id,
+    currencyCode: "INR",
+    price: input.price,
+    compareAtPrice: input.compareAtPrice,
+    costPrice: input.costPrice,
   });
 
   return variant;

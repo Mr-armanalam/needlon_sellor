@@ -9,19 +9,34 @@ export const AUTH_ROUTES = [
   "/reset-password",
 ];
 
-export const PROTECTED_ROUTES = [
-  "/dashboard",
-  "/orders",
-  "/products",
-  "/settings",
+export const PUBLIC_ROUTES = [
+  "/",
+  "/about",
+  "/pricing",
 ];
 
-// ─── Admin-only pages ─────────────────────────────────────────────────────────
-// Only users with role === "admin" may access these.
-// Sellers hitting any of these paths are redirected to /dashboard (middleware),
-// or receive a 403 JSON response (Route Handlers / Server Components via
-// requireAdmin()).
-//
-// Here we keep this list prefix-based — "/admin" covers /admin/sellers, /admin/orders,
-// etc., because the middleware uses `pathname.startsWith(route)`.
 export const ADMIN_ROUTES = ["/admin"];
+
+function matchesRoute(pathname: string, route: string): boolean {
+  return pathname === route || pathname.startsWith(`${route}/`);
+}
+
+export function isProtectedRoute(pathname: string): boolean {
+  return (
+    !isPublicRoute(pathname) &&
+    !isAuthRoute(pathname) &&
+    !isAdminRoute(pathname)
+  );
+}
+
+export function isAuthRoute(pathname: string): boolean {
+  return AUTH_ROUTES.some((route) => matchesRoute(pathname, route));
+}
+
+export function isAdminRoute(pathname: string): boolean {
+  return ADMIN_ROUTES.some((route) => matchesRoute(pathname, route));
+}
+
+export function isPublicRoute(pathname: string): boolean {
+  return PUBLIC_ROUTES.includes(pathname);
+}

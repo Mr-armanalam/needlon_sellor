@@ -86,7 +86,6 @@ export const getFilteredProducts = async (searchParams: URLSearchParams, sellerI
     // Price range dropdown filter with safe numeric SQL cast
     const numPrice = sql`COALESCE(
       NULLIF(regexp_replace(${pricingTable.price}::text, '[^0-9.]', '', 'g'), '')::numeric,
-      NULLIF(regexp_replace(${productVariantsTable.price}::text, '[^0-9.]', '', 'g'), '')::numeric,
       0
     )`;
 
@@ -136,8 +135,6 @@ export const getFilteredProducts = async (searchParams: URLSearchParams, sellerI
                 variant: {
                     id: productVariantsTable.id,
                     sku: productVariantsTable.sku,
-                    price: productVariantsTable.price,
-                    compareAtPrice: productVariantsTable.compareAtPrice,
                     weightGrams: productVariantsTable.weightGrams,
                 },
                 inventory: {

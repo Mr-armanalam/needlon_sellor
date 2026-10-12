@@ -1,5 +1,7 @@
 'use client';
 
+
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Plus, SlidersHorizontal, Eye, Heart, ShoppingBag, Edit3, Share2, Copy, 
@@ -99,7 +101,7 @@ export default function ProductManagement() {
       if (activeTab !== 'All') params.append('status', activeTab.toUpperCase().replace(' ', '_'));
       if (searchQuery) params.append('search', searchQuery);
 
-      const res = await fetch(`/api/seller/products?${params.toString()}`);
+      const res = await apiFetch(`/api/seller/products?${params.toString()}`);
       if (res.ok) {
         const json = await res.json();
         if (json.data?.items) {
@@ -161,7 +163,7 @@ export default function ProductManagement() {
         status,
       };
 
-      const res = await fetch('/api/products', {
+      const res = await apiFetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -188,7 +190,7 @@ export default function ProductManagement() {
   const handleDelete = async (id: string | number) => {
     try {
       if (typeof id === 'string' && id.includes('-')) {
-        await fetch(`/api/products/${id}`, { method: 'DELETE' });
+        await apiFetch(`/api/products/${id}`, { method: 'DELETE' });
       }
       setProducts(prev => prev.filter(p => p.id !== id));
     } catch (err) {

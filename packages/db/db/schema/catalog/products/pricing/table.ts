@@ -142,6 +142,18 @@ export const pricingTable = pgTable(
         ),
 
         /**
+         * Discount Offer Rate in percentage (e.g. 15.00 for 15%).
+         * Persisted directly to eliminate recalculation drift.
+         */
+        discountRate: numeric(
+            "discount_rate",
+            {
+                precision: 5,
+                scale: 2,
+            },
+        ).default("0.00"),
+
+        /**
          * Internal procurement /
          * manufacturing cost.
          *

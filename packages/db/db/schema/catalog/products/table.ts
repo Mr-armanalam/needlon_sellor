@@ -16,6 +16,7 @@ import {
 import { seller } from "@/db/schema/seller";
 
 import { categoriesTable } from "@/db/schema/catalog/categories";
+import { brands } from "@/db/schema/seller/brand";
 
 import {
     productStatusEnum,
@@ -104,6 +105,26 @@ export const productsTable = pgTable(
                     onDelete: "restrict",
                 },
             ),
+
+        subcategoryId: uuid("subcategory_id")
+            .references(
+                (): AnyPgColumn => categoriesTable.id,
+                {
+                    onDelete: "restrict",
+                },
+            ),
+
+        brandId: uuid("brand_id")
+            .references(
+                (): AnyPgColumn => brands.id,
+                {
+                    onDelete: "set null",
+                },
+            ),
+
+        brandName: varchar("brand_name", {
+            length: 150,
+        }),
 
         /**
          * ----------------------------------------------------------
@@ -240,6 +261,14 @@ export const productsTable = pgTable(
             table.status,
             table.createdAt,
         ),
+
+        subcategoryIdx: index(
+            "products_subcategory_idx",
+        ).on(table.subcategoryId),
+
+        brandIdx: index(
+            "products_brand_idx",
+        ).on(table.brandId),
 
         storeUpdatedIdx: index(
             "products_store_updated_idx",

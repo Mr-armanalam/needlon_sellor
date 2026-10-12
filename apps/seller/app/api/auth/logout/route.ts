@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { and, eq, gt, or } from "drizzle-orm";
 
 import { db } from "@/db";
 import { sessions } from "@/db/schema/seller";
@@ -39,7 +39,15 @@ export async function POST() {
 
           updatedAt: new Date(),
         })
-        .where(eq(sessions.refreshToken, refreshTokenHash));
+        .where(
+          or(
+            eq(sessions.refreshToken, refreshTokenHash),
+            and(
+              eq(sessions.previousRefreshToken, refreshTokenHash),
+              gt(sessions.previousRefreshTokenExpiresAt, new Date()),
+            ),
+          ),
+        );
     }
 
     cookieStore.set("access_token", "", {

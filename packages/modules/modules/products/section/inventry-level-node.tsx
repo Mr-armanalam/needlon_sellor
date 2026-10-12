@@ -17,10 +17,11 @@ const InventryLevelNode = () => {
                     <div className="flex items-center gap-2">
                         <input
                             type="number"
-                            placeholder="14"
+                            min="0"
+                            placeholder="Enter available quantity (e.g. 14)"
                             value={formData.boutiqueStockCount}
                             onChange={(e) => handleInputChange('boutiqueStockCount', e.target.value)}
-                            className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all"
+                            className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all font-medium"
                         />
                     </div>
                     {/* Stock Shortcuts */}
@@ -53,11 +54,85 @@ const InventryLevelNode = () => {
                     </div>
                     <input
                         type="text"
-                        placeholder="NDLN-ETH-KUR-01"
+                        placeholder="e.g. NDLN-ETH-KUR-01"
                         value={formData.uniqueSku}
                         onChange={(e) => handleInputChange('uniqueSku', e.target.value)}
                         className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all font-mono"
                     />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Low Stock Threshold</label>
+                    <input
+                        type="number"
+                        min="0"
+                        placeholder="Alert threshold (default 5)"
+                        value={formData.lowStockThreshold}
+                        onChange={(e) => handleInputChange('lowStockThreshold', e.target.value)}
+                        className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all font-medium"
+                    />
+                    <span className="text-[11px] text-neutral-400">Receive an inventory alert when available stock drops below this count.</span>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Barcode / EAN / UPC <span className="text-neutral-300 normal-case">(Optional)</span></label>
+                    <input
+                        type="text"
+                        placeholder="e.g. 8901234567890"
+                        value={formData.barcode}
+                        onChange={(e) => handleInputChange('barcode', e.target.value)}
+                        className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all font-mono"
+                    />
+                    <span className="text-[11px] text-neutral-400">Barcode or scan identifier for boutique warehouse management.</span>
+                </div>
+
+                {/* Warehouse Bin / Position & Reserved Stock */}
+                <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between">
+                        <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Bin / Storage Position</label>
+                        {formData.lastAdjustedAt && (
+                            <span className="text-[10px] text-neutral-400">
+                                Last adjusted: {new Date(formData.lastAdjustedAt).toLocaleDateString()}
+                            </span>
+                        )}
+                    </div>
+                    <input
+                        type="number"
+                        min="0"
+                        placeholder="0"
+                        value={formData.position}
+                        onChange={(e) => handleInputChange('position', e.target.value)}
+                        className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all font-medium"
+                    />
+                    <span className="text-[11px] text-neutral-400">Shelf sorting index or boutique rack position identifier.</span>
+                </div>
+
+                {/* Reserved Quantity Info Card */}
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Reserved / In-Transit Stock</label>
+                    <div className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] text-neutral-700 flex items-center justify-between font-medium">
+                        <span>{formData.reservedQuantity || '0'} units</span>
+                        <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/60">
+                            Hold for Orders
+                        </span>
+                    </div>
+                    <span className="text-[11px] text-neutral-400">Units committed to active customer checkouts and in-processing orders.</span>
+                </div>
+
+                <div className="sm:col-span-2 flex items-center justify-between p-3.5 bg-neutral-50 border border-neutral-200/60 rounded-xl mt-1">
+                    <div className="flex flex-col gap-0.5">
+                        <span className="text-[13px] font-semibold text-neutral-900">Allow Backorders When Out of Stock</span>
+                        <span className="text-[11px] text-neutral-400">Allow customers to continue placing boutique orders even when stock count reaches 0.</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={Boolean(formData.allowBackorder)}
+                            onChange={(e) => handleInputChange('allowBackorder', e.target.checked)}
+                            className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-neutral-900"></div>
+                    </label>
                 </div>
 
             </div>

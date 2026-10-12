@@ -1,5 +1,7 @@
 'use client';
 
+
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import React, { useState, useEffect } from 'react';
 import { X, ShieldCheck, Send, Clock, AlertCircle, Loader2 } from 'lucide-react';
 
@@ -31,7 +33,7 @@ export default function ChatPermissionModal({
     setLoading(true);
     setError(null);
 
-    fetch(`/api/seller/chat/permission?buyerId=${buyerId}`)
+    apiFetch(`/api/seller/chat/permission?buyerId=${buyerId}`)
       .then((res) => res.json())
       .then((json) => {
         if (!isMounted) return;
@@ -63,7 +65,7 @@ export default function ChatPermissionModal({
     setError(null);
 
     try {
-      const res = await fetch('/api/seller/chat/request', {
+      const res = await apiFetch('/api/seller/chat/request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

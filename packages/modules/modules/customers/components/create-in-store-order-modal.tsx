@@ -1,5 +1,7 @@
 'use client';
 
+
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import React, { useState } from 'react';
 import { X, ShoppingBag, Ruler, Banknote, FileText, Loader2 } from 'lucide-react';
 
@@ -48,7 +50,7 @@ export default function CreateInStoreOrderModal({
 
     setSubmitting(true);
     try {
-      const res = await fetch('/api/seller/orders/in-store', {
+      const res = await apiFetch('/api/seller/orders/in-store', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

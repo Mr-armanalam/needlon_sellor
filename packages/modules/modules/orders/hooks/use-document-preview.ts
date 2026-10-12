@@ -1,3 +1,4 @@
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import { useState, useEffect } from "react";
 import {initial_tab} from "@/modules/orders/types";
 
@@ -42,7 +43,7 @@ export const useDocumentPreview = (
                     endpoint = `/api/orders/${orderId}/shipping-label`;
                 }
 
-                const res = await fetch(endpoint);
+                const res = await apiFetch(endpoint);
                 const data = await res.json();
 
                 if (data.success && data.data?.html) {

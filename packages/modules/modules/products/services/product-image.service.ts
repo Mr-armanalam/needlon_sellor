@@ -8,12 +8,31 @@ import {
 } from "../repository";
 import { CreateProductImageDto } from "../dto";
 import { NotFoundError } from "@/modules/shared/errors";
+import { supabaseServer } from "@/lib/supabase/server";
+import { PRODUCT_MEDIA_BUCKET } from "../constants/media";
+import { uploadProductMediaDataUrlToSupabase } from "./upload-product-media.service";
 
 export async function getProductImagesService(productId: string) {
   return findProductImagesByProductId(productId);
 }
 
 export async function addProductImageService(data: CreateProductImageDto) {
+  // If data.imageUrl is a base64 data URL, upload to Supabase Storage first to prevent DB bloat
+  if (data.imageUrl && data.imageUrl.startsWith("data:")) {
+    try {
+      const uploadRes = await uploadProductMediaDataUrlToSupabase(
+        data.productId,
+        data.imageUrl,
+        data.fileName
+      );
+      data.imageUrl = uploadRes.publicUrl;
+      data.storageKey = uploadRes.storageKey;
+      data.mediaType = uploadRes.mediaType;
+    } catch (uploadErr) {
+      console.warn("Failed converting data URL to Supabase storage:", uploadErr);
+    }
+  }
+
   const existing = await findProductImagesByProductId(data.productId);
   // If first image, automatically set as primary cover
   if (existing.length === 0) {
@@ -30,6 +49,19 @@ export async function deleteProductImageService(imageId: string) {
   if (!image) {
     throw new NotFoundError("Image not found");
   }
+
+  // Remove underlying asset from Supabase Storage bucket if storageKey is known
+  if (image.storageKey) {
+    try {
+      const client = typeof supabaseServer === "function" ? (supabaseServer as any)() : supabaseServer;
+      if (client?.storage) {
+        await client.storage.from(PRODUCT_MEDIA_BUCKET).remove([image.storageKey]);
+      }
+    } catch (storageErr) {
+      console.warn("Failed removing storage file from Supabase:", storageErr);
+    }
+  }
+
   await deleteProductImage(imageId);
   return true;
 }

@@ -1,5 +1,7 @@
 "use client";
 
+
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import React, { useState, useEffect } from "react";
 import { 
   Shield, KeyRound, Eye, EyeOff, Laptop, Smartphone, 
@@ -34,7 +36,7 @@ export default function SecurityTab() {
   const fetchSessions = async () => {
     setIsLoadingSessions(true);
     try {
-      const res = await fetch("/api/auth/sessions");
+      const res = await apiFetch("/api/auth/sessions");
       const json = await res.json();
       if (json.success && json.data) {
         setSessions(json.data);
@@ -90,7 +92,7 @@ export default function SecurityTab() {
 
     setIsSubmitting(true);
     try {
-      const res = await fetch("/api/seller/settings/password", {
+      const res = await apiFetch("/api/seller/settings/password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -121,7 +123,7 @@ export default function SecurityTab() {
   const handleTerminateOtherSessions = async () => {
     setIsTerminating(true);
     try {
-      const res = await fetch("/api/auth/sessions/logout-others", {
+      const res = await apiFetch("/api/auth/sessions/logout-others", {
         method: "POST",
       });
       const data = await res.json();

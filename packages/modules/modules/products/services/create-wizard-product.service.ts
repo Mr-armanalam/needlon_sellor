@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import { categoriesTable as categories } from "@/db/schema/catalog/categories/table";
 import { inventoryTable } from "@/db/schema/catalog/products/inventory/table";
+import { pricingTable } from "@/db/schema/catalog/products/pricing/table";
 import { productImagesTable } from "@/db/schema/catalog/products/product-images/table";
 import { generateUniqueSlug } from "@/modules/shared/slug/generate-unique-slug";
 import { createProduct, createProductVariant, existsProductSlug, getProductVariantBySku } from "../repository";
@@ -66,12 +67,34 @@ export async function createWizardProductService({ sellerId, data }: CreateWizar
   const variant = await createProductVariant({
     productId: product.id,
     sku: data.uniqueSku.trim(),
-    price: data.retailPrice,
-    compareAtPrice: data.discountOfferRate ? data.retailPrice : undefined,
     weightGrams: data.packageWeight ? Math.round(parseFloat(data.packageWeight) * 1000) || 350 : 350,
     status: "ACTIVE",
     position: 0,
   });
+
+  // 5b. Insert pricing record
+  if (data.retailPrice) {
+    await db.insert(pricingTable).values({
+      variantId: variant.id,
+      currencyCode: "INR",
+      price: data.retailPrice,
+      discountRate: data.discountOfferRate || "0.00",
+      compareAtPrice: data.discountOfferRate ? data.retailPrice : undefined,
+    });
+  }
+
+  // 5c. Persist variant attributes if provided
+  if (data.sizesMatrix || data.colorsTrack || data.fabricMaterial) {
+    const { updateDraftProductVariants } = await import("../repository/draft-product.repository");
+    await updateDraftProductVariants(
+      product.id,
+      categoryId,
+      data.sizesMatrix,
+      data.colorsTrack,
+      { fabricMaterial: data.fabricMaterial },
+      sellerId
+    );
+  }
 
   // 6. Insert inventory record
   const [invRecord] = await db
@@ -86,14 +109,30 @@ export async function createWizardProductService({ sellerId, data }: CreateWizar
   // 7. Insert media assets if provided
   const mediaRecords = [];
   if (data.mediaUrls && data.mediaUrls.length > 0) {
+    const { uploadProductMediaDataUrlToSupabase } = await import("./upload-product-media.service");
     for (let i = 0; i < data.mediaUrls.length; i++) {
-      const url = data.mediaUrls[i];
+      let url = data.mediaUrls[i];
+      let storageKey = `image-${i}.jpg`;
+      let mediaType = "IMAGE";
+
+      if (url.startsWith("data:")) {
+        try {
+          const uploadRes = await uploadProductMediaDataUrlToSupabase(product.id, url);
+          url = uploadRes.publicUrl;
+          storageKey = uploadRes.storageKey;
+          mediaType = uploadRes.mediaType;
+        } catch (uErr) {
+          console.warn("Failed uploading wizard media dataUrl to Supabase:", uErr);
+        }
+      }
+
       const [media] = await db
         .insert(productImagesTable)
         .values({
           productId: product.id,
           imageUrl: url,
-          storageKey: `image-${i}.jpg`,
+          storageKey,
+          mediaType,
           displayOrder: i,
           isPrimary: i === 0,
         })

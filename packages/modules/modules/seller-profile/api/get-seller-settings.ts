@@ -1,3 +1,4 @@
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import { SellerSettingsDto } from "@/modules/seller-profile/dto";
 
 interface GetSellerSettingsResponse {
@@ -7,7 +8,7 @@ interface GetSellerSettingsResponse {
 }
 
 export async function getSellerSettings(): Promise<SellerSettingsDto> {
-  const response = await fetch("/api/seller/settings", {
+  const response = await apiFetch("/api/seller/settings", {
     method: "GET",
     credentials: "include",
     headers: {

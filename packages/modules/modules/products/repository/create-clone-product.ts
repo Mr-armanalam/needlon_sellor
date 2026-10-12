@@ -7,8 +7,9 @@ import { pricingTable } from "@/db/schema/catalog/products/pricing/table";
 import { shippingTable } from "@/db/schema/catalog/products/shipping/table";
 import { productSeoTable } from "@/db/schema/catalog/products/product-seo/table";
 import { productImagesTable } from "@/db/schema/catalog/products/product-images/table";
-import { productAiTable } from "@/db/schema/catalog/products/product-ai/table";
 import { productVariantOptionsTable } from "@/db/schema/catalog/products/product-variant-options/table";
+import { productAttributeValuesTable } from "@/db/schema/catalog/products/product-attribute-values/table";
+import { productTagMappingsTable } from "@/db/schema/catalog/products/product-tag-mappings/table";
 import { eq } from "drizzle-orm";
 import { generateUniqueSlug } from "@/modules/shared/slug/generate-unique-slug";
 import { existsProductSlug } from "./exists-product-slug";
@@ -43,9 +44,14 @@ export const createCloneProduct = async ({productId, seller}:{productId:string; 
                 shortDescription: originalProduct.shortDescription,
                 description: originalProduct.description,
                 status: "DRAFT", // reset duplicated to draft status
+                publishedAt: null,
                 visibility: originalProduct.visibility,
                 productType: originalProduct.productType,
+                subcategoryId: originalProduct.subcategoryId,
+                brandId: originalProduct.brandId,
+                brandName: originalProduct.brandName,
                 isFeatured: originalProduct.isFeatured,
+                isCustomizable: originalProduct.isCustomizable,
             })
             .returning();
 
@@ -60,12 +66,11 @@ export const createCloneProduct = async ({productId, seller}:{productId:string; 
                 .insert(productVariantsTable)
                 .values({
                     productId: newProduct.id,
+                    name: origVar.name || "Standard Variant",
                     sku: `${origVar.sku}-COPY-${Date.now().toString().slice(-4)}`,
                     barcode: origVar.barcode ? `${origVar.barcode}-COPY` : null,
-                    price: origVar.price,
-                    compareAtPrice: origVar.compareAtPrice,
-                    costPrice: origVar.costPrice,
                     weightGrams: origVar.weightGrams,
+                    estimatedDeliveryWindow: origVar.estimatedDeliveryWindow,
                     status: origVar.status,
                     position: origVar.position,
                 })
@@ -123,6 +128,7 @@ export const createCloneProduct = async ({productId, seller}:{productId:string; 
                     dimensionUnit: origShipping.dimensionUnit,
                     requiresShipping: origShipping.requiresShipping,
                     isFreeShipping: origShipping.isFreeShipping,
+                    metadata: origShipping.metadata,
                 });
             }
 
@@ -177,23 +183,39 @@ export const createCloneProduct = async ({productId, seller}:{productId:string; 
             });
         }
 
-        // 5. Clone AI record
-        const [origAi] = await tx
+        // 5. Clone garment attributes
+        const origAttributes = await tx
             .select()
-            .from(productAiTable)
-            .where(eq(productAiTable.productId, productId))
-            .limit(1);
+            .from(productAttributeValuesTable)
+            .where(eq(productAttributeValuesTable.productId, productId));
 
-        if (origAi) {
-            await tx.insert(productAiTable).values({
+        for (const attr of origAttributes) {
+            await tx.insert(productAttributeValuesTable).values({
                 productId: newProduct.id,
-                summary: origAi.summary,
-                qualityScore: origAi.qualityScore,
+                attributeId: attr.attributeId,
+                valueText: attr.valueText,
+                valueNumber: attr.valueNumber,
+                valueBoolean: attr.valueBoolean,
+                valueDate: attr.valueDate,
+                valueJson: attr.valueJson,
+            });
+        }
+
+        // 6. Clone tag mappings
+        const origTagMappings = await tx
+            .select()
+            .from(productTagMappingsTable)
+            .where(eq(productTagMappingsTable.productId, productId));
+
+        for (const tm of origTagMappings) {
+            await tx.insert(productTagMappingsTable).values({
+                productId: newProduct.id,
+                tagId: tm.tagId,
             });
         }
 
         return newProduct;
     });
 
-    return duplicated
-}
+    return duplicated;
+};

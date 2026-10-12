@@ -7,7 +7,6 @@ import { categoriesTable } from "@/db/schema/catalog/categories";
 import { productsTable } from "./table";
 import {sellerStore} from "@/db/schema/seller/seller-store";
 import {productImagesTable} from "@/db/schema/catalog/products/product-images";
-import {productVideosTable} from "@/db/schema/catalog/products/product-videos/table";
 import {productVariantsTable} from "@/db/schema/catalog/products/product-variants/table";
 import {productVariantOptionsTable} from "@/db/schema/catalog/products/product-variant-options/table";
 import {productAttributeValuesTable} from "@/db/schema/catalog/products/product-attribute-values/table";
@@ -65,9 +64,8 @@ export const productsRelations = relations(
         // }),
 
         variants: many(productVariantsTable),
-        // images: many(productImagesTable),
-        // videos: many(productVideosTable),
-        // options: many(productVariantOptionsTable),
+        images: many(productImagesTable),
+        options: many(productVariantOptionsTable),
         // attributeValues: many(productAttributeValuesTable),
         // seo: one(productSeoTable),
         // tagMappings: many(productTagMappingsTable),

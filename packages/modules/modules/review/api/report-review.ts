@@ -1,3 +1,4 @@
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import type {
     ReportReviewInput,
 } from "../schema/report-review-schema";
@@ -6,7 +7,7 @@ export async function reportReview(
     input: ReportReviewInput,
 ) {
     const response =
-        await fetch(
+        await apiFetch(
             "/api/seller/reviews/report",
             {
                 method: "POST",

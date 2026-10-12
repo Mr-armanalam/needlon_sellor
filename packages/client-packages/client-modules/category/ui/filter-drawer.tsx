@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 
 interface FilterDrawerProps {
   category: string;
+  parentCategory?: string;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -43,6 +44,7 @@ interface FiltersApiResponse {
 
 const FilterDrawer: React.FC<FilterDrawerProps> = ({
   category,
+  parentCategory,
   isOpen,
   onClose,
 }) => {
@@ -54,9 +56,12 @@ const FilterDrawer: React.FC<FilterDrawerProps> = ({
 
   // 1. Data Fetching with TanStack Query (Server-state management)
   const { data, isLoading } = useQuery<FiltersApiResponse>({
-    queryKey: ["filters", category],
+    queryKey: ["filters", parentCategory, category],
     queryFn: async (): Promise<FiltersApiResponse> => {
-      const res = await fetch(`/api/filters?category=${category}`);
+      const url = `/api/filters?category=${encodeURIComponent(category)}${
+        parentCategory ? `&parentCategory=${encodeURIComponent(parentCategory)}` : ""
+      }`;
+      const res = await fetch(url);
       if (!res.ok) throw new Error("Network response was not ok");
       return res.json();
     },

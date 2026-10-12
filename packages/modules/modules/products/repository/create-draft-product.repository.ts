@@ -38,6 +38,7 @@ export async function createDraftProduct(data: any): Promise<Product> {
         name: data.name || "Untitled Draft",
         slug: data.slug || `draft-${timestamp}-${randomSuffix}`,
         status: data.status || "DRAFT",
+        visibility: data.visibility || "PUBLIC",
     };
 
     const product = await db.transaction(async (tx) => {
@@ -81,8 +82,8 @@ export async function createDraftProduct(data: any): Promise<Product> {
             .insert(productVariantsTable)
             .values({
                 productId: prod.id,
+                name: "Standard Variant",
                 sku: `sku-${prod.id}`,
-                price: "0.00",
                 position: 0,
                 status: "ACTIVE",
             })
@@ -93,16 +94,18 @@ export async function createDraftProduct(data: any): Promise<Product> {
         await tx.insert(inventoryTable).values({
             variantId: variant.id,
             quantity: 0,
-            lowStockThreshold: 5,
+            lowStockThreshold: 0,
         });
 
-        // Create default pricing
+        // Create default pricing (authoritative store)
         const { pricingTable } = await import("@/db/schema/catalog/products/pricing/table");
         await tx.insert(pricingTable).values({
             variantId: variant.id,
             price: "0.00",
             currencyCode: "INR",
             isTaxInclusive: true,
+            createdBy: sellerId,
+            updatedBy: sellerId,
         });
 
         // Create default shipping
@@ -113,6 +116,8 @@ export async function createDraftProduct(data: any): Promise<Product> {
             weightUnit: "KG",
             requiresShipping: true,
             isFreeShipping: false,
+            createdBy: sellerId,
+            updatedBy: sellerId,
         });
 
         // Create default SEO
@@ -122,14 +127,9 @@ export async function createDraftProduct(data: any): Promise<Product> {
             slug: prod.slug,
             metaTitle: prod.name,
             metaDescription: "",
-        });
-
-        // Create default AI record
-        const { productAiTable } = await import("@/db/schema/catalog/products/product-ai/table");
-        await tx.insert(productAiTable).values({
-            productId: prod.id,
-            summary: "",
-            qualityScore: 0,
+            metaKeywords: [],
+            createdBy: sellerId,
+            updatedBy: sellerId,
         });
 
         return prod;

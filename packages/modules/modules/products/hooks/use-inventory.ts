@@ -1,3 +1,4 @@
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import { useState, useEffect, useCallback } from "react";
 import { InventoryItemResponseDto } from "../dto/inventory.dto";
 
@@ -14,7 +15,7 @@ export function useInventory(options?: { lowStockOnly?: boolean }) {
       const queryParams = new URLSearchParams();
       if (options?.lowStockOnly) queryParams.append("lowStockOnly", "true");
 
-      const res = await fetch(`/api/seller/inventory?${queryParams.toString()}`);
+      const res = await apiFetch(`/api/seller/inventory?${queryParams.toString()}`);
       const json = await res.json();
 
       if (json.success && json.data) {
@@ -36,7 +37,7 @@ export function useInventory(options?: { lowStockOnly?: boolean }) {
 
   const updateStock = async (variantId: string, quantity: number, lowStockThreshold?: number) => {
     try {
-      const res = await fetch("/api/seller/inventory", {
+      const res = await apiFetch("/api/seller/inventory", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ variantId, quantity, lowStockThreshold }),
@@ -54,7 +55,7 @@ export function useInventory(options?: { lowStockOnly?: boolean }) {
 
   const adjustStock = async (variantId: string, adjustment: number, reason?: string) => {
     try {
-      const res = await fetch("/api/seller/inventory/adjust", {
+      const res = await apiFetch("/api/seller/inventory/adjust", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ variantId, adjustment, reason }),

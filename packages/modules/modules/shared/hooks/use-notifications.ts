@@ -1,3 +1,4 @@
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import { useState, useEffect, useCallback } from "react";
 import { NotificationItemDto } from "../dto/notification.dto";
 
@@ -11,7 +12,7 @@ export function useNotifications() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/seller/notifications");
+      const res = await apiFetch("/api/seller/notifications");
       const json = await res.json();
       if (json.success && json.data) {
         setNotifications(json.data.notifications || []);
@@ -30,7 +31,7 @@ export function useNotifications() {
 
   const markRead = async (notificationId?: string, markAll: boolean = false) => {
     try {
-      const res = await fetch("/api/seller/notifications", {
+      const res = await apiFetch("/api/seller/notifications", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ notificationId, markAll }),

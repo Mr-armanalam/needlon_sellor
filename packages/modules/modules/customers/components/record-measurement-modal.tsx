@@ -1,5 +1,7 @@
 'use client';
 
+
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import React, { useState } from 'react';
 import { X, Scissors, Ruler, Loader2 } from 'lucide-react';
 
@@ -150,7 +152,7 @@ export default function RecordMeasurementModal({
 
     setSubmitting(true);
     try {
-      const res = await fetch('/api/seller/measurements', {
+      const res = await apiFetch('/api/seller/measurements', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

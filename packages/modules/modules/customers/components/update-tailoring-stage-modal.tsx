@@ -1,5 +1,7 @@
 'use client';
 
+
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import React, { useState } from 'react';
 import { X, Scissors, Loader2 } from 'lucide-react';
 
@@ -47,7 +49,7 @@ export default function UpdateTailoringStageModal({
     setSubmitting(true);
 
     try {
-      const res = await fetch(`/api/seller/orders/${orderId}/tailoring-stage`, {
+      const res = await apiFetch(`/api/seller/orders/${orderId}/tailoring-stage`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -1,3 +1,4 @@
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import { useState, useEffect, useCallback } from "react";
 import {
   SubscriptionPlanDto,
@@ -16,7 +17,7 @@ export function useSubscription() {
 
   const fetchSubscriptionData = useCallback(async () => {
     try {
-      const res = await fetch("/api/seller/subscription");
+      const res = await apiFetch("/api/seller/subscription");
       const json = await res.json();
       if (json.success && json.data) {
         setPlans(json.data.plans || []);
@@ -30,7 +31,7 @@ export function useSubscription() {
   const fetchLedger = useCallback(async (tab: "history" | "invoices") => {
     setLedgerLoading(true);
     try {
-      const res = await fetch(`/api/seller/subscription/ledger?tab=${tab}`);
+      const res = await apiFetch(`/api/seller/subscription/ledger?tab=${tab}`);
       const json = await res.json();
       if (json.success && json.data) {
         setLedger(json.data);
@@ -67,7 +68,7 @@ export function useSubscription() {
     }
   ) => {
     try {
-      const res = await fetch("/api/seller/subscription", {
+      const res = await apiFetch("/api/seller/subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ planId, billingCycle, paymentDetails }),

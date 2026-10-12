@@ -28,7 +28,7 @@ const UploadPhotosNVideosNode = () => {
                 ref={fileInputRef}
                 type="file"
                 multiple
-                accept="image/jpeg,image/png,image/webp,video/mp4"
+                accept="image/*,video/*,.avif,.webp,.png,.jpg,.jpeg,.mp4,.webm,.mov"
                 className="hidden"
                 onChange={handleFileUpload}
             />
@@ -51,7 +51,7 @@ const UploadPhotosNVideosNode = () => {
                 <span className="text-[13px] font-semibold text-neutral-800">
                   {isUploadingMedia ? "Uploading media assets..." : isDraggingOver ? "Drop files here to upload" : "Drag files or click to map folder location"}
                 </span>
-                <span className="text-[11px] text-neutral-400">Supports JPEG, PNG, MP4 (Max 1080p profile)</span>
+                <span className="text-[11px] text-neutral-400">Supports all images & videos (JPEG, PNG, WebP, AVIF, MP4, WebM, MOV)</span>
             </div>
 
             {/* Uploaded Media Gallery Deck */}
@@ -62,7 +62,11 @@ const UploadPhotosNVideosNode = () => {
                         {mediaAssets.map((asset, idx) => (
                             <div key={asset.id} className="relative group bg-neutral-50 rounded-xl border border-neutral-200/80 overflow-hidden flex flex-col">
                                 <div className="relative aspect-square w-full bg-neutral-100 flex items-center justify-center overflow-hidden">
-                                    <img src={asset.imageUrl} alt={asset.fileName} className="w-full h-full object-cover" />
+                                    {asset.mediaType === 'VIDEO' || asset.fileName?.match(/\.(mp4|webm|mov|ogg|mkv)$/i) ? (
+                                        <video src={asset.imageUrl} className="w-full h-full object-cover" muted playsInline />
+                                    ) : (
+                                        <img src={asset.imageUrl} alt={asset.fileName} className="w-full h-full object-cover" />
+                                    )}
 
                                     {asset.isPrimary && (
                                         <span className="absolute top-2 left-2 bg-neutral-900 text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm">

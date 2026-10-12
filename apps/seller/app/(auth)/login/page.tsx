@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useSWRConfig } from "swr";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +25,7 @@ import {
 } from "@/modules/auth/validations/login-request-schema";
 
 export default function LoginPage() {
-  const router = useRouter();
+  const { mutate } = useSWRConfig();
   const loginMutation = useLoginMutation();
 
   const form = useForm<LoginRequestInput>({
@@ -42,9 +42,10 @@ export default function LoginPage() {
 
       toast.success("Login successful");
       const destination = data.user.role === "admin" ? "/admin" : "/dashboard";
-      router.push(destination);
-    } catch (error: any) {
-      const errMsg = error?.message || "Login failed";
+      await mutate("/api/auth/me");
+      window.location.assign(destination);
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : "Login failed";
       form.setError("email", {
         type: "server",
         message: errMsg,

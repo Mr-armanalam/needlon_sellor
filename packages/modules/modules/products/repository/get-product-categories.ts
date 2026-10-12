@@ -2,10 +2,11 @@ import { db } from "@/db";
 import { categoriesTable } from "@/db/schema/catalog/categories/table";
 import { categoryAttributesTable } from "@/db/schema/catalog/category-attributes";
 import { categoryAttributeOptionsTable } from "@/db/schema/catalog/category-attribute-options";
+import {isNull} from "drizzle-orm";
 
 export const getProductCategories = async () => {
     // 1. Fetch categories
-    let categories = await db.select().from(categoriesTable);
+    let categories = await db.select().from(categoriesTable).where(isNull(categoriesTable.parentId));
 
     // 2. If categories table is empty, seed dummy database records
     if (categories.length === 0) {

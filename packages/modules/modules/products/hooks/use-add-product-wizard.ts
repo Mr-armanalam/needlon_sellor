@@ -1,9 +1,13 @@
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import React, {useEffect, useRef, useState, createContext, useContext} from "react";
 import {CATEGORY_SUBCATEGORY_MAP, DEFAULT_FORM_DATA, wizardSteps} from "@/modules/products/constants";
 import {
     deleteProductImageClient,
+    fetchBrandsClient,
     fetchCategoriesClient,
+    fetchDeliverySettingsClient,
     fetchProductImagesClient,
+    fetchShippingPartnersClient,
     getProductClient,
     publishProductClient, reorderProductImagesClient, setPrimaryThumbnailClient, updateProductBasicInfoClient,
     updateProductDeliveryClient,
@@ -11,6 +15,7 @@ import {
     updateProductPricingClient, updateProductSeoClient, updateProductVariantsClient,
     uploadProductImageClient
 } from "@/modules/products";
+import { generateProductSeoData } from "@/modules/products/lib/seo-generator";
 import {useProductUiSet} from "@/modules/products/hooks/use-product-ui-set";
 
 
@@ -20,6 +25,8 @@ interface MediaItem {
     fileName: string;
     isPrimary: boolean;
     displayOrder: number;
+    mediaType?: string;
+    storageKey?: string;
 }
 
 
@@ -30,6 +37,11 @@ function useAddProductWizardInternal() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState(DEFAULT_FORM_DATA);
     const [availableCategories, setAvailableCategories] = useState<string[]>(Object.keys(CATEGORY_SUBCATEGORY_MAP));
+    const [categoriesData, setCategoriesData] = useState<any[]>([]);
+    const [subcategoriesData, setSubcategoriesData] = useState<any[]>([]);
+    const [verifiedBrands, setVerifiedBrands] = useState<any[]>([]);
+    const [shippingPartners, setShippingPartners] = useState<any[]>([]);
+    const [pickupHubs, setPickupHubs] = useState<any[]>([]);
 
     // Step 1: Photos & Media State
     const [mediaAssets, setMediaAssets] = useState<MediaItem[]>([]);
@@ -39,10 +51,45 @@ function useAddProductWizardInternal() {
     useEffect(() => {
         fetchCategoriesClient()
             .then((res: any) => {
-                const cats = res?.categories;
+                const cats = res?.categories || res?.data?.categories;
+                const subCats = res?.subcategories || res?.data?.subcategories || [];
+                const allCats = res?.allCategories || res?.data?.allCategories || [];
                 if (Array.isArray(cats) && cats.length > 0) {
+                    setCategoriesData(cats);
                     const names = cats.map((c: any) => c.name).filter(Boolean);
                     setAvailableCategories(names);
+                }
+                if (Array.isArray(subCats)) {
+                    setSubcategoriesData(subCats);
+                } else if (Array.isArray(allCats)) {
+                    setSubcategoriesData(allCats.filter((c: any) => Boolean(c.parentId)));
+                }
+            })
+            .catch(() => {});
+
+        fetchBrandsClient()
+            .then((res: any) => {
+                const bList = res?.brands || res?.data?.brands;
+                if (Array.isArray(bList)) {
+                    setVerifiedBrands(bList);
+                }
+            })
+            .catch(() => {});
+
+        fetchShippingPartnersClient()
+            .then((res: any) => {
+                const pList = res?.partners || res?.data?.partners;
+                if (Array.isArray(pList)) {
+                    setShippingPartners(pList);
+                }
+            })
+            .catch(() => {});
+
+        fetchDeliverySettingsClient()
+            .then((res: any) => {
+                const hub = res?.pickupHub || res?.data?.pickupHub;
+                if (hub) {
+                    setPickupHubs([hub]);
                 }
             })
             .catch(() => {});
@@ -63,42 +110,96 @@ function useAddProductWizardInternal() {
 
     useEffect(() => {
         if (productId) {
+            setActiveProductId(productId);
             getProductClient(productId)
                 .then((data: any) => {
                     if (data) {
                         setFormData({
                             name: data.name || '',
-                            brandLabel: data.brandLabel || 'House of Needlon',
-                            category: data.category || 'Ethnic Wear',
-                            subcategory: data.subcategory || 'Kurtis',
+                            brandLabel: data.brandLabel || '',
+                            brandId: data.brandId || '',
+                            brandName: data.brandName || '',
+                            category: data.category || '',
+                            categoryId: data.categoryId || '',
+                            subcategory: data.subcategory || '',
+                            subcategoryId: data.subcategoryId || '',
                             descriptionStory: data.descriptionStory || '',
-                            retailPrice: data.retailPrice || '0',
+                            currencyCode: data.currencyCode || 'INR',
+                            retailPrice: data.retailPrice || '',
                             discountOfferRate: data.discountOfferRate || '0',
-                            sizesMatrix: data.sizesMatrix || 'S, M, L, XL, XXL',
-                            colorsTrack: data.colorsTrack || 'Ivory White, Indigo Blue',
+                            compareAtPrice: data.compareAtPrice || '',
+                            costPrice: data.costPrice || '',
+                            minimumAdvertisedPrice: data.minimumAdvertisedPrice || '',
+                            effectiveFrom: data.effectiveFrom ? String(data.effectiveFrom).slice(0, 10) : '',
+                            effectiveUntil: data.effectiveUntil ? String(data.effectiveUntil).slice(0, 10) : '',
+                            isTaxInclusive: data.isTaxInclusive !== false,
+                            sizesMatrix: data.sizesMatrix || '',
+                            colorsTrack: data.colorsTrack || 'Ivory White',
                             fabricMaterial: data.fabricMaterial || '100% Chanderi Cotton',
-                            sleevesStyle: data.sleevesStyle || 'Three-Quarter Sleeve',
+                            sleevesStyle: data.sleevesStyle ?? '',
                             fitType: data.fitType || 'Straight Regular Fit',
                             occasionFocus: data.occasionFocus || 'Festival, Office Wear',
                             genderProfile: data.genderProfile || 'Women',
                             targetAgeGroup: data.targetAgeGroup || 'Adults (18-45 Years)',
-                            boutiqueStockCount: String(data.boutiqueStockCount || '0'),
-                            uniqueSku: data.uniqueSku || `NDLN-ETH-KUR-${Math.floor(100 + Math.random() * 900)}`,
-                            pickupHubAddress: data.pickupHubAddress || 'Studio Workshop, Block 4C, Kalyan, Maharashtra',
-                            packageWeight: data.packageWeight || '0.35',
+                            boutiqueStockCount: String(data.boutiqueStockCount ?? ''),
+                            uniqueSku: data.uniqueSku || '',
+                            lowStockThreshold: data.lowStockThreshold || '5',
+                            reservedQuantity: String(data.reservedQuantity ?? '0'),
+                            allowBackorder: Boolean(data.allowBackorder),
+                            lastAdjustedAt: data.lastAdjustedAt || '',
+                            barcode: data.barcode || '',
+                            position: String(data.position ?? '0'),
+                            pickupHubId: data.pickupHubId || '',
+                            pickupHubAddress: data.pickupHubAddress || '',
+                            shippingPartnerId: data.shippingPartnerId || '',
+                            shippingMethodId: data.shippingMethodId || '',
+                            deliveryZone: data.deliveryZone || 'DOMESTIC',
+                            packageWeight: data.packageWeight || '',
                             deliveryRadiusRange: data.deliveryRadiusRange || 'Nationwide Shipping',
                             estimatedDeliveryWindow: data.estimatedDeliveryWindow || '3 - 5 business days delivery timeline',
-                            searchKeywords: data.searchKeywords || 'handloom, chikankari, festive kurti, cotton apparel',
+                            searchKeywords: data.searchKeywords || '',
                             customVisibility: data.customVisibility || 'PUBLIC',
                             isCustomizable: data.isCustomizable !== false,
                             hasExistingOrders: Boolean((data.orderCount && data.orderCount > 0) || (data.salesCount && data.salesCount > 0)),
+                            slug: data.slug || '',
+                            metaTitle: data.metaTitle || '',
+                            metaDescription: data.metaDescription || '',
+                            canonicalUrl: data.canonicalUrl || '',
+                            ogTitle: data.ogTitle || '',
+                            ogDescription: data.ogDescription || '',
+                            ogImage: data.ogImage || null,
+                            twitterTitle: data.twitterTitle || '',
+                            twitterDescription: data.twitterDescription || '',
+                            twitterImage: data.twitterImage || null,
                             mediaUrls: data.mediaUrls || [],
+                            customAttributes: Array.isArray(data.customAttributes) ? data.customAttributes : [],
                         });
                     }
                 })
                 .catch((err: any) => console.error("Failed to load edit product details:", err));
         }
     }, [productId]);
+
+    useEffect(() => {
+        // Auto-populate pickup hub address from seller delivery configuration if blank
+        apiFetch("/api/seller/delivery/settings")
+            .then(res => res.json())
+            .then(result => {
+                const hub = result?.data?.pickupHub || result?.pickupHub;
+                if (hub) {
+                    const fullHubAddress = [hub.hubName, hub.address, hub.city, hub.pincode].filter(Boolean).join(", ");
+                    if (fullHubAddress) {
+                        setFormData(prev => {
+                            if (!prev.pickupHubAddress) {
+                                return { ...prev, pickupHubAddress: fullHubAddress };
+                            }
+                            return prev;
+                        });
+                    }
+                }
+            })
+            .catch(() => {});
+    }, []);
 
     const [isDraggingOver, setIsDraggingOver] = useState(false);
 
@@ -107,39 +208,37 @@ function useAddProductWizardInternal() {
 
         setIsUploadingMedia(true);
         try {
+            let currentProductId = activeProductId;
+            if (!currentProductId) {
+                const { createDraftProductClient } = await import('../api/product-client');
+                const res = await createDraftProductClient();
+                currentProductId = res?.data?.id || res?.id;
+                if (currentProductId) {
+                    setActiveProductId(currentProductId);
+                }
+            }
+
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
 
-                // Convert File to base64 Data URL for persistent storage in DB
-                const dataUrl = await new Promise<string>((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result as string);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(file);
-                });
+                if (currentProductId) {
+                    const formData = new FormData();
+                    formData.append("file", file);
+                    formData.append("fileName", file.name);
+                    formData.append("mimeType", file.type || "image/jpeg");
+                    formData.append("fileSize", String(file.size));
+                    formData.append("isPrimary", String(mediaAssets.length === 0 && i === 0));
+                    formData.append("displayOrder", String(mediaAssets.length + i));
 
-                if (activeProductId) {
-                    const uploaded = await uploadProductImageClient(activeProductId, {
-                        imageUrl: dataUrl,
-                        fileName: file.name,
-                        mimeType: file.type || "image/jpeg",
-                        fileSize: file.size,
-                    });
+                    const uploaded = await uploadProductImageClient(currentProductId, formData);
                     const newItem = uploaded?.data || uploaded;
-                    setMediaAssets(prev => [...prev, newItem]);
-                } else {
-                    const newItem: MediaItem = {
-                        id: `temp-${Date.now()}-${i}`,
-                        imageUrl: dataUrl,
-                        fileName: file.name,
-                        isPrimary: mediaAssets.length === 0,
-                        displayOrder: mediaAssets.length,
-                    };
-                    setMediaAssets(prev => [...prev, newItem]);
+                    if (newItem) {
+                        setMediaAssets(prev => [...prev, newItem]);
+                    }
                 }
             }
         } catch (err: any) {
-            alert(err.message || "Failed to upload image asset");
+            alert(err.message || "Failed to upload media asset");
         } finally {
             setIsUploadingMedia(false);
             if (fileInputRef.current) fileInputRef.current.value = "";
@@ -231,9 +330,14 @@ function useAddProductWizardInternal() {
                 await updateProductBasicInfoClient(activeProductId, {
                     name: formData.name,
                     brandLabel: formData.brandLabel,
+                    brandId: formData.brandId || undefined,
+                    brandName: formData.brandName || undefined,
                     category: formData.category,
+                    categoryId: formData.categoryId || undefined,
                     subcategory: formData.subcategory,
+                    subcategoryId: formData.subcategoryId || undefined,
                     descriptionStory: formData.descriptionStory,
+                    isCustomizable: formData.isCustomizable,
                 });
             } catch (err) {
                 console.error("Failed to sync basic info step:", err);
@@ -243,6 +347,13 @@ function useAddProductWizardInternal() {
                 await updateProductPricingClient(activeProductId, {
                     retailPrice: formData.retailPrice,
                     discountOfferRate: formData.discountOfferRate,
+                    currencyCode: formData.currencyCode,
+                    compareAtPrice: formData.compareAtPrice,
+                    costPrice: formData.costPrice,
+                    minimumAdvertisedPrice: formData.minimumAdvertisedPrice,
+                    effectiveFrom: formData.effectiveFrom,
+                    effectiveUntil: formData.effectiveUntil,
+                    isTaxInclusive: formData.isTaxInclusive,
                 });
             } catch (err) {
                 console.error("Failed to sync pricing step:", err);
@@ -258,6 +369,7 @@ function useAddProductWizardInternal() {
                     occasionFocus: formData.occasionFocus,
                     genderProfile: formData.genderProfile,
                     targetAgeGroup: formData.targetAgeGroup,
+                    customAttributes: (formData.customAttributes || []).filter((a: any) => a && a.name?.trim() && a.value?.trim()),
                 });
             } catch (err) {
                 console.error("Failed to sync variants step:", err);
@@ -267,6 +379,11 @@ function useAddProductWizardInternal() {
                 await updateProductInventoryClient(activeProductId, {
                     boutiqueStockCount: formData.boutiqueStockCount,
                     uniqueSku: formData.uniqueSku,
+                    lowStockThreshold: formData.lowStockThreshold,
+                    reservedQuantity: formData.reservedQuantity,
+                    allowBackorder: formData.allowBackorder,
+                    barcode: formData.barcode,
+                    position: formData.position,
                 });
             } catch (err) {
                 console.error("Failed to sync inventory step:", err);
@@ -274,7 +391,11 @@ function useAddProductWizardInternal() {
         } else if (currentStep === 6 && activeProductId) {
             try {
                 await updateProductDeliveryClient(activeProductId, {
+                    pickupHubId: formData.pickupHubId,
                     pickupHubAddress: formData.pickupHubAddress,
+                    shippingPartnerId: formData.shippingPartnerId,
+                    shippingMethodId: formData.shippingMethodId,
+                    deliveryZone: formData.deliveryZone,
                     packageWeight: formData.packageWeight,
                     deliveryRadiusRange: formData.deliveryRadiusRange,
                     estimatedDeliveryWindow: formData.estimatedDeliveryWindow,
@@ -287,6 +408,16 @@ function useAddProductWizardInternal() {
                 await updateProductSeoClient(activeProductId, {
                     searchKeywords: formData.searchKeywords,
                     customVisibility: formData.customVisibility,
+                    slug: formData.slug,
+                    metaTitle: formData.metaTitle,
+                    metaDescription: formData.metaDescription,
+                    canonicalUrl: formData.canonicalUrl,
+                    ogTitle: formData.ogTitle,
+                    ogDescription: formData.ogDescription,
+                    ogImage: formData.ogImage,
+                    twitterTitle: formData.twitterTitle,
+                    twitterDescription: formData.twitterDescription,
+                    twitterImage: formData.twitterImage,
                 });
             } catch (err) {
                 console.error("Failed to sync SEO step:", err);
@@ -299,6 +430,101 @@ function useAddProductWizardInternal() {
 
     const handleInputChange = (field: keyof typeof DEFAULT_FORM_DATA, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
+    };
+
+    // Price and discount calculations (bidirectional and stable)
+    const handlePriceChange = (newPrice: string) => {
+        const numPrice = parseFloat(newPrice);
+        setFormData(prev => {
+            const next = { ...prev, retailPrice: newPrice };
+            const rate = parseFloat(prev.discountOfferRate || '0');
+            if (!isNaN(numPrice) && numPrice > 0 && !isNaN(rate) && rate > 0 && rate < 100) {
+                next.compareAtPrice = (numPrice / (1 - rate / 100)).toFixed(2);
+            } else if (!isNaN(numPrice) && numPrice > 0 && (!prev.compareAtPrice || parseFloat(prev.compareAtPrice) < numPrice)) {
+                next.compareAtPrice = newPrice;
+            }
+            return next;
+        });
+    };
+
+    const handleDiscountChange = (newDiscount: string) => {
+        const rate = parseFloat(newDiscount);
+        setFormData(prev => {
+            const next = { ...prev, discountOfferRate: newDiscount };
+            const numPrice = parseFloat(prev.retailPrice || '0');
+            if (!isNaN(numPrice) && numPrice > 0 && !isNaN(rate) && rate > 0 && rate < 100) {
+                next.compareAtPrice = (numPrice / (1 - rate / 100)).toFixed(2);
+            }
+            return next;
+        });
+    };
+
+    const handleComparePriceChange = (newComparePrice: string) => {
+        const compare = parseFloat(newComparePrice);
+        setFormData(prev => {
+            const next = { ...prev, compareAtPrice: newComparePrice };
+            const numPrice = parseFloat(prev.retailPrice || '0');
+            if (!isNaN(numPrice) && !isNaN(compare) && compare > numPrice && compare > 0) {
+                next.discountOfferRate = (((compare - numPrice) / compare) * 100).toFixed(2);
+            } else if (compare <= numPrice) {
+                next.discountOfferRate = '0';
+            }
+            return next;
+        });
+    };
+
+    // Brand and category selection helpers
+    const handleSelectCategory = (catId: string, catName: string) => {
+        setFormData(prev => ({
+            ...prev,
+            categoryId: catId,
+            category: catName,
+            subcategoryId: '',
+            subcategory: '',
+        }));
+    };
+
+    const handleSelectSubcategory = (subId: string, subName: string) => {
+        setFormData(prev => ({
+            ...prev,
+            subcategoryId: subId,
+            subcategory: subName,
+        }));
+    };
+
+    const handleSelectBrand = (bId: string, bName: string) => {
+        setFormData(prev => ({
+            ...prev,
+            brandId: bId,
+            brandName: bName,
+            brandLabel: bName,
+        }));
+    };
+
+    // Auto-generate SEO attributes based on active form state
+    const handleRegenerateSeo = () => {
+        const primaryAsset = mediaAssets.find(m => m.isPrimary) || mediaAssets[0];
+        const generated = generateProductSeoData({
+            productName: formData.name,
+            brandName: formData.brandName || formData.brandLabel,
+            categoryName: formData.category,
+            descriptionStory: formData.descriptionStory,
+            tags: formData.searchKeywords ? formData.searchKeywords.split(',').map(s => s.trim()).filter(Boolean) : [],
+            primaryImageUrl: primaryAsset?.imageUrl || null,
+            price: formData.retailPrice,
+            currencyCode: formData.currencyCode,
+        });
+        setFormData(prev => ({
+            ...prev,
+            slug: generated.slug,
+            metaTitle: generated.metaTitle,
+            metaDescription: generated.metaDescription,
+            canonicalUrl: generated.canonicalUrl,
+            ogTitle: generated.ogTitle,
+            ogDescription: generated.ogDescription,
+            twitterTitle: generated.twitterTitle,
+            twitterDescription: generated.twitterDescription,
+        }));
     };
 
     // Toggle size pill selection
@@ -339,14 +565,26 @@ function useAddProductWizardInternal() {
                 await updateProductBasicInfoClient(targetId, {
                     name: formData.name,
                     brandLabel: formData.brandLabel,
+                    brandId: formData.brandId || undefined,
+                    brandName: formData.brandName || undefined,
                     category: formData.category,
+                    categoryId: formData.categoryId || undefined,
                     subcategory: formData.subcategory,
+                    subcategoryId: formData.subcategoryId || undefined,
                     descriptionStory: formData.descriptionStory,
+                    isCustomizable: formData.isCustomizable,
                 }).catch(() => {});
 
                 await updateProductPricingClient(targetId, {
                     retailPrice: formData.retailPrice,
                     discountOfferRate: formData.discountOfferRate,
+                    currencyCode: formData.currencyCode,
+                    compareAtPrice: formData.compareAtPrice,
+                    costPrice: formData.costPrice,
+                    minimumAdvertisedPrice: formData.minimumAdvertisedPrice,
+                    effectiveFrom: formData.effectiveFrom,
+                    effectiveUntil: formData.effectiveUntil,
+                    isTaxInclusive: formData.isTaxInclusive,
                 }).catch(() => {});
 
                 await updateProductVariantsClient(targetId, {
@@ -363,10 +601,19 @@ function useAddProductWizardInternal() {
                 await updateProductInventoryClient(targetId, {
                     boutiqueStockCount: formData.boutiqueStockCount,
                     uniqueSku: formData.uniqueSku,
+                    lowStockThreshold: formData.lowStockThreshold,
+                    reservedQuantity: formData.reservedQuantity,
+                    allowBackorder: formData.allowBackorder,
+                    barcode: formData.barcode,
+                    position: formData.position,
                 }).catch(() => {});
 
                 await updateProductDeliveryClient(targetId, {
+                    pickupHubId: formData.pickupHubId,
                     pickupHubAddress: formData.pickupHubAddress,
+                    shippingPartnerId: formData.shippingPartnerId,
+                    shippingMethodId: formData.shippingMethodId,
+                    deliveryZone: formData.deliveryZone,
                     packageWeight: formData.packageWeight,
                     deliveryRadiusRange: formData.deliveryRadiusRange,
                     estimatedDeliveryWindow: formData.estimatedDeliveryWindow,
@@ -375,6 +622,16 @@ function useAddProductWizardInternal() {
                 await updateProductSeoClient(targetId, {
                     searchKeywords: formData.searchKeywords,
                     customVisibility: formData.customVisibility,
+                    slug: formData.slug,
+                    metaTitle: formData.metaTitle,
+                    metaDescription: formData.metaDescription,
+                    canonicalUrl: formData.canonicalUrl,
+                    ogTitle: formData.ogTitle,
+                    ogDescription: formData.ogDescription,
+                    ogImage: formData.ogImage,
+                    twitterTitle: formData.twitterTitle,
+                    twitterDescription: formData.twitterDescription,
+                    twitterImage: formData.twitterImage,
                 }).catch(() => {});
 
                 await publishProductClient(targetId, status);
@@ -387,13 +644,34 @@ function useAddProductWizardInternal() {
         }
     };
 
+    // Subcategory options derived from database or fallback map
     const subcategoryOptions = CATEGORY_SUBCATEGORY_MAP[formData.category] || ['Kurtis', 'General'];
 
+    const filteredSubcategories = subcategoriesData.filter((sub: any) => {
+        if (formData.categoryId) {
+            return sub.parentId === formData.categoryId;
+        }
+        const found = categoriesData.find(c => c.name?.toLowerCase() === formData.category?.toLowerCase());
+        return found ? sub.parentId === found.id : false;
+    });
 
     return {
         subcategoryOptions,
+        filteredSubcategories,
+        categoriesData,
+        subcategoriesData,
+        verifiedBrands,
+        shippingPartners,
+        pickupHubs,
         handleBackStep,
         handleInputChange,
+        handlePriceChange,
+        handleDiscountChange,
+        handleComparePriceChange,
+        handleSelectCategory,
+        handleSelectSubcategory,
+        handleSelectBrand,
+        handleRegenerateSeo,
         handleToggleSize,
         handleGenerateSKU,
         handleSaveProduct,

@@ -91,6 +91,15 @@ export async function limitLogin(
   );
 }
 
+export async function resetLoginLimit(ip: string, email: string): Promise<void> {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  await Promise.all([
+    resetRateLimit(`rl:login:ip:${ip}`),
+    resetRateLimit(`rl:login:email:${normalizedEmail}`),
+  ]);
+}
+
 export async function limitForgotPassword(
   email: string
 ) {

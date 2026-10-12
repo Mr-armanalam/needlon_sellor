@@ -1,3 +1,4 @@
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import { useState, useEffect, useCallback } from "react";
 
 export function useHelpCenter() {
@@ -12,7 +13,7 @@ export function useHelpCenter() {
 
   const fetchDashboard = useCallback(async () => {
     try {
-      const res = await fetch("/api/seller/help/dashboard");
+      const res = await apiFetch("/api/seller/help/dashboard");
       const json = await res.json();
       if (json.success && json.data) {
         setDashboardData(json.data);
@@ -28,7 +29,7 @@ export function useHelpCenter() {
       const url = category && category !== "all"
         ? `/api/seller/help/kb?category=${encodeURIComponent(category)}`
         : "/api/seller/help/kb";
-      const res = await fetch(url);
+      const res = await apiFetch(url);
       const json = await res.json();
       if (json.success && json.data) {
         setKbArticles(json.data.articles || []);
@@ -52,7 +53,7 @@ export function useHelpCenter() {
     }
     setIsSearching(true);
     try {
-      const res = await fetch(`/api/seller/help/search?q=${encodeURIComponent(query)}`);
+      const res = await apiFetch(`/api/seller/help/search?q=${encodeURIComponent(query)}`);
       const json = await res.json();
       if (json.success && json.data) {
         setSearchResults(json.data);
@@ -66,7 +67,7 @@ export function useHelpCenter() {
 
   const requestCallback = async (phoneNumber: string, preferredTimeSlot: string, reason?: string) => {
     try {
-      const res = await fetch("/api/seller/help/callback", {
+      const res = await apiFetch("/api/seller/help/callback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phoneNumber, preferredTimeSlot, reason }),

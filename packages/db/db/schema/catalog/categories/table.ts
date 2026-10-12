@@ -46,11 +46,9 @@ import {
  *
  * Example
  *
- * Women
- *   ├── Ethnic Wear
- *   │      └── Sarees
- *   │
- *   └── Western Wear
+ * for mens
+ *   ├── items-for-men
+ *   │      └── shirt
  *
  * ============================================================
  */
@@ -108,9 +106,8 @@ export const categoriesTable = pgTable(
          *
          * /women
          *
-         * /women/ethnic-wear
-         *
-         * /women/ethnic-wear/sarees
+         * /item-for-men/shirt
+        
          */
         path: text("path").notNull(),
 
@@ -334,4 +331,4 @@ export const categoriesTable = pgTable(
     }),
 );
 
-export { categoriesTable as categories };
+export { categoriesTable as categories };

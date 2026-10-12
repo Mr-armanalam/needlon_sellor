@@ -17,10 +17,20 @@ import { ACCESS_TOKEN_TTL, REFRESH_TOKEN_TTL } from "@/modules/auth/lib/tokens";
 
 import { getClientIp } from "@/modules/auth/lib/request";
 
-import { limitLogin } from "@/modules/auth/lib/rate-limit";
+import { limitLogin, resetLoginLimit } from "@/modules/auth/lib/rate-limit";
 import { successResponse } from "@/modules/shared/api/success-response";
 
 const MAX_ACTIVE_SESSIONS = 2;
+
+function loginError(message: string, status: number, code: string) {
+  return NextResponse.json(
+    {
+      success: false,
+      error: { code, message },
+    },
+    { status },
+  );
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -29,14 +39,7 @@ export async function POST(req: NextRequest) {
     const parsed = loginRequestSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json(
-        {
-          error: "Invalid credentials",
-        },
-        {
-          status: 400,
-        },
-      );
+      return loginError("Invalid credentials.", 400, "INVALID_CREDENTIALS");
     }
 
     const { email, password } = parsed.data;
@@ -46,13 +49,10 @@ export async function POST(req: NextRequest) {
     const allowed = await limitLogin(ip, email);
 
     if (!allowed) {
-      return NextResponse.json(
-        {
-          error: "Too many login attempts. Please try again later.",
-        },
-        {
-          status: 429,
-        },
+      return loginError(
+        "Too many login attempts. Please try again later.",
+        429,
+        "TOO_MANY_REQUESTS",
       );
     }
 
@@ -65,37 +65,22 @@ export async function POST(req: NextRequest) {
      * Prevents account enumeration.
      */
     if (!existingSeller || !existingSeller.passwordHash) {
-      return NextResponse.json(
-        {
-          error: "Invalid email or password",
-        },
-        {
-          status: 401,
-        },
-      );
+      return loginError("Invalid email or password.", 401, "UNAUTHORIZED");
     }
 
     const passwordValid = await compare(password, existingSeller.passwordHash);
 
     if (!passwordValid) {
-      return NextResponse.json(
-        {
-          error: "Invalid email or password",
-        },
-        {
-          status: 401,
-        },
-      );
+      return loginError("Invalid email or password.", 401, "UNAUTHORIZED");
     }
 
+    await resetLoginLimit(ip, email);
+
     if (!existingSeller.emailVerified) {
-      return NextResponse.json(
-        {
-          error: "Please verify your email address before logging in.",
-        },
-        {
-          status: 403,
-        },
+      return loginError(
+        "Please verify your email address before logging in.",
+        403,
+        "EMAIL_NOT_VERIFIED",
       );
     }
 
@@ -194,14 +179,10 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("LOGIN_ERROR", error);
-
-    return NextResponse.json(
-      {
-        error: "Internal server error",
-      },
-      {
-        status: 500,
-      },
+    return loginError(
+      "Unable to sign in right now. Please try again.",
+      500,
+      "LOGIN_FAILED",
     );
   }
 }

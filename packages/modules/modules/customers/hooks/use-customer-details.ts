@@ -1,3 +1,4 @@
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import { useState, useEffect, useCallback } from "react";
 
 export interface CustomerHistoryItem {
@@ -47,7 +48,7 @@ export function useCustomerDetails(buyerId?: string) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/seller/customers/${buyerId}`);
+      const res = await apiFetch(`/api/seller/customers/${buyerId}`);
       const json = await res.json();
       if (json.success && json.data) {
         setData(json.data);
