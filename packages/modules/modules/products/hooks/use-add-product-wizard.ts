@@ -68,27 +68,27 @@ function useAddProductWizardInternal() {
                     if (data) {
                         setFormData({
                             name: data.name || '',
-                            brandLabel: data.brandLabel || 'House of Needlon',
-                            category: data.category || 'Ethnic Wear',
-                            subcategory: data.subcategory || 'Kurtis',
+                            brandLabel: data.brandLabel || '',
+                            category: data.category || '',
+                            subcategory: data.subcategory || '',
                             descriptionStory: data.descriptionStory || '',
-                            retailPrice: data.retailPrice || '0',
-                            discountOfferRate: data.discountOfferRate || '0',
-                            sizesMatrix: data.sizesMatrix || 'S, M, L, XL, XXL',
-                            colorsTrack: data.colorsTrack || 'Ivory White, Indigo Blue',
-                            fabricMaterial: data.fabricMaterial || '100% Chanderi Cotton',
-                            sleevesStyle: data.sleevesStyle || 'Three-Quarter Sleeve',
-                            fitType: data.fitType || 'Straight Regular Fit',
-                            occasionFocus: data.occasionFocus || 'Festival, Office Wear',
-                            genderProfile: data.genderProfile || 'Women',
-                            targetAgeGroup: data.targetAgeGroup || 'Adults (18-45 Years)',
-                            boutiqueStockCount: String(data.boutiqueStockCount || '0'),
-                            uniqueSku: data.uniqueSku || `NDLN-ETH-KUR-${Math.floor(100 + Math.random() * 900)}`,
-                            pickupHubAddress: data.pickupHubAddress || 'Studio Workshop, Block 4C, Kalyan, Maharashtra',
-                            packageWeight: data.packageWeight || '0.35',
-                            deliveryRadiusRange: data.deliveryRadiusRange || 'Nationwide Shipping',
-                            estimatedDeliveryWindow: data.estimatedDeliveryWindow || '3 - 5 business days delivery timeline',
-                            searchKeywords: data.searchKeywords || 'handloom, chikankari, festive kurti, cotton apparel',
+                            retailPrice: data.retailPrice || '',
+                            discountOfferRate: data.discountOfferRate || '',
+                            sizesMatrix: data.sizesMatrix || '',
+                            colorsTrack: data.colorsTrack || '',
+                            fabricMaterial: data.fabricMaterial || '',
+                            sleevesStyle: data.sleevesStyle || '',
+                            fitType: data.fitType || '',
+                            occasionFocus: data.occasionFocus || '',
+                            genderProfile: data.genderProfile || '',
+                            targetAgeGroup: data.targetAgeGroup || '',
+                            boutiqueStockCount: String(data.boutiqueStockCount ?? ''),
+                            uniqueSku: data.uniqueSku || '',
+                            pickupHubAddress: data.pickupHubAddress || '',
+                            packageWeight: data.packageWeight || '',
+                            deliveryRadiusRange: data.deliveryRadiusRange || '',
+                            estimatedDeliveryWindow: data.estimatedDeliveryWindow || '',
+                            searchKeywords: data.searchKeywords || '',
                             customVisibility: data.customVisibility || 'PUBLIC',
                             isCustomizable: data.isCustomizable !== false,
                             hasExistingOrders: Boolean((data.orderCount && data.orderCount > 0) || (data.salesCount && data.salesCount > 0)),
@@ -99,6 +99,27 @@ function useAddProductWizardInternal() {
                 .catch((err: any) => console.error("Failed to load edit product details:", err));
         }
     }, [productId]);
+
+    useEffect(() => {
+        // Auto-populate pickup hub address from seller delivery configuration if blank
+        fetch("/api/seller/delivery/settings")
+            .then(res => res.json())
+            .then(result => {
+                const hub = result?.data?.pickupHub;
+                if (hub) {
+                    const fullHubAddress = [hub.hubName, hub.address, hub.city, hub.pincode].filter(Boolean).join(", ");
+                    if (fullHubAddress) {
+                        setFormData(prev => {
+                            if (!prev.pickupHubAddress) {
+                                return { ...prev, pickupHubAddress: fullHubAddress };
+                            }
+                            return prev;
+                        });
+                    }
+                }
+            })
+            .catch(() => {});
+    }, []);
 
     const [isDraggingOver, setIsDraggingOver] = useState(false);
 
@@ -234,6 +255,7 @@ function useAddProductWizardInternal() {
                     category: formData.category,
                     subcategory: formData.subcategory,
                     descriptionStory: formData.descriptionStory,
+                    isCustomizable: formData.isCustomizable,
                 });
             } catch (err) {
                 console.error("Failed to sync basic info step:", err);
@@ -342,6 +364,7 @@ function useAddProductWizardInternal() {
                     category: formData.category,
                     subcategory: formData.subcategory,
                     descriptionStory: formData.descriptionStory,
+                    isCustomizable: formData.isCustomizable,
                 }).catch(() => {});
 
                 await updateProductPricingClient(targetId, {

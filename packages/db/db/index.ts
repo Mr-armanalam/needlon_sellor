@@ -33,7 +33,6 @@ import {productSeoTable} from "./schema/catalog/products/product-seo";
 import {productTagMappingsTable} from "./schema/catalog/products/product-tag-mappings";
 import {productTagsTable} from "./schema/catalog/products/product-tags";
 import {productVariantOptionsTable} from "./schema/catalog/products/product-variant-options";
-import {productVideosTable} from "./schema/catalog/products/product-videos";
 import { shippingTable } from "./schema/catalog/products/shipping";
 import * as ordersSchema from "./schema/orders";
 import { reviewsTable } from "./schema/reviews";
@@ -94,7 +93,6 @@ export const schema = {
   productVariantOptionsTable,
   productVariantsTable,
   productVariantsRelations,
-  productVideosTable,
   shippingTable
 };
 

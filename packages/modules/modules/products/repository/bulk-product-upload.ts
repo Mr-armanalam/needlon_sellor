@@ -6,7 +6,6 @@ import { inventoryTable } from "@/db/schema/catalog/products/inventory/table";
 import { pricingTable } from "@/db/schema/catalog/products/pricing/table";
 import { shippingTable } from "@/db/schema/catalog/products/shipping/table";
 import { productSeoTable } from "@/db/schema/catalog/products/product-seo/table";
-import { productAiTable } from "@/db/schema/catalog/products/product-ai/table";
 import { categoriesTable } from "@/db/schema/catalog/categories/table";
 import { eq, sql } from "drizzle-orm";
 import { generateUniqueSlug } from "@/modules/shared/slug/generate-unique-slug";
@@ -57,9 +56,12 @@ export const bulkProductUpload = async ( seller: AuthSeller, items: any) => {
                     categoryId,
                     name,
                     slug,
-                    shortDescription: item.brandLabel ? `Brand: ${item.brandLabel}` : null,
+                    shortDescription: item.brandLabel
+                        ? `Brand: ${item.brandLabel}${item.subcategory ? ` | Subcategory: ${item.subcategory}` : ''}`
+                        : item.subcategory || null,
                     description: item.descriptionStory || null,
                     status: "PUBLISHED", // Published by default during bulk import
+                    publishedAt: new Date(),
                     visibility: "PUBLIC",
                     isFeatured: false,
                 })
@@ -70,6 +72,7 @@ export const bulkProductUpload = async ( seller: AuthSeller, items: any) => {
                 .insert(productVariantsTable)
                 .values({
                     productId: prod.id,
+                    name: item.variantName || "Standard Variant",
                     sku: baseSku,
                     price,
                     weightGrams: Math.round(parseFloat(weight) * 1000) || 350,
@@ -89,6 +92,8 @@ export const bulkProductUpload = async ( seller: AuthSeller, items: any) => {
             await tx.insert(pricingTable).values({
                 variantId: variant.id,
                 price,
+                compareAtPrice: item.compareAtPrice ? String(item.compareAtPrice) : null,
+                costPrice: item.costPrice ? String(item.costPrice) : null,
                 currencyCode: "INR",
                 isTaxInclusive: true,
             });
@@ -100,6 +105,7 @@ export const bulkProductUpload = async ( seller: AuthSeller, items: any) => {
                 weightUnit: "KG",
                 requiresShipping: true,
                 isFreeShipping: false,
+                metadata: (item.pickupHubAddress ? { pickupHubAddress: item.pickupHubAddress } : {}) as any,
             });
 
             // Create SEO
@@ -112,13 +118,6 @@ export const bulkProductUpload = async ( seller: AuthSeller, items: any) => {
                 slug,
                 metaTitle: name,
                 metaKeywords: keywords,
-            });
-
-            // Create default AI
-            await tx.insert(productAiTable).values({
-                productId: prod.id,
-                summary: "",
-                qualityScore: 0,
             });
 
             uploaded.push(prod);

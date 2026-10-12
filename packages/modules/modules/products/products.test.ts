@@ -142,33 +142,6 @@ async function runProductsModuleTests() {
       "metadata" jsonb DEFAULT '{}'::jsonb NOT NULL,
       "created_by" uuid,
       "created_at" timestamp with time zone DEFAULT now() NOT NULL
-    )`,
-    `CREATE TABLE "product_videos" (
-      "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-      "product_id" uuid NOT NULL,
-      "storage_provider" varchar(50) DEFAULT 'SUPABASE' NOT NULL,
-      "storage_path" varchar(255) NOT NULL,
-      "video_url" varchar(500) NOT NULL,
-      "thumbnail_url" varchar(500),
-      "file_name" varchar(255) NOT NULL,
-      "mime_type" varchar(100) NOT NULL,
-      "file_size" bigint NOT NULL,
-      "checksum" varchar(100) NOT NULL,
-      "duration_seconds" numeric NOT NULL,
-      "width" integer NOT NULL,
-      "height" integer NOT NULL,
-      "title" varchar(255),
-      "description" text,
-      "display_order" integer DEFAULT 0 NOT NULL,
-      "video_type" varchar(50) DEFAULT 'GALLERY' NOT NULL,
-      "is_primary" boolean DEFAULT false NOT NULL,
-      "status" varchar(50) DEFAULT 'ACTIVE' NOT NULL,
-      "metadata" jsonb DEFAULT '{}'::jsonb NOT NULL,
-      "created_by" uuid,
-      "updated_by" uuid,
-      "created_at" timestamp with time zone DEFAULT now() NOT NULL,
-      "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-      "deleted_at" timestamp with time zone
     )`
   ];
   for (const q of missingTables) {
@@ -464,7 +437,10 @@ async function runProductsModuleTests() {
     if (publishedProduct?.status !== "PUBLISHED") {
       throw new Error("DraftProductService failed to publish product!");
     }
-    console.log(`✅ publishProduct succeeded (Status: "${publishedProduct.status}")`);
+    if (!publishedProduct?.publishedAt) {
+      throw new Error("DraftProductService failed to set publishedAt timestamp!");
+    }
+    console.log(`✅ publishProduct succeeded (Status: "${publishedProduct.status}", Published At: ${publishedProduct.publishedAt})`);
 
     // 17. Test Catalog Filtering & Image Sanitization Mappers
     console.log("\n17. Testing Catalog Filters, Price Ranges, Sorting & Image Sanitization...");
@@ -499,7 +475,7 @@ async function runProductsModuleTests() {
 
     // 18. Test Bulk Upload API & Validation
     console.log("\n18. Testing Bulk Upload Endpoint & Row Validation...");
-    const { POST: bulkUploadHandler } = await import("../../../apps/seller/app/api/seller/products/bulk-upload/route");
+    const { POST: bulkUploadHandler } = await import("../../../../apps/seller/app/api/seller/products/bulk-upload/route");
 
     // Test invalid non-array payload
     const invalidReq = new Request("http://localhost:3000/api/seller/products/bulk-upload", {
@@ -546,6 +522,55 @@ async function runProductsModuleTests() {
       throw new Error("Bulk upload endpoint failed to insert items!");
     }
     console.log(`✅ Bulk Upload DB transaction succeeded (Inserted ${validJson.data.items.length} products).`);
+
+    // 19. Test getProductById Dynamic Attributes & Metadata Resolution
+    console.log("\n19. Testing getProductById Dynamic Attribute & Shipping Metadata Resolution...");
+    const { getProductById } = await import("./repository/get-product-by-id");
+    const retrievedDraft = await getProductById(createdDraft.id, {
+      id: DEFAULT_SELLER_ID,
+      role: "seller",
+      name: "Default Test Seller",
+      email: "default-seller@test.com",
+    } as any);
+
+    if (retrievedDraft instanceof Error) {
+      throw retrievedDraft;
+    }
+
+    if (retrievedDraft.retailPrice !== "2450.00" && retrievedDraft.retailPrice !== "2450") {
+      throw new Error(`Expected retailPrice 2450, got ${retrievedDraft.retailPrice}`);
+    }
+    if (retrievedDraft.pickupHubAddress !== "Studio Workshop, Block 4C, Kalyan, Maharashtra") {
+      throw new Error(`Expected pickupHubAddress to be Studio Workshop, got ${retrievedDraft.pickupHubAddress}`);
+    }
+    if (retrievedDraft.fabricMaterial !== "100% Chanderi Cotton") {
+      throw new Error(`Expected fabricMaterial to be 100% Chanderi Cotton, got ${retrievedDraft.fabricMaterial}`);
+    }
+    console.log(`✅ getProductById succeeded (Retail: ${retrievedDraft.retailPrice}, Hub: "${retrievedDraft.pickupHubAddress}", Fabric: "${retrievedDraft.fabricMaterial}")`);
+
+    // 20. Test Product Cloning (createCloneProduct)
+    console.log("\n20. Testing Product Cloning (createCloneProduct)...");
+    const { createCloneProduct } = await import("./repository/create-clone-product");
+    const clonedProduct = await createCloneProduct({
+      productId: createdDraft.id,
+      seller: {
+        id: DEFAULT_SELLER_ID,
+        role: "seller",
+        name: "Default Test Seller",
+        email: "default-seller@test.com",
+      } as any,
+    });
+
+    if (!clonedProduct || clonedProduct.status !== "DRAFT") {
+      throw new Error("createCloneProduct failed to duplicate product in DRAFT status!");
+    }
+    if (clonedProduct.publishedAt !== null) {
+      throw new Error("createCloneProduct duplicated product must have publishedAt as null!");
+    }
+    console.log(`✅ createCloneProduct succeeded (Cloned Name: "${clonedProduct.name}", Status: "${clonedProduct.status}", PublishedAt: ${clonedProduct.publishedAt})`);
+
+    // Clean up cloned product
+    await db.delete(products).where(eq(products.id, clonedProduct.id));
 
     console.log("\n🎉 ALL CANONICAL PRODUCTS MODULE TESTS PASSED! ✅");
   } finally {

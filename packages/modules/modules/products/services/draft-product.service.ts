@@ -5,6 +5,7 @@ import {
     findProductById,
     deleteProduct,
     updateProduct,
+    updateDraftProductBasicInfo,
     updateDraftProductPricing,
     updateDraftProductVariants,
     updateDraftProductInventory,
@@ -17,8 +18,12 @@ import { productStatusEnum } from "@/db/schema/catalog/enums";
 
 export interface DraftBasicInfoInput {
   name?: string;
+  brandLabel?: string;
+  category?: string;
+  subcategory?: string;
   descriptionStory?: string;
   slug?: string;
+  isCustomizable?: boolean;
 }
 
 export interface DraftPricingInput {
@@ -30,17 +35,26 @@ export interface DraftPricingInput {
 export interface DraftVariantsInput {
   sizesMatrix?: string;
   colorsTrack?: string;
+  fabricMaterial?: string;
+  sleevesStyle?: string;
+  fitType?: string;
+  occasionFocus?: string;
+  genderProfile?: string;
+  targetAgeGroup?: string;
   [key: string]: unknown;
 }
 
 export interface DraftInventoryInput {
   uniqueSku?: string;
-  boutiqueStockCount?: number;
+  boutiqueStockCount?: number | string;
   [key: string]: unknown;
 }
 
 export interface DraftDeliveryInput {
-  packageWeight?: string;
+  packageWeight?: string | number;
+  pickupHubAddress?: string;
+  deliveryRadiusRange?: string;
+  estimatedDeliveryWindow?: string;
   [key: string]: unknown;
 }
 
@@ -117,14 +131,7 @@ export async function updateDraftProductBasicInfoService(id: string, input: Draf
         throw new NotFoundError("Draft product not found.");
     }
 
-    const updateData: Partial<{ name: string; description: string; slug: string }> = {};
-    if (input.name) updateData.name = input.name;
-    if (input.descriptionStory) updateData.description = input.descriptionStory;
-    if (input.slug) updateData.slug = input.slug;
-
-    return Object.keys(updateData).length > 0
-        ? updateProduct(id, updateData)
-        : draft;
+    return updateDraftProductBasicInfo(id, input);
 }
 
 export async function updateDraftProductPricingService(id: string, input: DraftPricingInput) {
@@ -144,7 +151,13 @@ export async function updateDraftProductVariantsService(id: string, input: Draft
         throw new NotFoundError("Draft product not found.");
     }
 
-    await updateDraftProductVariants(id, draft.categoryId, input.sizesMatrix, input.colorsTrack);
+    await updateDraftProductVariants(
+        id,
+        draft.categoryId,
+        input.sizesMatrix,
+        input.colorsTrack,
+        input
+    );
 
     return { ...draft, ...input, metadata: { ...input } };
 }
@@ -166,7 +179,11 @@ export async function updateDraftProductDeliveryService(id: string, input: Draft
         throw new NotFoundError("Draft product not found.");
     }
 
-    await updateDraftProductDelivery(id, input.packageWeight);
+    await updateDraftProductDelivery(id, input.packageWeight, {
+        pickupHubAddress: input.pickupHubAddress,
+        deliveryRadiusRange: input.deliveryRadiusRange,
+        estimatedDeliveryWindow: input.estimatedDeliveryWindow,
+    });
 
     return { ...draft, ...input, metadata: { ...input } };
 }
@@ -196,9 +213,16 @@ export async function publishDraftProductService(id: string, input?: { status?: 
     }
 
     const newStatus = input?.status || "PUBLISHED";
-    return updateProduct(id, {
+    const updateData: any = {
         status: newStatus,
-    });
+        updatedAt: new Date(),
+    };
+
+    if (newStatus === "PUBLISHED") {
+        updateData.publishedAt = new Date();
+    }
+
+    return updateProduct(id, updateData);
 }
 
 /**

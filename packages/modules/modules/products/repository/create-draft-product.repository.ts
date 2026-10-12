@@ -81,6 +81,7 @@ export async function createDraftProduct(data: any): Promise<Product> {
             .insert(productVariantsTable)
             .values({
                 productId: prod.id,
+                name: "Standard Variant",
                 sku: `sku-${prod.id}`,
                 price: "0.00",
                 position: 0,
@@ -96,7 +97,7 @@ export async function createDraftProduct(data: any): Promise<Product> {
             lowStockThreshold: 5,
         });
 
-        // Create default pricing
+        // Create default pricing (authoritative store)
         const { pricingTable } = await import("@/db/schema/catalog/products/pricing/table");
         await tx.insert(pricingTable).values({
             variantId: variant.id,
@@ -122,14 +123,6 @@ export async function createDraftProduct(data: any): Promise<Product> {
             slug: prod.slug,
             metaTitle: prod.name,
             metaDescription: "",
-        });
-
-        // Create default AI record
-        const { productAiTable } = await import("@/db/schema/catalog/products/product-ai/table");
-        await tx.insert(productAiTable).values({
-            productId: prod.id,
-            summary: "",
-            qualityScore: 0,
         });
 
         return prod;

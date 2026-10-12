@@ -7,6 +7,7 @@ export const updateBasicInfoSchema = z.object({
   subcategory: z.string().trim().max(255).optional(),
   descriptionStory: z.string().trim().optional(),
   slug: z.string().trim().max(255).optional(),
+  isCustomizable: z.boolean().optional(),
   hsnCode: z.string().trim().max(50).optional(),
   countryOfOrigin: z.string().trim().max(100).optional(),
 });
