@@ -167,19 +167,37 @@ export const getProductById = async (productId:string, seller:AuthSeller) => {
     // Parse Variant sizes & colors
     let sizesMatrix = "";
     let colorsTrack = "";
+    const colorFromAttr = attrMap["color"] || attrMap["color track"] || attrMap["colors_track"] || attrMap["colors track"] || "";
+    const sizeFromAttr = attrMap["size"] || attrMap["sizes"] || attrMap["sizes_matrix"] || attrMap["sizes matrix"] || "";
+
     if (variant?.name && variant.name !== "Standard Variant") {
         const delimiter = variant.name.includes(" - ") ? " - " : (variant.name.includes("/") ? "/" : null);
         if (delimiter) {
             const parts = variant.name.split(delimiter).map(p => p.trim());
             if (parts.length >= 2) {
                 sizesMatrix = parts[0];
-                colorsTrack = parts[1];
+                colorsTrack = parts.slice(1).join(" - ");
             } else if (parts.length === 1) {
-                sizesMatrix = parts[0];
+                if (colorFromAttr && parts[0] === colorFromAttr) {
+                    colorsTrack = parts[0];
+                } else {
+                    sizesMatrix = parts[0];
+                }
             }
         } else {
-            sizesMatrix = variant.name;
+            if (colorFromAttr && variant.name === colorFromAttr) {
+                colorsTrack = variant.name;
+            } else {
+                sizesMatrix = variant.name;
+            }
         }
+    }
+
+    if (!colorsTrack && colorFromAttr) {
+        colorsTrack = colorFromAttr;
+    }
+    if (!sizesMatrix && sizeFromAttr) {
+        sizesMatrix = sizeFromAttr;
     }
 
     // Extract Shipping Metadata

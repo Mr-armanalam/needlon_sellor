@@ -83,6 +83,19 @@ export async function createWizardProductService({ sellerId, data }: CreateWizar
     });
   }
 
+  // 5c. Persist variant attributes if provided
+  if (data.sizesMatrix || data.colorsTrack || data.fabricMaterial) {
+    const { updateDraftProductVariants } = await import("../repository/draft-product.repository");
+    await updateDraftProductVariants(
+      product.id,
+      categoryId,
+      data.sizesMatrix,
+      data.colorsTrack,
+      { fabricMaterial: data.fabricMaterial },
+      sellerId
+    );
+  }
+
   // 6. Insert inventory record
   const [invRecord] = await db
     .insert(inventoryTable)

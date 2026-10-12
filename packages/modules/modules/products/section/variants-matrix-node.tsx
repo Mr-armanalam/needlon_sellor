@@ -9,7 +9,59 @@ import {
 } from "@/modules/products/constants";
 
 const VariantsMatrixNode = () => {
-    const {formData, handleInputChange, handleToggleSize} = useAddProductWizard()
+    const {formData, handleInputChange, handleToggleSize} = useAddProductWizard();
+
+    const [isCustomColor, setIsCustomColor] = React.useState<boolean>(() => {
+        return Boolean(formData.colorsTrack && !STANDARD_COLORS.includes(formData.colorsTrack));
+    });
+    const [isCustomFabric, setIsCustomFabric] = React.useState<boolean>(() => {
+        return Boolean(formData.fabricMaterial && !STANDARD_FABRICS.includes(formData.fabricMaterial));
+    });
+
+    React.useEffect(() => {
+        if (formData.colorsTrack && !STANDARD_COLORS.includes(formData.colorsTrack)) {
+            setIsCustomColor(true);
+        }
+    }, [formData.colorsTrack]);
+
+    React.useEffect(() => {
+        if (formData.fabricMaterial && !STANDARD_FABRICS.includes(formData.fabricMaterial)) {
+            setIsCustomFabric(true);
+        }
+    }, [formData.fabricMaterial]);
+
+    const isColorCustomActive = isCustomColor || (Boolean(formData.colorsTrack) && !STANDARD_COLORS.includes(formData.colorsTrack));
+    const selectColorValue = isColorCustomActive ? 'Custom' : (formData.colorsTrack || STANDARD_COLORS[0]);
+
+    const handleColorSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const val = e.target.value;
+        if (val === 'Custom') {
+            setIsCustomColor(true);
+            if (STANDARD_COLORS.includes(formData.colorsTrack)) {
+                handleInputChange('colorsTrack', '');
+            }
+        } else {
+            setIsCustomColor(false);
+            handleInputChange('colorsTrack', val);
+        }
+    };
+
+    const isFabricCustomActive = isCustomFabric || (Boolean(formData.fabricMaterial) && !STANDARD_FABRICS.includes(formData.fabricMaterial));
+    const selectFabricValue = isFabricCustomActive ? 'Custom' : (formData.fabricMaterial || STANDARD_FABRICS[0]);
+
+    const handleFabricSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const val = e.target.value;
+        if (val === 'Custom') {
+            setIsCustomFabric(true);
+            if (STANDARD_FABRICS.includes(formData.fabricMaterial)) {
+                handleInputChange('fabricMaterial', '');
+            }
+        } else {
+            setIsCustomFabric(false);
+            handleInputChange('fabricMaterial', val);
+        }
+    };
+
     return (
         <div className="flex flex-col gap-5 animate-fade-in">
             <div className="flex flex-col gap-0.5">
@@ -54,23 +106,30 @@ const VariantsMatrixNode = () => {
                 <div className="flex flex-col gap-1.5">
                     <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Colors Track</label>
                     <select
-                        value={STANDARD_COLORS.includes(formData.colorsTrack) ? formData.colorsTrack : 'Custom'}
-                        onChange={(e) => {
-                            if (e.target.value !== 'Custom') handleInputChange('colorsTrack', e.target.value);
-                        }}
+                        value={selectColorValue}
+                        onChange={handleColorSelectChange}
                         className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all cursor-pointer"
                     >
                         {STANDARD_COLORS.map(c => <option key={c} value={c}>{c}</option>)}
                         <option value="Custom">Custom Color Code...</option>
                     </select>
-                    {!STANDARD_COLORS.includes(formData.colorsTrack) && (
-                        <input
-                            type="text"
-                            placeholder="Type custom color track..."
-                            value={formData.colorsTrack}
-                            onChange={(e) => handleInputChange('colorsTrack', e.target.value)}
-                            className="w-full p-2 bg-white border border-neutral-200/80 rounded-lg text-[12px] outline-none mt-1"
-                        />
+                    {isColorCustomActive && (
+                        <div className="flex items-center gap-2 mt-1">
+                            <input
+                                type="text"
+                                placeholder="Type custom color or color code (e.g. #FF5733, Navy Blue)..."
+                                value={formData.colorsTrack}
+                                onChange={(e) => handleInputChange('colorsTrack', e.target.value)}
+                                className="flex-1 p-2 bg-white border border-neutral-200/80 rounded-lg text-[12px] outline-none focus:border-neutral-900 transition-all"
+                            />
+                            <input
+                                type="color"
+                                value={/^#[0-9A-Fa-f]{6}$/.test(formData.colorsTrack) ? formData.colorsTrack : '#000000'}
+                                onChange={(e) => handleInputChange('colorsTrack', e.target.value)}
+                                title="Pick color code"
+                                className="w-8 h-8 p-0.5 rounded-lg border border-neutral-200/80 cursor-pointer bg-white"
+                            />
+                        </div>
                     )}
                 </div>
 
@@ -78,22 +137,20 @@ const VariantsMatrixNode = () => {
                 <div className="flex flex-col gap-1.5">
                     <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Fabric Material</label>
                     <select
-                        value={STANDARD_FABRICS.includes(formData.fabricMaterial) ? formData.fabricMaterial : 'Custom'}
-                        onChange={(e) => {
-                            if (e.target.value !== 'Custom') handleInputChange('fabricMaterial', e.target.value);
-                        }}
+                        value={selectFabricValue}
+                        onChange={handleFabricSelectChange}
                         className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all cursor-pointer"
                     >
                         {STANDARD_FABRICS.map(f => <option key={f} value={f}>{f}</option>)}
                         <option value="Custom">Custom Fabric Material...</option>
                     </select>
-                    {!STANDARD_FABRICS.includes(formData.fabricMaterial) && (
+                    {isFabricCustomActive && (
                         <input
                             type="text"
-                            placeholder="Type custom fabric material..."
+                            placeholder="Type custom fabric material (e.g. 100% Organic Bamboo Silk)..."
                             value={formData.fabricMaterial}
                             onChange={(e) => handleInputChange('fabricMaterial', e.target.value)}
-                            className="w-full p-2 bg-white border border-neutral-200/80 rounded-lg text-[12px] outline-none mt-1"
+                            className="w-full p-2 bg-white border border-neutral-200/80 rounded-lg text-[12px] outline-none mt-1 focus:border-neutral-900 transition-all"
                         />
                     )}
                 </div>
