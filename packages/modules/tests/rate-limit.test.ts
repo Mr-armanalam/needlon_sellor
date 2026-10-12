@@ -1,5 +1,10 @@
 import assert from "node:assert";
-import { rateLimit, resetRateLimit } from "../modules/auth/lib/rate-limit";
+import {
+  limitLogin,
+  rateLimit,
+  resetLoginLimit,
+  resetRateLimit,
+} from "../modules/auth/lib/rate-limit";
 import { getClientIp } from "../modules/auth/lib/request";
 import { NextRequest } from "next/server";
 
@@ -16,6 +21,16 @@ async function testResetRateLimitWithoutRedis() {
   const res = await resetRateLimit("test:key");
   assert.strictEqual(res, true);
   console.log("✓ resetRateLimit test passed.");
+}
+
+async function testResetLoginLimit() {
+  console.log("--> Testing successful-login rate-limit reset...");
+  await resetLoginLimit("127.0.0.1", " Seller@Example.com ");
+  assert.strictEqual(
+    await limitLogin("127.0.0.1", "seller@example.com"),
+    true,
+  );
+  console.log("resetLoginLimit test passed.");
 }
 
 function testGetClientIpResolution() {
@@ -59,6 +74,7 @@ async function runAllRateLimitTests() {
   console.log("=== RATE LIMIT MODULE TEST SUITE ===");
   await testRateLimitBypassWithoutRedis();
   await testResetRateLimitWithoutRedis();
+  await testResetLoginLimit();
   testGetClientIpResolution();
   console.log("=== ALL RATE LIMIT TESTS PASSED SUCCESSFULLY! ===");
 }

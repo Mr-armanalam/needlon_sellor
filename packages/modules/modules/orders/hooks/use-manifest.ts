@@ -1,3 +1,4 @@
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import { useState } from "react";
 
 export const useManifest = (ordersList: any[] = []) => {
@@ -39,7 +40,7 @@ export const useManifest = (ordersList: any[] = []) => {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch("/api/orders/manifest", {
+            const res = await apiFetch("/api/orders/manifest", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

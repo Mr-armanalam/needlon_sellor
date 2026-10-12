@@ -1,3 +1,4 @@
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import { useState, useEffect, useCallback } from "react";
 import { SupportTicketResponseDto, CreateSupportTicketDto } from "../dto/support.dto";
 
@@ -10,7 +11,7 @@ export function useSupport() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/seller/support/tickets");
+      const res = await apiFetch("/api/seller/support/tickets");
       const json = await res.json();
       if (json.success && json.data) {
         setTickets(json.data.tickets || []);
@@ -28,7 +29,7 @@ export function useSupport() {
 
   const createTicket = async (dto: CreateSupportTicketDto) => {
     try {
-      const res = await fetch("/api/seller/support/tickets", {
+      const res = await apiFetch("/api/seller/support/tickets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(dto),
@@ -46,7 +47,7 @@ export function useSupport() {
 
   const fetchTicketDetails = async (ticketId: string) => {
     try {
-      const res = await fetch(`/api/seller/support/tickets/${ticketId}`);
+      const res = await apiFetch(`/api/seller/support/tickets/${ticketId}`);
       const json = await res.json();
       if (json.success) {
         return { success: true, data: json.data };
@@ -59,7 +60,7 @@ export function useSupport() {
 
   const sendReply = async (ticketId: string, message: string) => {
     try {
-      const res = await fetch(`/api/seller/support/tickets/${ticketId}/reply`, {
+      const res = await apiFetch(`/api/seller/support/tickets/${ticketId}/reply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message }),
@@ -77,7 +78,7 @@ export function useSupport() {
 
   const updateStatus = async (ticketId: string, status: "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED") => {
     try {
-      const res = await fetch(`/api/seller/support/tickets/${ticketId}`, {
+      const res = await apiFetch(`/api/seller/support/tickets/${ticketId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),

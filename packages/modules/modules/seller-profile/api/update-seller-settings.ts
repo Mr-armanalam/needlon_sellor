@@ -1,3 +1,4 @@
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import { SellerSettingsDto, UpdateSellerSettingsDto } from "@/modules/seller-profile/dto";
 
 interface UpdateSellerSettingsResponse {
@@ -9,7 +10,7 @@ interface UpdateSellerSettingsResponse {
 export async function updateSellerSettings(
   payload: UpdateSellerSettingsDto,
 ): Promise<SellerSettingsDto> {
-  const response = await fetch("/api/seller/settings", {
+  const response = await apiFetch("/api/seller/settings", {
     method: "PATCH",
     credentials: "include",
     headers: {

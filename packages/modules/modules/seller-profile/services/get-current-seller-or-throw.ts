@@ -1,8 +1,9 @@
 import { getCurrentSeller } from "@/modules/auth/lib/get-current-seller";
+import { UnauthorizedError } from "@/modules/shared/errors/unauthorised-error";
 
-export class UnauthorizedSellerError extends Error {
+export class UnauthorizedSellerError extends UnauthorizedError {
     constructor() {
-        super("Unauthorized");
+        super();
         this.name = "UnauthorizedSellerError";
     }
 }

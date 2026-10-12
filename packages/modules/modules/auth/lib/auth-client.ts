@@ -35,12 +35,41 @@ export async function apiFetch(
   input: RequestInfo | URL,
   init?: RequestInit,
 ): Promise<Response> {
+  const requestUrl =
+    typeof input === "string"
+      ? input
+      : input instanceof URL
+        ? input.toString()
+        : input.url;
+  const requestUrlObject = new URL(
+    requestUrl,
+    typeof window === "undefined" ? "http://localhost" : window.location.origin,
+  );
+  const pathname = requestUrlObject.pathname;
+  const shouldRefresh =
+    typeof window !== "undefined" &&
+    requestUrlObject.origin === window.location.origin &&
+    pathname.startsWith("/api/") &&
+    ![
+      "/api/auth/login",
+      "/api/auth/signup",
+      "/api/auth/forgot-password",
+      "/api/auth/send-otp",
+      "/api/auth/verify-otp",
+      "/api/auth/reset-password",
+      "/api/auth/refresh",
+    ].includes(pathname);
+  const retryInput =
+    typeof Request !== "undefined" && input instanceof Request
+      ? input.clone()
+      : input;
+
   const response = await fetch(input, {
     credentials: "include",
     ...init,
   });
 
-  if (response.status !== 401) {
+  if (response.status !== 401 || !shouldRefresh) {
     return response;
   }
 
@@ -56,9 +85,14 @@ export async function apiFetch(
     return response;
   }
 
-  return fetch(input, {
+  const retryResponse = await fetch(retryInput, {
     credentials: "include",
     ...init,
   });
-}
 
+  if (retryResponse.status === 401) {
+    emitAuthFailure();
+  }
+
+  return retryResponse;
+}

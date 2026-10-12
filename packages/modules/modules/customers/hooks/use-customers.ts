@@ -1,3 +1,4 @@
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import { useState, useEffect, useCallback } from "react";
 import { CustomerItemResponseDto } from "../dto/customer.dto";
 
@@ -12,7 +13,7 @@ export function useCustomers(searchQuery?: string) {
     setError(null);
     try {
       const url = `/api/seller/customers${searchQuery ? `?search=${encodeURIComponent(searchQuery)}` : ""}`;
-      const res = await fetch(url);
+      const res = await apiFetch(url);
       const json = await res.json();
       if (json.success && json.data) {
         setCustomers(json.data.customers || []);

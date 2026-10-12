@@ -1,4 +1,6 @@
 "use client";
+
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import React, { useEffect, useState } from "react";
 import { Globe, Sun, Moon, Monitor, BellPlus, DollarSign, Send, ShieldCheck } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -47,7 +49,7 @@ export default function SellerSettingsSection({
   const handleSendTestNotification = async () => {
     setIsSendingTest(true);
     try {
-      const res = await fetch("/api/seller/settings/test-notification", {
+      const res = await apiFetch("/api/seller/settings/test-notification", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

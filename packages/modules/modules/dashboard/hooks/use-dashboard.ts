@@ -1,3 +1,4 @@
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import { useState, useEffect, useCallback } from "react";
 import { DashboardOverviewResponseDto } from "../dto/dashboard.dto";
 
@@ -11,7 +12,7 @@ export function useDashboard() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/seller/dashboard");
+      const res = await apiFetch("/api/seller/dashboard");
       const json = await res.json();
       if (json.success && json.data) {
         setData(json.data);
@@ -32,7 +33,7 @@ export function useDashboard() {
   const confirmOrder = async (orderId: string) => {
     setActionLoadingMap((prev) => ({ ...prev, [orderId]: true }));
     try {
-      const res = await fetch(`/api/seller/orders/${orderId}/action`, {
+      const res = await apiFetch(`/api/seller/orders/${orderId}/action`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "CONFIRM" }),
@@ -54,7 +55,7 @@ export function useDashboard() {
   const declineOrder = async (orderId: string) => {
     setActionLoadingMap((prev) => ({ ...prev, [orderId]: true }));
     try {
-      const res = await fetch(`/api/seller/orders/${orderId}/action`, {
+      const res = await apiFetch(`/api/seller/orders/${orderId}/action`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "CANCEL", remarks: "Declined by seller from dashboard" }),
@@ -75,7 +76,7 @@ export function useDashboard() {
   const duplicateProduct = async (productId: string) => {
     setActionLoadingMap((prev) => ({ ...prev, [`dup-${productId}`]: true }));
     try {
-      const res = await fetch(`/api/seller/products/${productId}/duplicate`, {
+      const res = await apiFetch(`/api/seller/products/${productId}/duplicate`, {
         method: "POST",
       });
       const json = await res.json();

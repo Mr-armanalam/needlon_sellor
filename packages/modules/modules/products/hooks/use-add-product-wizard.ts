@@ -1,3 +1,4 @@
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import React, {useEffect, useRef, useState, createContext, useContext} from "react";
 import {CATEGORY_SUBCATEGORY_MAP, DEFAULT_FORM_DATA, wizardSteps} from "@/modules/products/constants";
 import {
@@ -106,7 +107,7 @@ function useAddProductWizardInternal() {
 
     useEffect(() => {
         // Auto-populate pickup hub address from seller delivery configuration if blank
-        fetch("/api/seller/delivery/settings")
+        apiFetch("/api/seller/delivery/settings")
             .then(res => res.json())
             .then(result => {
                 const hub = result?.data?.pickupHub;

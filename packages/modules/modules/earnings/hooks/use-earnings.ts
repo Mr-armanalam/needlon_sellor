@@ -1,3 +1,4 @@
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import { useState, useEffect, useCallback } from "react";
 import {
   EarningsSummaryResponseDto,
@@ -21,8 +22,8 @@ export function useEarnings() {
   const fetchSummaryAndBank = useCallback(async () => {
     try {
       const [earningsRes, bankRes] = await Promise.all([
-        fetch("/api/seller/earnings"),
-        fetch("/api/seller/bank"),
+        apiFetch("/api/seller/earnings"),
+        apiFetch("/api/seller/bank"),
       ]);
 
       const earningsJson = await earningsRes.json();
@@ -43,7 +44,7 @@ export function useEarnings() {
   const fetchAnalytics = useCallback(async (tf: "weekly" | "monthly") => {
     setAnalyticsLoading(true);
     try {
-      const res = await fetch(`/api/seller/earnings/analytics?timeframe=${tf}`);
+      const res = await apiFetch(`/api/seller/earnings/analytics?timeframe=${tf}`);
       const json = await res.json();
       if (json.success && json.data) {
         setAnalytics(json.data);
@@ -59,7 +60,7 @@ export function useEarnings() {
   const fetchLedger = useCallback(async (vt: "transactions" | "settlements") => {
     setLedgerLoading(true);
     try {
-      const res = await fetch(`/api/seller/earnings/ledger?viewType=${vt}`);
+      const res = await apiFetch(`/api/seller/earnings/ledger?viewType=${vt}`);
       const json = await res.json();
       if (json.success && json.data) {
         setLedger(json.data);
@@ -100,7 +101,7 @@ export function useEarnings() {
   // 4. Request payout mutation
   const requestPayout = async (amount: number, bankAccountId?: string, notes?: string) => {
     try {
-      const res = await fetch("/api/seller/payouts/request", {
+      const res = await apiFetch("/api/seller/payouts/request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ amount, bankAccountId, notes }),

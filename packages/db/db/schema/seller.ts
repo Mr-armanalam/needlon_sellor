@@ -43,6 +43,8 @@ export const sessions = pgTable("sessions", {
   revokedAt: timestamp("revoked_at"), // null = still valid
   refreshTokenVersion: integer("refresh_token_version").default(0).notNull(),
   lastRotatedAt: timestamp("last_rotated_at"),
+  previousRefreshToken: text("previous_refresh_token"),
+  previousRefreshTokenExpiresAt: timestamp("previous_refresh_token_expires_at"),
 });
 
 export const sellerpasswordResetTokens = pgTable("seller_pass_reset_tokens", {

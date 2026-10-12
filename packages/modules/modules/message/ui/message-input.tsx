@@ -1,3 +1,4 @@
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import React, { useState, useRef } from "react";
 import { MessageDto } from "../dto";
 import QuickReplyContainer from "@/modules/message/section/quick-reply-container";
@@ -49,7 +50,7 @@ export default function MessageInput({
         const formData = new FormData();
         formData.append("file", file);
         
-        const response = await fetch("/api/messages/upload", {
+        const response = await apiFetch("/api/messages/upload", {
           method: "POST",
           body: formData,
         });

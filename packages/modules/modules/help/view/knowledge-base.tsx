@@ -1,3 +1,4 @@
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import React, { useState } from 'react';
 import { BookOpen, Camera, FileText, DollarSign, Truck, ShoppingBag, Globe, ArrowLeft, ArrowRight, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { useHelpCenter } from '../hooks/use-help-center';
@@ -25,7 +26,7 @@ export default function KnowledgeBase({ onBack }: { onBack?: () => void }) {
 
   const handleVote = async (articleId: string, isHelpful: boolean) => {
     try {
-      await fetch(`/api/seller/help/kb/articles/${articleId}/vote`, {
+      await apiFetch(`/api/seller/help/kb/articles/${articleId}/vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isHelpful }),

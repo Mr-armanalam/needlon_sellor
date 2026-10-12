@@ -1,5 +1,7 @@
 'use client';
 
+
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import React, { useState } from 'react';
 import { X, CheckCircle2, ShoppingBag, Loader2 } from 'lucide-react';
 
@@ -37,7 +39,7 @@ export default function OrderHandoverModal({
     setError(null);
 
     try {
-      const res = await fetch(`/api/seller/orders/${orderId}/handover`, {
+      const res = await apiFetch(`/api/seller/orders/${orderId}/handover`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

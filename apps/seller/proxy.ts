@@ -3,23 +3,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAccessToken } from "@/modules/auth/lib/tokens";
 import {
   ACCESS_COOKIE,
-  ADMIN_ROUTES,
-  AUTH_ROUTES,
-  PROTECTED_ROUTES,
+  PUBLIC_ROUTES,
+  REFRESH_COOKIE,
+  isAdminRoute,
+  isAuthRoute,
+  isProtectedRoute,
 } from "@/modules/auth/lib/auth-config";
-
-// Route classifiers
-function isProtectedRoute(pathname: string): boolean {
-  return PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
-}
-
-function isAuthRoute(pathname: string): boolean {
-  return AUTH_ROUTES.some((route) => pathname.startsWith(route));
-}
-
-function isAdminRoute(pathname: string): boolean {
-  return ADMIN_ROUTES.some((route) => pathname.startsWith(route));
-}
 
 // Middleware
 // 1. No blocklist check — by design. A Redis round-trip on every page
@@ -38,54 +27,47 @@ function isAdminRoute(pathname: string): boolean {
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
-  const PUBLIC_ROUTES = ["/", "/about", "/pricing"];
-
   if (PUBLIC_ROUTES.includes(pathname)) {
     return NextResponse.next();
   }
 
-  // Decode token (no DB/Redis)
   const accessToken = request.cookies.get(ACCESS_COOKIE)?.value;
-
   const payload = accessToken ? await verifyAccessToken(accessToken) : null;
   const authenticated = !!payload;
   const role = payload?.role ?? null;
-
-  // Admin route
-  // Layer 1: must be authenticated at all.
-  // Layer 2: must hold the "admin" role.
-  // Sellers are redirected to /dashboard (not /login) because they ARE logged
-  // in — this is an authorisation failure, not an authentication failure. A
-  // /login redirect would be confusing UX for a valid seller.
+  const hasRefreshToken = !!request.cookies.get(REFRESH_COOKIE)?.value;
 
   if (isAdminRoute(pathname)) {
     if (!authenticated) {
+      if (hasRefreshToken) {
+        return NextResponse.next();
+      }
+
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("callbackUrl", pathname);
       return NextResponse.redirect(loginUrl);
     }
 
     if (role !== "admin") {
-      // Authenticated seller trying to reach an admin page → /dashboard.
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 
     return NextResponse.next();
   }
 
-  // Seller-protected routes
-  if (isProtectedRoute(pathname) && !authenticated) {
+  if (isAuthRoute(pathname)) {
+    if (!authenticated) {
+      return NextResponse.next();
+    }
+
+    const destination = role === "admin" ? "/admin" : "/dashboard";
+    return NextResponse.redirect(new URL(destination, request.url));
+  }
+
+  if (isProtectedRoute(pathname) && !authenticated && !hasRefreshToken) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
-  }
-
-  // Auth pages (Login or Signup)
-  // Redirect any authenticated user — regardless of role — away from auth pages.
-
-  if (isAuthRoute(pathname) && authenticated) {
-    const destination = role === "admin" ? "/admin" : "/dashboard";
-    return NextResponse.redirect(new URL(destination, request.url));
   }
 
   return NextResponse.next();

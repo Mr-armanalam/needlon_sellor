@@ -1,5 +1,7 @@
 'use client';
 
+
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import React, { useState } from 'react';
 import { X, Calendar, Clock, Scissors, UserCheck, Loader2 } from 'lucide-react';
 
@@ -42,7 +44,7 @@ export default function ScheduleFittingModal({
     setError(null);
 
     try {
-      const res = await fetch('/api/seller/fittings', {
+      const res = await apiFetch('/api/seller/fittings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

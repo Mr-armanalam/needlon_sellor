@@ -5,7 +5,7 @@ import { Role } from "@/db/schema/seller";
 
 const ACCESS_SECRET = new TextEncoder().encode(process.env.JWT_ACCESS_SECRET!);
 
-// ─── Payload ──────────────────────────────────────────────────────────────────
+// ─── Payload ───────────────────────────────────────────────────
 // `role` in the JWT - middleware can make role-based routing
 // decisions without a database round-trip on every page navigation.
 // The DB remains the authoritative source — getCurrentSeller() always re-reads
@@ -67,15 +67,25 @@ export function hashRefreshToken(token: string) {
 }
 
 export async function isTokenBlocklisted(jti: string): Promise<boolean> {
-  return (await redis.exists(`blocklist:${jti}`)) === 1;
+  if (!redis) return false;
+  try {
+    return (await redis.exists(`blocklist:${jti}`)) === 1;
+  } catch (error) {
+    console.warn("[TokenBlocklist] Redis check failed, skipping blocklist check:", error);
+    return false;
+  }
 }
 
 export async function blocklistToken(jti: string, ttlSeconds: number) {
-  await redis.set(`blocklist:${jti}`, 1, {
-    ex: ttlSeconds,
-  });
+  if (!redis) return;
+  try {
+    await redis.set(`blocklist:${jti}`, 1, {
+      ex: ttlSeconds,
+    });
+  } catch (error) {
+    console.warn("[TokenBlocklist] Redis failed to set blocklist token:", error);
+  }
 }
-
 
 export async function getAccessTokenPayload(
   token: string

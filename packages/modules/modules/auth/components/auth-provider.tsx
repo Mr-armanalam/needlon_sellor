@@ -4,11 +4,16 @@ import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { toast } from "sonner";
 
-import { onAuthFailure } from "@/modules/auth/lib/auth-events";
+import {
+  onAuthFailure,
+  onAuthStateChanged,
+} from "@/modules/auth/lib/auth-events";
+import { useSWRConfig } from "swr";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { mutate } = useSWRConfig();
 
   useEffect(() => {
     const unsubscribe = onAuthFailure(() => {
@@ -22,11 +27,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.replace("/login");
       }
     });
+    const unsubscribeAuthState = onAuthStateChanged(() => {
+      void mutate("/api/auth/me");
+    });
 
     return () => {
       unsubscribe();
+      unsubscribeAuthState();
     };
-  }, [router, pathname]);
+  }, [mutate, router, pathname]);
 
   return <>{children}</>;
 }

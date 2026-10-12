@@ -1,3 +1,4 @@
+import { apiFetch } from "@/modules/auth/lib/auth-client";
 import { useState, useEffect, useCallback } from "react";
 import { AnalyticsOverviewResponseDto } from "../dto/analytics.dto";
 
@@ -10,7 +11,7 @@ export function useAnalytics(timeframe: "7d" | "30d" | "90d" | "1y" = "30d") {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/seller/analytics/overview?timeframe=${timeframe}`);
+      const res = await apiFetch(`/api/seller/analytics/overview?timeframe=${timeframe}`);
       const json = await res.json();
       if (json.success && json.data) {
         setData(json.data);
