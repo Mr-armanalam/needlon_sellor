@@ -47,6 +47,9 @@ export interface DraftVariantsInput {
 export interface DraftInventoryInput {
   uniqueSku?: string;
   boutiqueStockCount?: number | string;
+  lowStockThreshold?: number | string;
+  allowBackorder?: boolean;
+  barcode?: string;
   [key: string]: unknown;
 }
 
@@ -168,7 +171,11 @@ export async function updateDraftProductInventoryService(id: string, input: Draf
         throw new NotFoundError("Draft product not found.");
     }
 
-    await updateDraftProductInventory(id, input.uniqueSku, input.boutiqueStockCount);
+    await updateDraftProductInventory(id, input.uniqueSku, input.boutiqueStockCount, {
+        lowStockThreshold: input.lowStockThreshold,
+        allowBackorder: input.allowBackorder,
+        barcode: input.barcode,
+    });
 
     return { ...draft, sku: input.uniqueSku, metadata: { ...input } };
 }
@@ -220,6 +227,9 @@ export async function publishDraftProductService(id: string, input?: { status?: 
 
     if (newStatus === "PUBLISHED") {
         updateData.publishedAt = new Date();
+        if (!draft.visibility || draft.visibility === "PRIVATE") {
+            updateData.visibility = "PUBLIC";
+        }
     }
 
     return updateProduct(id, updateData);

@@ -38,6 +38,7 @@ export async function createDraftProduct(data: any): Promise<Product> {
         name: data.name || "Untitled Draft",
         slug: data.slug || `draft-${timestamp}-${randomSuffix}`,
         status: data.status || "DRAFT",
+        visibility: data.visibility || "PUBLIC",
     };
 
     const product = await db.transaction(async (tx) => {
@@ -94,7 +95,7 @@ export async function createDraftProduct(data: any): Promise<Product> {
         await tx.insert(inventoryTable).values({
             variantId: variant.id,
             quantity: 0,
-            lowStockThreshold: 5,
+            lowStockThreshold: 0,
         });
 
         // Create default pricing (authoritative store)
@@ -123,6 +124,7 @@ export async function createDraftProduct(data: any): Promise<Product> {
             slug: prod.slug,
             metaTitle: prod.name,
             metaDescription: "",
+            metaKeywords: [],
         });
 
         return prod;

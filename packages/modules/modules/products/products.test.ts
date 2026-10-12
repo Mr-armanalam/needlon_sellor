@@ -395,6 +395,9 @@ async function runProductsModuleTests() {
     const updatedDraftInventory = await draftService.updateInventory(createdDraft.id, {
       boutiqueStockCount: 14,
       uniqueSku: `NDLN-CH-KRT-INV-${timestamp}`,
+      lowStockThreshold: 3,
+      allowBackorder: true,
+      barcode: "8901234567890",
     });
 
     if (updatedDraftInventory?.sku !== `NDLN-CH-KRT-INV-${timestamp}`) {
@@ -546,7 +549,22 @@ async function runProductsModuleTests() {
     if (retrievedDraft.fabricMaterial !== "100% Chanderi Cotton") {
       throw new Error(`Expected fabricMaterial to be 100% Chanderi Cotton, got ${retrievedDraft.fabricMaterial}`);
     }
-    console.log(`✅ getProductById succeeded (Retail: ${retrievedDraft.retailPrice}, Hub: "${retrievedDraft.pickupHubAddress}", Fabric: "${retrievedDraft.fabricMaterial}")`);
+    if (retrievedDraft.lowStockThreshold !== "3") {
+      throw new Error(`Expected lowStockThreshold to be "3", got "${retrievedDraft.lowStockThreshold}"`);
+    }
+    if (retrievedDraft.allowBackorder !== true) {
+      throw new Error(`Expected allowBackorder to be true, got ${retrievedDraft.allowBackorder}`);
+    }
+    if (retrievedDraft.barcode !== "8901234567890") {
+      throw new Error(`Expected barcode to be "8901234567890", got "${retrievedDraft.barcode}"`);
+    }
+    if (!retrievedDraft.searchKeywords.includes("handloom") || !retrievedDraft.searchKeywords.includes("festive kurti")) {
+      throw new Error(`Expected searchKeywords to include handloom & festive kurti, got "${retrievedDraft.searchKeywords}"`);
+    }
+    if (retrievedDraft.customVisibility !== "PUBLIC") {
+      throw new Error(`Expected customVisibility to be "PUBLIC", got ${retrievedDraft.customVisibility}`);
+    }
+    console.log(`✅ getProductById succeeded (Retail: ${retrievedDraft.retailPrice}, Hub: "${retrievedDraft.pickupHubAddress}", Fabric: "${retrievedDraft.fabricMaterial}", LowStock: ${retrievedDraft.lowStockThreshold}, AllowBackorder: ${retrievedDraft.allowBackorder}, Barcode: "${retrievedDraft.barcode}", Keywords: "${retrievedDraft.searchKeywords}", Visibility: "${retrievedDraft.customVisibility}")`);
 
     // 20. Test Product Cloning (createCloneProduct)
     console.log("\n20. Testing Product Cloning (createCloneProduct)...");

@@ -291,7 +291,12 @@ export async function updateDraftProductVariants(
 export async function updateDraftProductInventory(
   productId: string,
   uniqueSku?: string,
-  boutiqueStockCount?: string | number
+  boutiqueStockCount?: string | number,
+  extraParams?: {
+    lowStockThreshold?: number | string;
+    allowBackorder?: boolean;
+    barcode?: string;
+  }
 ) {
   const [variant] = await db
     .select()
@@ -300,17 +305,36 @@ export async function updateDraftProductInventory(
     .limit(1);
 
   if (variant) {
-    if (uniqueSku) {
+    const variantUpdate: Record<string, unknown> = { updatedAt: new Date() };
+    if (uniqueSku !== undefined && uniqueSku.trim()) {
+      variantUpdate.sku = uniqueSku.trim();
+    }
+    if (extraParams?.barcode !== undefined) {
+      variantUpdate.barcode = extraParams.barcode?.trim() || null;
+    }
+
+    if (Object.keys(variantUpdate).length > 1) {
       await db
         .update(productVariantsTable)
-        .set({ sku: uniqueSku.trim(), updatedAt: new Date() })
+        .set(variantUpdate)
         .where(eq(productVariantsTable.id, variant.id));
     }
 
-    if (boutiqueStockCount !== undefined) {
+    const invUpdate: Record<string, unknown> = { updatedAt: new Date() };
+    if (boutiqueStockCount !== undefined && String(boutiqueStockCount).trim() !== "") {
+      invUpdate.quantity = Number(boutiqueStockCount) || 0;
+    }
+    if (extraParams?.lowStockThreshold !== undefined && String(extraParams.lowStockThreshold).trim() !== "") {
+      invUpdate.lowStockThreshold = Number(extraParams.lowStockThreshold) || 0;
+    }
+    if (extraParams?.allowBackorder !== undefined) {
+      invUpdate.allowBackorder = Boolean(extraParams.allowBackorder);
+    }
+
+    if (Object.keys(invUpdate).length > 1) {
       await db
         .update(inventoryTable)
-        .set({ quantity: Number(boutiqueStockCount) || 0, updatedAt: new Date() })
+        .set(invUpdate)
         .where(eq(inventoryTable.variantId, variant.id));
     }
   }
@@ -365,7 +389,8 @@ export async function updateDraftProductDelivery(
 
 export async function updateDraftProductSeo(
   productId: string,
-  searchKeywords?: string
+  searchKeywords?: string,
+  customVisibility?: "PUBLIC" | "PRIVATE" | "UNLISTED"
 ) {
   const keywords = searchKeywords
     ? searchKeywords.split(",").map((k: string) => k.trim()).filter(Boolean)
@@ -376,6 +401,14 @@ export async function updateDraftProductSeo(
     .from(productsTable)
     .where(eq(productsTable.id, productId))
     .limit(1);
+
+  // Update visibility on master product
+  if (customVisibility) {
+    await db
+      .update(productsTable)
+      .set({ visibility: customVisibility, updatedAt: new Date() })
+      .where(eq(productsTable.id, productId));
+  }
 
   const [primaryImage] = await db
     .select()
@@ -395,21 +428,51 @@ export async function updateDraftProductSeo(
   const metaDescription = product?.description ? product.description.slice(0, 160) : "";
   const imageUrl = primaryImage?.imageUrl || anyImage?.imageUrl || null;
 
+  // Upsert productSeoTable to ensure keywords are never silently lost
+  const [existingSeo] = await db
+    .select({ id: productSeoTable.id })
+    .from(productSeoTable)
+    .where(eq(productSeoTable.productId, productId))
+    .limit(1);
+
+  if (existingSeo) {
+    await db
+      .update(productSeoTable)
+      .set({
+        metaKeywords: keywords,
+        metaTitle,
+        metaDescription,
+        ogTitle: metaTitle,
+        ogDescription: metaDescription,
+        ogImage: imageUrl,
+        twitterTitle: metaTitle,
+        twitterDescription: metaDescription,
+        twitterImage: imageUrl,
+        updatedAt: new Date(),
+      })
+      .where(eq(productSeoTable.productId, productId));
+  } else {
+    await db
+      .insert(productSeoTable)
+      .values({
+        productId,
+        slug: product?.slug || `seo-${productId.slice(0, 8)}`,
+        metaKeywords: keywords,
+        metaTitle,
+        metaDescription,
+        ogTitle: metaTitle,
+        ogDescription: metaDescription,
+        ogImage: imageUrl,
+        twitterTitle: metaTitle,
+        twitterDescription: metaDescription,
+        twitterImage: imageUrl,
+      });
+  }
+
+  // Clear existing mappings before refreshing
   await db
-    .update(productSeoTable)
-    .set({
-      metaKeywords: keywords,
-      metaTitle,
-      metaDescription,
-      ogTitle: metaTitle,
-      ogDescription: metaDescription,
-      ogImage: imageUrl,
-      twitterTitle: metaTitle,
-      twitterDescription: metaDescription,
-      twitterImage: imageUrl,
-      updatedAt: new Date(),
-    })
-    .where(eq(productSeoTable.productId, productId));
+    .delete(productTagMappingsTable)
+    .where(eq(productTagMappingsTable.productId, productId));
 
   // Upsert keywords into product_tags and product_tag_mappings
   for (const kw of keywords) {

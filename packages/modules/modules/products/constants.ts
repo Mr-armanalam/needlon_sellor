@@ -16,6 +16,9 @@ export const DEFAULT_FORM_DATA = {
     genderProfile: '',
     targetAgeGroup: '',
     boutiqueStockCount: '',
+    lowStockThreshold: '',
+    allowBackorder: false,
+    barcode: '',
     uniqueSku: '',
     pickupHubAddress: '',
     packageWeight: '',
@@ -48,7 +51,7 @@ export const GENDER_OPTIONS = ['Women', 'Men', 'Unisex', 'Girls', 'Boys'];
 export const AGE_GROUP_OPTIONS = ['Adults (18-45 Years)', 'Teens (13-17 Years)', 'Kids (2-12 Years)', 'Seniors (45+ Years)'];
 export const DELIVERY_RADIUS_OPTIONS = ['Nationwide Shipping', 'Statewide Delivery', 'Local City Delivery', 'International Express'];
 export const DELIVERY_WINDOW_OPTIONS = ['3 - 5 business days delivery timeline', '1 - 2 business days', '5 - 7 business days', 'Same Day Dispatch'];
-export const VISIBILITY_OPTIONS = ['PUBLIC', 'UNLISTED', 'DRAFT'];
+export const VISIBILITY_OPTIONS = ['PUBLIC', 'PRIVATE', 'UNLISTED'] as const;
 
 export const wizardSteps = [
     { number: 1, label: "Photos" },

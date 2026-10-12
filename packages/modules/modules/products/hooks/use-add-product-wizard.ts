@@ -63,6 +63,7 @@ function useAddProductWizardInternal() {
 
     useEffect(() => {
         if (productId) {
+            setActiveProductId(productId);
             getProductClient(productId)
                 .then((data: any) => {
                     if (data) {
@@ -84,6 +85,9 @@ function useAddProductWizardInternal() {
                             targetAgeGroup: data.targetAgeGroup || '',
                             boutiqueStockCount: String(data.boutiqueStockCount ?? ''),
                             uniqueSku: data.uniqueSku || '',
+                            lowStockThreshold: data.lowStockThreshold || '',
+                            allowBackorder: Boolean(data.allowBackorder),
+                            barcode: data.barcode || '',
                             pickupHubAddress: data.pickupHubAddress || '',
                             packageWeight: data.packageWeight || '',
                             deliveryRadiusRange: data.deliveryRadiusRange || '',
@@ -289,6 +293,9 @@ function useAddProductWizardInternal() {
                 await updateProductInventoryClient(activeProductId, {
                     boutiqueStockCount: formData.boutiqueStockCount,
                     uniqueSku: formData.uniqueSku,
+                    lowStockThreshold: formData.lowStockThreshold,
+                    allowBackorder: formData.allowBackorder,
+                    barcode: formData.barcode,
                 });
             } catch (err) {
                 console.error("Failed to sync inventory step:", err);
@@ -386,6 +393,9 @@ function useAddProductWizardInternal() {
                 await updateProductInventoryClient(targetId, {
                     boutiqueStockCount: formData.boutiqueStockCount,
                     uniqueSku: formData.uniqueSku,
+                    lowStockThreshold: formData.lowStockThreshold,
+                    allowBackorder: formData.allowBackorder,
+                    barcode: formData.barcode,
                 }).catch(() => {});
 
                 await updateProductDeliveryClient(targetId, {

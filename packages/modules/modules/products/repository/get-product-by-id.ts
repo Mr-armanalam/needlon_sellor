@@ -12,6 +12,8 @@ import { productImagesTable } from "@/db/schema/catalog/products/product-images/
 import { categoriesTable } from "@/db/schema/catalog/categories/table";
 import { categoryAttributesTable } from "@/db/schema/catalog/category-attributes/table";
 import { productAttributeValuesTable } from "@/db/schema/catalog/products/product-attribute-values/table";
+import { productTagMappingsTable } from "@/db/schema/catalog/products/product-tag-mappings/table";
+import { productTagsTable } from "@/db/schema/catalog/products/product-tags/table";
 import { eq } from "drizzle-orm";
 
 export const getProductById = async (productId:string, seller:AuthSeller) => {
@@ -79,6 +81,22 @@ export const getProductById = async (productId:string, seller:AuthSeller) => {
         .from(productSeoTable)
         .where(eq(productSeoTable.productId, productId))
         .limit(1);
+
+    // Fetch Tags from mapping table
+    const tagRows = await db
+        .select({
+            name: productTagsTable.name,
+        })
+        .from(productTagMappingsTable)
+        .innerJoin(
+            productTagsTable,
+            eq(productTagMappingsTable.tagId, productTagsTable.id)
+        )
+        .where(eq(productTagMappingsTable.productId, productId));
+
+    const mappingKeywords = tagRows.map(r => r.name).filter(Boolean);
+    const seoKeywords = (seo?.metaKeywords as string[]) || [];
+    const combinedKeywords = Array.from(new Set([...seoKeywords, ...mappingKeywords]));
 
     // Fetch Images
     const images = await db
@@ -150,7 +168,7 @@ export const getProductById = async (productId:string, seller:AuthSeller) => {
     // Construct flat form data response
     const data = {
         id: product.id,
-        name: product.name,
+        name: product.name === "Untitled Draft" ? "" : product.name,
         brandLabel,
         category: categoryName,
         subcategory,
@@ -168,13 +186,18 @@ export const getProductById = async (productId:string, seller:AuthSeller) => {
         occasionFocus: attrMap["occasion"] || "",
         genderProfile: attrMap["gender"] || "",
         targetAgeGroup: attrMap["age_group"] || "",
-        boutiqueStockCount: inventory?.quantity ?? 0,
-        uniqueSku: variant?.sku || "",
+        boutiqueStockCount: (product.status === "DRAFT" && (!inventory?.quantity || inventory.quantity === 0))
+            ? ""
+            : String(inventory?.quantity ?? ""),
+        uniqueSku: (variant?.sku && !variant.sku.startsWith("sku-")) ? variant.sku : "",
+        lowStockThreshold: (inventory?.lowStockThreshold && inventory.lowStockThreshold > 0) ? String(inventory.lowStockThreshold) : "",
+        allowBackorder: Boolean(inventory?.allowBackorder),
+        barcode: variant?.barcode || "",
         pickupHubAddress,
         packageWeight: shipping?.weight || (variant?.weightGrams ? String(variant.weightGrams / 1000) : ""),
         deliveryRadiusRange,
         estimatedDeliveryWindow,
-        searchKeywords: seo?.metaKeywords ? seo.metaKeywords.join(", ") : "",
+        searchKeywords: combinedKeywords.join(", "),
         customVisibility: product.visibility || "PUBLIC",
         status: product.status,
         mediaUrls: images.map(img => img.imageUrl),

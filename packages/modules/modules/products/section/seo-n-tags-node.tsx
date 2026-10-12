@@ -45,11 +45,13 @@ const SeoNTagsNode = () => {
                 <div className="flex flex-col gap-1.5">
                     <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Custom Visibility Settings</label>
                     <select
-                        value={formData.customVisibility}
+                        value={formData.customVisibility || 'PUBLIC'}
                         onChange={(e) => handleInputChange('customVisibility', e.target.value as any)}
                         className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all cursor-pointer font-bold text-neutral-800"
                     >
-                        {VISIBILITY_OPTIONS.map(v => <option key={v} value={v}>{v} (Visible on public storefront & search indices)</option>)}
+                        <option value="PUBLIC">PUBLIC — Visible on storefront & search engines</option>
+                        <option value="PRIVATE">PRIVATE — Hidden from storefront (Private Catalog)</option>
+                        <option value="UNLISTED">UNLISTED — Accessible only via direct share link</option>
                     </select>
                 </div>
             </div>
