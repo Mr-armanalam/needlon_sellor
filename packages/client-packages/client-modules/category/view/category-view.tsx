@@ -46,20 +46,26 @@ const CategoryView = () => {
   const material = searchParams.get("material");
 
   const productData = useCallback(async () => {
-    await fetch(
-      `/api/products?category=${categories}&subcategory=${category}&sort=${sort}${
-        material ? `&material=${material}` : ""
-      }`,
-      { cache: "no-store" } 
-    )
-      .then(async (res) => await res.json())
-      .then(setProducts);
-  }, [categories, category, material, sort]);
+    const query = new URLSearchParams();
+    if (categories) query.set("category", categories);
+    if (category) query.set("subcategory", category);
+    if (sort) query.set("sort", sort);
 
-  
+    searchParams.forEach((val, key) => {
+      if (!["category", "subcategory", "sort"].includes(key)) {
+        query.set(key, val);
+      }
+    });
+
+    await fetch(`/api/products?${query.toString()}`, { cache: "no-store" })
+      .then(async (res) => await res.json())
+      .then(setProducts)
+      .catch((err) => console.error("fetch products error:", err));
+  }, [categories, category, sort, searchParams]);
+
   useEffect(() => {
     productData();
-  }, [category, sort, productData]);
+  }, [productData]);
 
   return (
     <div className="md:px-6 px-3 py-8">
@@ -80,6 +86,7 @@ const CategoryView = () => {
       <FilterDrawer
         isOpen={filterOpen}
         category={category}
+        parentCategory={categories}
         onClose={() => setFilterOpen(false)} 
       />
     </div>

@@ -89,13 +89,8 @@ const ItemControl = ({ sort, category, setFilterOpen, isFilterHide }: param) => 
           onValueChange={(sortby) => {
             if (!sortby) return;
             const newParams = new URLSearchParams(searchParams.toString());
-            let values = newParams.get(category)?.split(",") || [];
-            values = values.filter((v) => v === sortby);
-            if (values.length > 0) return;
             newParams.set("sort", sortby);
-            return router.push(
-              `${category}?${newParams.toString()}`
-            );
+            router.push(`${pathname}?${newParams.toString()}`);
           }}
         >
           <SelectTrigger className="w-50 text-gray-900 dark:text-gray-300 dark:border-gray-400 min-h-10 border-stone-300 shadow-none rounded-xs focus-visible:outline-none h-[60px]">

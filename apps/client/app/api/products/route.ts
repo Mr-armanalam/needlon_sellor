@@ -9,7 +9,19 @@ export async function GET(req: NextRequest) {
     const subcatSlug = searchParams.get("subcatSlug") || searchParams.get("subcategory") || undefined;
     const sort = searchParams.get("sort") || undefined;
 
-    const products = await ProductService.getFilteredProducts(categoryType, subcatSlug, sort);
+    const attributeFilters: Record<string, string[]> = {};
+    searchParams.forEach((value, key) => {
+      if (!["category", "categoryType", "subcategory", "subcatSlug", "sort"].includes(key)) {
+        attributeFilters[key] = value.split(",").map((s) => s.trim()).filter(Boolean);
+      }
+    });
+
+    const products = await ProductService.getFilteredProducts(
+      categoryType,
+      subcatSlug,
+      sort,
+      attributeFilters
+    );
 
     if (products && products.length > 0) {
       const productData = products.map(transformToProductCard);

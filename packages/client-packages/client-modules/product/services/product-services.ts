@@ -2,22 +2,21 @@ import { ProductRepository } from "../repositories/product-repository";
 import { transformDbProductToDto } from "./product-transformer";
 
 export const ProductService = {
-  async getFilteredProducts(categoryType?: string, subcatSlug?: string, sort?: string) {
+  async getFilteredProducts(
+    categoryType?: string,
+    subcatSlug?: string,
+    sort?: string,
+    attributeFilters?: Record<string, string[]>
+  ) {
     if (process.env.DATABASE_URL) {
       try {
-        let rows = await ProductRepository.getProducts({
-          categorySlug: subcatSlug || categoryType,
+        const rows = await ProductRepository.getProducts({
+          categoryType,
+          subcatSlug,
           sort: sort as any,
-          limit: 30,
+          attributeFilters,
+          limit: 50,
         });
-
-        // If no products matched the specific category, fetch general products
-        if ((!rows || rows.length === 0) && (subcatSlug || categoryType)) {
-          rows = await ProductRepository.getProducts({
-            sort: sort as any,
-            limit: 30,
-          });
-        }
 
         if (rows && rows.length > 0) {
           const transformed = await Promise.all(

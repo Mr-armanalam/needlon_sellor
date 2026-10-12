@@ -55,6 +55,7 @@ export function transformDbProductToDto(
   row: {
     product: any;
     category?: any;
+    subCategory?: any;
     defaultVariant?: any;
     pricing?: any;
   },
@@ -63,6 +64,7 @@ export function transformDbProductToDto(
 ): ProductWithCategoryDTO {
   const p = row.product;
   const cat = row.category;
+  const subcat = row.subCategory;
   const variantPricing = variants[0]?.pricing;
   const pr = row.pricing || variantPricing;
 
@@ -117,7 +119,7 @@ export function transformDbProductToDto(
       id: cat?.id || "cat-default",
       category: catName,
       CatType: catSlug,
-      SubCatType: catSlug,
+      SubCatType: subcat?.slug || catSlug,
       contentTag: "Classic Collection",
       descriptiveContent: cat?.description || "Curated premium fashion collection.",
     },

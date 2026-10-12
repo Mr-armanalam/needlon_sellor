@@ -5,7 +5,8 @@ import { transformToProductCard } from "@/modules/product/services/product-trans
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const filterType = searchParams.get("type") || "trending";
+    const filterType = searchParams.get("filterType") || searchParams.get("type") || "trending";
+    const sort = searchParams.get("sort") || undefined;
 
     let products: any[] = [];
     if (filterType === "premium") {
@@ -14,6 +15,8 @@ export async function GET(req: NextRequest) {
       products = await ProductService.getBestSeller();
     } else if (filterType === "new-in") {
       products = await ProductService.getNewIn();
+    } else if (["items-for-men", "items-for-women", "men", "women"].includes(filterType.toLowerCase())) {
+      products = await ProductService.getFiltered({ categoryType: filterType, sort });
     } else {
       products = await ProductService.getTrending();
     }
