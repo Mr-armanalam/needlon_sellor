@@ -319,6 +319,42 @@ async function syncAllSchemas() {
     `;
     console.log(`  ? Backfilled shipping rows: ${shippingBackfill.count || 0}`);
 
+    // -------------------------------------------------------------
+    // 8. Product Listing Redesign: subcategory_id, brand_id, brand_name, discount_rate, estimated_delivery_window
+    // -------------------------------------------------------------
+    console.log("\n--> [8/8] Synchronizing Product Listing fields (subcategory_id, brand_id, discount_rate)...");
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS brands (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        seller_id UUID,
+        name VARCHAR(150) NOT NULL,
+        slug VARCHAR(180) NOT NULL,
+        description TEXT,
+        logo_url TEXT,
+        website_url TEXT,
+        is_verified BOOLEAN DEFAULT false NOT NULL,
+        is_active BOOLEAN DEFAULT true NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `;
+    await sql`CREATE UNIQUE INDEX IF NOT EXISTS brands_slug_idx ON brands(slug);`;
+    await sql`CREATE INDEX IF NOT EXISTS brands_seller_idx ON brands(seller_id);`;
+
+    await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS subcategory_id UUID REFERENCES categories(id) ON DELETE SET NULL;`;
+    await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS brand_id UUID REFERENCES brands(id) ON DELETE SET NULL;`;
+    await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS brand_name VARCHAR(100);`;
+    await sql`CREATE INDEX IF NOT EXISTS products_subcategory_idx ON products(subcategory_id);`;
+    await sql`CREATE INDEX IF NOT EXISTS products_brand_idx ON products(brand_id);`;
+
+    await sql`ALTER TABLE pricing ADD COLUMN IF NOT EXISTS discount_rate NUMERIC(5, 2) DEFAULT '0.00';`;
+    await sql`CREATE INDEX IF NOT EXISTS pricing_discount_rate_idx ON pricing(discount_rate);`;
+
+    await sql`ALTER TABLE product_variants ADD COLUMN IF NOT EXISTS estimated_delivery_window VARCHAR(100);`;
+
+    console.log("  ? Product Listing fields and indexes verified.");
+
     console.log("\n=================================================================");
     console.log("== ALL SUPABASE SCHEMAS SUCCESSFULLY SYNCHRONIZED!             ==");
     console.log("=================================================================");

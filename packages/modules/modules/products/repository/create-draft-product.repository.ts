@@ -84,7 +84,6 @@ export async function createDraftProduct(data: any): Promise<Product> {
                 productId: prod.id,
                 name: "Standard Variant",
                 sku: `sku-${prod.id}`,
-                price: "0.00",
                 position: 0,
                 status: "ACTIVE",
             })

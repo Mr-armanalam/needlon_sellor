@@ -146,16 +146,33 @@ export const getProductById = async (productId:string, seller:AuthSeller) => {
         }
     }
 
+    // Check subcategory by foreign key if available
+    if (product.subcategoryId) {
+        const [subCat] = await db
+            .select({ name: categoriesTable.name })
+            .from(categoriesTable)
+            .where(eq(categoriesTable.id, product.subcategoryId))
+            .limit(1);
+        if (subCat?.name) {
+            subcategory = subCat.name;
+        }
+    }
+
     // Parse Variant sizes & colors
     let sizesMatrix = "";
     let colorsTrack = "";
     if (variant?.name && variant.name !== "Standard Variant") {
-        const parts = variant.name.split("/").map(p => p.trim());
-        if (parts.length >= 2) {
-            sizesMatrix = parts[0];
-            colorsTrack = parts[1];
-        } else if (parts.length === 1) {
-            sizesMatrix = parts[0];
+        const delimiter = variant.name.includes(" - ") ? " - " : (variant.name.includes("/") ? "/" : null);
+        if (delimiter) {
+            const parts = variant.name.split(delimiter).map(p => p.trim());
+            if (parts.length >= 2) {
+                sizesMatrix = parts[0];
+                colorsTrack = parts[1];
+            } else if (parts.length === 1) {
+                sizesMatrix = parts[0];
+            }
+        } else {
+            sizesMatrix = variant.name;
         }
     }
 
@@ -163,21 +180,38 @@ export const getProductById = async (productId:string, seller:AuthSeller) => {
     const shippingMeta = (shipping?.metadata as Record<string, unknown>) || {};
     const pickupHubAddress = (shippingMeta.pickupHubAddress as string) || "";
     const deliveryRadiusRange = (shippingMeta.deliveryRadiusRange as string) || "";
-    const estimatedDeliveryWindow = (shippingMeta.estimatedDeliveryWindow as string) || "";
+    const estimatedDeliveryWindow = variant?.estimatedDeliveryWindow || (shippingMeta.estimatedDeliveryWindow as string) || "";
 
-    // Construct flat form data response
+    // Safe stable discount calculation
+    let discountOfferRate = "0";
+    if (pricing?.discountRate !== undefined && pricing?.discountRate !== null) {
+        discountOfferRate = String(pricing.discountRate);
+    } else if (pricing?.compareAtPrice && pricing?.price && Number(pricing.compareAtPrice) > Number(pricing.price)) {
+        discountOfferRate = String(Math.round(((Number(pricing.compareAtPrice) - Number(pricing.price)) / Number(pricing.compareAtPrice)) * 100));
+    }
+
+    // Construct comprehensive form data response
     const data = {
         id: product.id,
         name: product.name === "Untitled Draft" ? "" : product.name,
-        brandLabel,
+        brandLabel: product.brandName || brandLabel,
+        brandId: product.brandId || null,
+        brandName: product.brandName || "",
         category: categoryName,
+        categoryId: product.categoryId,
         subcategory,
+        subcategoryId: product.subcategoryId || null,
         descriptionStory: product.description || "",
-        isCustomizable: product.isCustomizable ?? false,
-        retailPrice: pricing?.price ? String(pricing.price) : (variant?.price ? String(variant.price) : ""),
-        discountOfferRate: pricing?.compareAtPrice && pricing?.price && Number(pricing.compareAtPrice) > Number(pricing.price)
-            ? String(Math.round(((Number(pricing.compareAtPrice) - Number(pricing.price)) / Number(pricing.compareAtPrice)) * 100))
-            : "0",
+        isCustomizable: product.isCustomizable ?? true,
+        currencyCode: pricing?.currencyCode || "INR",
+        retailPrice: pricing?.price ? String(pricing.price) : "",
+        discountOfferRate,
+        compareAtPrice: pricing?.compareAtPrice ? String(pricing.compareAtPrice) : "",
+        costPrice: pricing?.costPrice ? String(pricing.costPrice) : "",
+        minimumAdvertisedPrice: pricing?.minimumAdvertisedPrice ? String(pricing.minimumAdvertisedPrice) : "",
+        effectiveFrom: pricing?.effectiveFrom ? pricing.effectiveFrom.toISOString() : "",
+        effectiveUntil: pricing?.effectiveUntil ? pricing.effectiveUntil.toISOString() : "",
+        isTaxInclusive: pricing?.isTaxInclusive ?? true,
         sizesMatrix,
         colorsTrack,
         fabricMaterial: attrMap["fabric"] || "",
@@ -191,12 +225,29 @@ export const getProductById = async (productId:string, seller:AuthSeller) => {
             : String(inventory?.quantity ?? ""),
         uniqueSku: (variant?.sku && !variant.sku.startsWith("sku-")) ? variant.sku : "",
         lowStockThreshold: (inventory?.lowStockThreshold && inventory.lowStockThreshold > 0) ? String(inventory.lowStockThreshold) : "",
+        reservedQuantity: String(inventory?.reservedQuantity ?? 0),
         allowBackorder: Boolean(inventory?.allowBackorder),
+        lastAdjustedAt: inventory?.lastAdjustedAt ? inventory.lastAdjustedAt.toISOString() : "",
         barcode: variant?.barcode || "",
+        position: String(variant?.position ?? 0),
+        pickupHubId: (shippingMeta.pickupHubId as string) || null,
         pickupHubAddress,
+        shippingPartnerId: (shippingMeta.shippingPartnerId as string) || null,
+        shippingMethodId: (shippingMeta.shippingMethodId as string) || null,
+        deliveryZone: (shippingMeta.deliveryZone as string) || "",
         packageWeight: shipping?.weight || (variant?.weightGrams ? String(variant.weightGrams / 1000) : ""),
         deliveryRadiusRange,
         estimatedDeliveryWindow,
+        slug: seo?.slug || product.slug,
+        metaTitle: seo?.metaTitle || "",
+        metaDescription: seo?.metaDescription || "",
+        canonicalUrl: seo?.canonicalUrl || "",
+        ogTitle: seo?.ogTitle || "",
+        ogDescription: seo?.ogDescription || "",
+        ogImage: seo?.ogImage || null,
+        twitterTitle: seo?.twitterTitle || "",
+        twitterDescription: seo?.twitterDescription || "",
+        twitterImage: seo?.twitterImage || null,
         searchKeywords: combinedKeywords.join(", "),
         customVisibility: product.visibility || "PUBLIC",
         status: product.status,

@@ -3,8 +3,12 @@ import { z } from "zod";
 export const updateBasicInfoSchema = z.object({
   name: z.string().trim().min(1, "Product name is required").max(255),
   brandLabel: z.string().trim().max(255).optional(),
+  brandId: z.string().uuid().optional().nullable(),
+  brandName: z.string().trim().max(150).optional().nullable(),
   category: z.string().trim().max(255).optional(),
+  categoryId: z.string().uuid().optional().nullable(),
   subcategory: z.string().trim().max(255).optional(),
+  subcategoryId: z.string().uuid().optional().nullable(),
   descriptionStory: z.string().trim().optional(),
   slug: z.string().trim().max(255).optional(),
   isCustomizable: z.boolean().optional(),

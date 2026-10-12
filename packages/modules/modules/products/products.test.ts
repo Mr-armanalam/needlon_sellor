@@ -39,6 +39,7 @@ async function runProductsModuleTests() {
       "variant_id" uuid NOT NULL,
       "currency_code" varchar(3) DEFAULT 'INR' NOT NULL,
       "price" numeric(12, 2) NOT NULL,
+      "discount_rate" numeric(5, 2) DEFAULT '0.00',
       "compare_at_price" numeric(12, 2),
       "cost_price" numeric(12, 2),
       "minimum_advertised_price" numeric(12, 2),
@@ -52,6 +53,10 @@ async function runProductsModuleTests() {
       "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
       "deleted_at" timestamp with time zone
     )`,
+    `ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "subcategory_id" uuid`,
+    `ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "brand_id" uuid`,
+    `ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "brand_name" varchar(100)`,
+    `ALTER TABLE "product_variants" ADD COLUMN IF NOT EXISTS "estimated_delivery_window" varchar(100)`,
     `CREATE TABLE "shipping" (
       "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       "variant_id" uuid NOT NULL,
@@ -589,6 +594,117 @@ async function runProductsModuleTests() {
 
     // Clean up cloned product
     await db.delete(products).where(eq(products.id, clonedProduct.id));
+
+    // 21. Test Pure SEO Generator
+    console.log("\n21. Testing Pure SEO Generator & JSON-LD Structured Data...");
+    const { generateProductSlug, generateProductSeoData } = await import("./lib/seo-generator");
+    const testSlug = generateProductSlug("Handcrafted Chikankari Silk Kurti #2026!");
+    if (testSlug !== "handcrafted-chikankari-silk-kurti-2026") {
+      throw new Error(`Expected slug 'handcrafted-chikankari-silk-kurti-2026', got '${testSlug}'`);
+    }
+
+    const testSeo = generateProductSeoData({
+      productName: "Chanderi Anarkali Suit",
+      brandName: "Needlon Atelier",
+      categoryName: "Ethnic Wear",
+      descriptionStory: "Handwoven pure silk Chanderi Anarkali suit tailored to bespoke perfection with zardozi embroidery.",
+      tags: ["chanderi", "anarkali", "festive"],
+      price: "4999",
+      currencyCode: "INR",
+    });
+
+    if (!testSeo.slug.includes("chanderi-anarkali-suit")) {
+      throw new Error(`Invalid generated SEO slug: ${testSeo.slug}`);
+    }
+    if (!testSeo.metaTitle.includes("Needlon Atelier")) {
+      throw new Error(`SEO metaTitle missing brand: ${testSeo.metaTitle}`);
+    }
+    if ((testSeo.structuredData as any)["@type"] !== "Product") {
+      throw new Error("Structured data must be Schema.org Product");
+    }
+    console.log(`✅ SEO Generator tests passed (Slug: "${testSeo.slug}", Title: "${testSeo.metaTitle}", Structured Offers Price: ${(testSeo.structuredData as any).offers?.price})`);
+
+    // 22. Test Zero-Drift Pricing Persistence & Verification
+    console.log("\n22. Testing Zero-Drift Discount Persistence in Pricing Table...");
+    const zeroDriftDraft = await draftService.updatePricing(createdDraft.id, {
+      retailPrice: "1999.00",
+      discountOfferRate: "15.00",
+      currencyCode: "INR",
+      compareAtPrice: "2351.76",
+      costPrice: "1200.00",
+      minimumAdvertisedPrice: "1899.00",
+      isTaxInclusive: true,
+    });
+
+    const refreshedPricingDraft = await getProductById(createdDraft.id, {
+      id: DEFAULT_SELLER_ID,
+      role: "seller",
+      name: "Default Test Seller",
+      email: "default-seller@test.com",
+    } as any);
+
+    if (refreshedPricingDraft instanceof Error) throw refreshedPricingDraft;
+
+    if (parseFloat(refreshedPricingDraft.discountOfferRate || "0") !== 15) {
+      throw new Error(`Expected stable discountOfferRate 15, got ${refreshedPricingDraft.discountOfferRate}`);
+    }
+    console.log(`✅ Zero-Drift Pricing verified (Retail: ${refreshedPricingDraft.retailPrice}, Rate: ${refreshedPricingDraft.discountOfferRate}%, MRP: ${refreshedPricingDraft.compareAtPrice})`);
+
+    // 23. Test Relational Brand and Subcategory Persistence
+    console.log("\n23. Testing Brand Label and Relational Subcategory on Draft Product...");
+    await draftService.updateBasicInfo(createdDraft.id, {
+      name: "Handloom Chikankari Designer Kurti",
+      brandLabel: "Boutique Artisan",
+      brandName: "Boutique Artisan",
+      category: "Ethnic Wear",
+      subcategory: "Kurtis",
+      descriptionStory: "Handcrafted pure cotton Chikankari kurti with bespoke options.",
+      isCustomizable: true,
+    });
+
+    const refreshedBasicDraft = await getProductById(createdDraft.id, {
+      id: DEFAULT_SELLER_ID,
+      role: "seller",
+      name: "Default Test Seller",
+      email: "default-seller@test.com",
+    } as any);
+
+    if (refreshedBasicDraft instanceof Error) throw refreshedBasicDraft;
+    if (refreshedBasicDraft.brandName !== "Boutique Artisan" && refreshedBasicDraft.brandLabel !== "Boutique Artisan") {
+      throw new Error(`Expected brand Boutique Artisan, got ${refreshedBasicDraft.brandName || refreshedBasicDraft.brandLabel}`);
+    }
+    console.log(`✅ Brand & Category persistence verified (Brand: "${refreshedBasicDraft.brandName || refreshedBasicDraft.brandLabel}", Category: "${refreshedBasicDraft.category}")`);
+
+    // 24. Test Delivery Logistics & Inventory Extras
+    console.log("\n24. Testing Delivery Logistics Window & Inventory Extras...");
+    await draftService.updateInventory(createdDraft.id, {
+      boutiqueStockCount: 20,
+      uniqueSku: `NDLN-EXTRA-SKU-${timestamp}`,
+      lowStockThreshold: 4,
+      reservedQuantity: 2,
+      position: 10,
+    });
+
+    await draftService.updateDelivery(createdDraft.id, {
+      pickupHubAddress: "Studio Workshop, Block 4C, Kalyan, Maharashtra",
+      packageWeight: "0.45",
+      deliveryZone: "DOMESTIC",
+      deliveryRadiusRange: "Nationwide Shipping",
+      estimatedDeliveryWindow: "2 - 4 business days expedited delivery",
+    });
+
+    const refreshedLogisticsDraft = await getProductById(createdDraft.id, {
+      id: DEFAULT_SELLER_ID,
+      role: "seller",
+      name: "Default Test Seller",
+      email: "default-seller@test.com",
+    } as any);
+
+    if (refreshedLogisticsDraft instanceof Error) throw refreshedLogisticsDraft;
+    if (refreshedLogisticsDraft.estimatedDeliveryWindow !== "2 - 4 business days expedited delivery") {
+      throw new Error(`Expected delivery window '2 - 4 business days expedited delivery', got '${refreshedLogisticsDraft.estimatedDeliveryWindow}'`);
+    }
+    console.log(`✅ Delivery Window verified: "${refreshedLogisticsDraft.estimatedDeliveryWindow}", Reserved Stock: ${refreshedLogisticsDraft.reservedQuantity}`);
 
     console.log("\n🎉 ALL CANONICAL PRODUCTS MODULE TESTS PASSED! ✅");
   } finally {

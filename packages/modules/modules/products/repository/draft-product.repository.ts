@@ -14,12 +14,17 @@ import { productAttributeValuesTable } from "@/db/schema/catalog/products/produc
 import { productTagsTable } from "@/db/schema/catalog/products/product-tags/table";
 import { productTagMappingsTable } from "@/db/schema/catalog/products/product-tag-mappings/table";
 import { categoriesTable } from "@/db/schema/catalog/categories/table";
+import { generateProductSeoData } from "../lib/seo-generator";
 
 export interface UpdateDraftBasicInfoParams {
   name?: string;
   brandLabel?: string;
+  brandId?: string | null;
+  brandName?: string | null;
   category?: string;
+  categoryId?: string | null;
   subcategory?: string;
+  subcategoryId?: string | null;
   descriptionStory?: string;
   slug?: string;
   isCustomizable?: boolean;
@@ -35,7 +40,9 @@ export async function updateDraftProductBasicInfo(
   if (input.slug) updateData.slug = input.slug;
   if (input.isCustomizable !== undefined) updateData.isCustomizable = input.isCustomizable;
 
-  if (input.category) {
+  if (input.categoryId) {
+    updateData.categoryId = input.categoryId;
+  } else if (input.category) {
     const [cat] = await db
       .select({ id: categoriesTable.id })
       .from(categoriesTable)
@@ -47,11 +54,28 @@ export async function updateDraftProductBasicInfo(
     }
   }
 
-  if (input.brandLabel || input.subcategory) {
-    const parts: string[] = [];
-    if (input.brandLabel) parts.push(`Brand: ${input.brandLabel}`);
-    if (input.subcategory) parts.push(`Subcategory: ${input.subcategory}`);
-    updateData.shortDescription = parts.join(" | ");
+  if (input.subcategoryId) {
+    updateData.subcategoryId = input.subcategoryId;
+  } else if (input.subcategory && updateData.categoryId) {
+    const [subCat] = await db
+      .select({ id: categoriesTable.id })
+      .from(categoriesTable)
+      .where(and(
+        eq(categoriesTable.name, input.subcategory),
+        eq(categoriesTable.parentId, updateData.categoryId)
+      ))
+      .limit(1);
+
+    if (subCat) {
+      updateData.subcategoryId = subCat.id;
+    }
+  }
+
+  if (input.brandId !== undefined) {
+    updateData.brandId = input.brandId;
+  }
+  if (input.brandName !== undefined || input.brandLabel !== undefined) {
+    updateData.brandName = input.brandName || input.brandLabel;
   }
 
   const [updated] = await db
@@ -75,10 +99,25 @@ export async function updateDraftProductBasicInfo(
   return updated;
 }
 
+export interface UpdateDraftPricingParams {
+  retailPrice?: string | number;
+  discountOfferRate?: string | number;
+  currencyCode?: string;
+  compareAtPrice?: string | number | null;
+  costPrice?: string | number | null;
+  minimumAdvertisedPrice?: string | number | null;
+  effectiveFrom?: string | Date | null;
+  effectiveUntil?: string | Date | null;
+  isTaxInclusive?: boolean;
+  metadata?: Record<string, unknown>;
+  sellerId?: string | null;
+}
+
 export async function updateDraftProductPricing(
   productId: string,
   retailPrice?: string | number,
-  discountOfferRate?: string | number
+  discountOfferRate?: string | number,
+  extraParams?: Partial<UpdateDraftPricingParams>
 ) {
   const [variant] = await db
     .select()
@@ -88,30 +127,50 @@ export async function updateDraftProductPricing(
 
   if (variant) {
     const price = retailPrice ? String(retailPrice) : "0.00";
-    const comparePrice = discountOfferRate
-      ? String(Number(price) * (1 + Number(discountOfferRate) / 100))
-      : null;
+    const discountRate = discountOfferRate !== undefined && discountOfferRate !== null && String(discountOfferRate).trim() !== ""
+      ? String(discountOfferRate)
+      : "0.00";
 
-    // Pricing table is the single authoritative source
+    let comparePrice: string | null = null;
+    if (extraParams?.compareAtPrice !== undefined && extraParams?.compareAtPrice !== null && String(extraParams.compareAtPrice).trim() !== "") {
+      comparePrice = String(extraParams.compareAtPrice);
+    } else if (Number(discountRate) > 0 && Number(price) > 0) {
+      const calculatedMrp = Number(price) / (1 - Number(discountRate) / 100);
+      comparePrice = calculatedMrp.toFixed(2);
+    }
+
+    const pricingUpdate: any = {
+      price,
+      discountRate,
+      compareAtPrice: comparePrice,
+      currencyCode: extraParams?.currencyCode || "INR",
+      isTaxInclusive: extraParams?.isTaxInclusive ?? true,
+      updatedAt: new Date(),
+    };
+
+    if (extraParams?.costPrice !== undefined) {
+      pricingUpdate.costPrice = extraParams.costPrice ? String(extraParams.costPrice) : null;
+    }
+    if (extraParams?.minimumAdvertisedPrice !== undefined) {
+      pricingUpdate.minimumAdvertisedPrice = extraParams.minimumAdvertisedPrice ? String(extraParams.minimumAdvertisedPrice) : null;
+    }
+    if (extraParams?.effectiveFrom !== undefined) {
+      pricingUpdate.effectiveFrom = extraParams.effectiveFrom ? new Date(extraParams.effectiveFrom) : null;
+    }
+    if (extraParams?.effectiveUntil !== undefined) {
+      pricingUpdate.effectiveUntil = extraParams.effectiveUntil ? new Date(extraParams.effectiveUntil) : null;
+    }
+    if (extraParams?.metadata !== undefined) {
+      pricingUpdate.metadata = extraParams.metadata;
+    }
+    if (extraParams?.sellerId) {
+      pricingUpdate.updatedBy = extraParams.sellerId;
+    }
+
     await db
       .update(pricingTable)
-      .set({
-        price,
-        compareAtPrice: comparePrice,
-        currencyCode: "INR",
-        updatedAt: new Date(),
-      })
+      .set(pricingUpdate)
       .where(eq(pricingTable.variantId, variant.id));
-
-    // Synchronize product_variants for backward compatibility
-    await db
-      .update(productVariantsTable)
-      .set({
-        price,
-        compareAtPrice: comparePrice,
-        updatedAt: new Date(),
-      })
-      .where(eq(productVariantsTable.id, variant.id));
   }
 }
 
@@ -296,6 +355,9 @@ export async function updateDraftProductInventory(
     lowStockThreshold?: number | string;
     allowBackorder?: boolean;
     barcode?: string;
+    reservedQuantity?: number | string;
+    lastAdjustedAt?: string | Date;
+    position?: number | string;
   }
 ) {
   const [variant] = await db
@@ -311,6 +373,9 @@ export async function updateDraftProductInventory(
     }
     if (extraParams?.barcode !== undefined) {
       variantUpdate.barcode = extraParams.barcode?.trim() || null;
+    }
+    if (extraParams?.position !== undefined && String(extraParams.position).trim() !== "") {
+      variantUpdate.position = Number(extraParams.position) || 0;
     }
 
     if (Object.keys(variantUpdate).length > 1) {
@@ -330,19 +395,25 @@ export async function updateDraftProductInventory(
     if (extraParams?.allowBackorder !== undefined) {
       invUpdate.allowBackorder = Boolean(extraParams.allowBackorder);
     }
-
-    if (Object.keys(invUpdate).length > 1) {
-      await db
-        .update(inventoryTable)
-        .set(invUpdate)
-        .where(eq(inventoryTable.variantId, variant.id));
+    if (extraParams?.reservedQuantity !== undefined && String(extraParams.reservedQuantity).trim() !== "") {
+      invUpdate.reservedQuantity = Number(extraParams.reservedQuantity) || 0;
     }
+    invUpdate.lastAdjustedAt = extraParams?.lastAdjustedAt ? new Date(extraParams.lastAdjustedAt) : new Date();
+
+    await db
+      .update(inventoryTable)
+      .set(invUpdate)
+      .where(eq(inventoryTable.variantId, variant.id));
   }
 }
 
 export interface UpdateDraftDeliveryParams {
   packageWeight?: string | number;
+  pickupHubId?: string | null;
   pickupHubAddress?: string;
+  shippingPartnerId?: string | null;
+  shippingMethodId?: string | null;
+  deliveryZone?: string;
   deliveryRadiusRange?: string;
   estimatedDeliveryWindow?: string;
 }
@@ -350,11 +421,7 @@ export interface UpdateDraftDeliveryParams {
 export async function updateDraftProductDelivery(
   productId: string,
   packageWeight?: string | number,
-  deliveryMeta?: {
-    pickupHubAddress?: string;
-    deliveryRadiusRange?: string;
-    estimatedDeliveryWindow?: string;
-  }
+  deliveryMeta?: UpdateDraftDeliveryParams
 ) {
   const [variant] = await db
     .select()
@@ -366,13 +433,25 @@ export async function updateDraftProductDelivery(
     const weightVal = packageWeight ? String(packageWeight) : "0.00";
     const weightG = Math.round(parseFloat(weightVal) * 1000) || 0;
 
+    const variantUpdate: Record<string, unknown> = {
+      weightGrams: weightG,
+      updatedAt: new Date(),
+    };
+    if (deliveryMeta?.estimatedDeliveryWindow) {
+      variantUpdate.estimatedDeliveryWindow = deliveryMeta.estimatedDeliveryWindow;
+    }
+
     await db
       .update(productVariantsTable)
-      .set({ weightGrams: weightG, updatedAt: new Date() })
+      .set(variantUpdate)
       .where(eq(productVariantsTable.id, variant.id));
 
     const metadata: Record<string, unknown> = {};
+    if (deliveryMeta?.pickupHubId) metadata.pickupHubId = deliveryMeta.pickupHubId;
     if (deliveryMeta?.pickupHubAddress) metadata.pickupHubAddress = deliveryMeta.pickupHubAddress;
+    if (deliveryMeta?.shippingPartnerId) metadata.shippingPartnerId = deliveryMeta.shippingPartnerId;
+    if (deliveryMeta?.shippingMethodId) metadata.shippingMethodId = deliveryMeta.shippingMethodId;
+    if (deliveryMeta?.deliveryZone) metadata.deliveryZone = deliveryMeta.deliveryZone;
     if (deliveryMeta?.deliveryRadiusRange) metadata.deliveryRadiusRange = deliveryMeta.deliveryRadiusRange;
     if (deliveryMeta?.estimatedDeliveryWindow) metadata.estimatedDeliveryWindow = deliveryMeta.estimatedDeliveryWindow;
 
@@ -387,10 +466,27 @@ export async function updateDraftProductDelivery(
   }
 }
 
+export interface UpdateDraftSeoParams {
+  searchKeywords?: string;
+  customVisibility?: "PUBLIC" | "PRIVATE" | "UNLISTED";
+  slug?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  canonicalUrl?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string | null;
+  twitterTitle?: string;
+  twitterDescription?: string;
+  twitterImage?: string | null;
+  structuredData?: Record<string, unknown>;
+}
+
 export async function updateDraftProductSeo(
   productId: string,
   searchKeywords?: string,
-  customVisibility?: "PUBLIC" | "PRIVATE" | "UNLISTED"
+  customVisibility?: "PUBLIC" | "PRIVATE" | "UNLISTED",
+  seoOverrides?: Partial<UpdateDraftSeoParams>
 ) {
   const keywords = searchKeywords
     ? searchKeywords.split(",").map((k: string) => k.trim()).filter(Boolean)
@@ -424,11 +520,30 @@ export async function updateDraftProductSeo(
         .limit(1)
     : [primaryImage];
 
-  const metaTitle = product ? `${product.name} | Needlon` : "Needlon Product";
-  const metaDescription = product?.description ? product.description.slice(0, 160) : "";
-  const imageUrl = primaryImage?.imageUrl || anyImage?.imageUrl || null;
+  const primaryImageUrl = primaryImage?.imageUrl || anyImage?.imageUrl || null;
 
-  // Upsert productSeoTable to ensure keywords are never silently lost
+  // Generate automated SEO bundle
+  const generatedSeo = generateProductSeoData({
+    productName: product?.name || "",
+    brandName: product?.brandName,
+    descriptionStory: product?.description,
+    tags: keywords,
+    primaryImageUrl,
+  });
+
+  const finalSlug = seoOverrides?.slug || product?.slug || generatedSeo.slug;
+  const finalMetaTitle = seoOverrides?.metaTitle || generatedSeo.metaTitle;
+  const finalMetaDescription = seoOverrides?.metaDescription || generatedSeo.metaDescription;
+  const finalCanonicalUrl = seoOverrides?.canonicalUrl || generatedSeo.canonicalUrl;
+  const finalOgTitle = seoOverrides?.ogTitle || generatedSeo.ogTitle;
+  const finalOgDescription = seoOverrides?.ogDescription || generatedSeo.ogDescription;
+  const finalOgImage = seoOverrides?.ogImage !== undefined ? seoOverrides.ogImage : generatedSeo.ogImage;
+  const finalTwitterTitle = seoOverrides?.twitterTitle || generatedSeo.twitterTitle;
+  const finalTwitterDescription = seoOverrides?.twitterDescription || generatedSeo.twitterDescription;
+  const finalTwitterImage = seoOverrides?.twitterImage !== undefined ? seoOverrides.twitterImage : generatedSeo.twitterImage;
+  const finalStructuredData = seoOverrides?.structuredData || generatedSeo.structuredData;
+
+  // Upsert productSeoTable
   const [existingSeo] = await db
     .select({ id: productSeoTable.id })
     .from(productSeoTable)
@@ -439,15 +554,18 @@ export async function updateDraftProductSeo(
     await db
       .update(productSeoTable)
       .set({
+        slug: finalSlug,
         metaKeywords: keywords,
-        metaTitle,
-        metaDescription,
-        ogTitle: metaTitle,
-        ogDescription: metaDescription,
-        ogImage: imageUrl,
-        twitterTitle: metaTitle,
-        twitterDescription: metaDescription,
-        twitterImage: imageUrl,
+        metaTitle: finalMetaTitle,
+        metaDescription: finalMetaDescription,
+        canonicalUrl: finalCanonicalUrl,
+        ogTitle: finalOgTitle,
+        ogDescription: finalOgDescription,
+        ogImage: finalOgImage,
+        twitterTitle: finalTwitterTitle,
+        twitterDescription: finalTwitterDescription,
+        twitterImage: finalTwitterImage,
+        structuredData: finalStructuredData,
         updatedAt: new Date(),
       })
       .where(eq(productSeoTable.productId, productId));
@@ -456,16 +574,18 @@ export async function updateDraftProductSeo(
       .insert(productSeoTable)
       .values({
         productId,
-        slug: product?.slug || `seo-${productId.slice(0, 8)}`,
+        slug: finalSlug,
         metaKeywords: keywords,
-        metaTitle,
-        metaDescription,
-        ogTitle: metaTitle,
-        ogDescription: metaDescription,
-        ogImage: imageUrl,
-        twitterTitle: metaTitle,
-        twitterDescription: metaDescription,
-        twitterImage: imageUrl,
+        metaTitle: finalMetaTitle,
+        metaDescription: finalMetaDescription,
+        canonicalUrl: finalCanonicalUrl,
+        ogTitle: finalOgTitle,
+        ogDescription: finalOgDescription,
+        ogImage: finalOgImage,
+        twitterTitle: finalTwitterTitle,
+        twitterDescription: finalTwitterDescription,
+        twitterImage: finalTwitterImage,
+        structuredData: finalStructuredData,
       });
   }
 

@@ -1,3 +1,5 @@
+import { db } from "@/db";
+import { pricingTable } from "@/db/schema/catalog/products/pricing/table";
 import { generateUniqueSlug } from "@/modules/shared/slug/generate-unique-slug";
 import { createProduct, createProductVariant, existsProductSlug } from "../repository";
 import { ProductStatus, ProductVisibility } from "../types";
@@ -57,13 +59,20 @@ export async function createProductService(input: CreateProductServiceInput) {
       productId: product.id,
       sku: input.defaultVariant.sku.trim(),
       barcode: input.defaultVariant.barcode,
-      price: input.defaultVariant.price,
-      compareAtPrice: input.defaultVariant.compareAtPrice,
-      costPrice: input.defaultVariant.costPrice,
       weightGrams: input.defaultVariant.weightGrams,
       status: "ACTIVE",
       position: 0,
     });
+
+    if (input.defaultVariant.price) {
+      await db.insert(pricingTable).values({
+        variantId: variant.id,
+        currencyCode: "INR",
+        price: input.defaultVariant.price,
+        compareAtPrice: input.defaultVariant.compareAtPrice,
+        costPrice: input.defaultVariant.costPrice,
+      });
+    }
   }
 
   return {

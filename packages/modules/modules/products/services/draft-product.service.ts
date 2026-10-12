@@ -143,7 +143,7 @@ export async function updateDraftProductPricingService(id: string, input: DraftP
         throw new NotFoundError("Draft product not found.");
     }
 
-    await updateDraftProductPricing(id, input.retailPrice, input.discountOfferRate);
+    await updateDraftProductPricing(id, input.retailPrice, input.discountOfferRate, input);
 
     return { ...draft, ...input, metadata: { ...input } };
 }
@@ -172,9 +172,12 @@ export async function updateDraftProductInventoryService(id: string, input: Draf
     }
 
     await updateDraftProductInventory(id, input.uniqueSku, input.boutiqueStockCount, {
-        lowStockThreshold: input.lowStockThreshold,
+        lowStockThreshold: input.lowStockThreshold as any,
         allowBackorder: input.allowBackorder,
         barcode: input.barcode,
+        reservedQuantity: input.reservedQuantity as any,
+        lastAdjustedAt: input.lastAdjustedAt as any,
+        position: input.position as any,
     });
 
     return { ...draft, sku: input.uniqueSku, metadata: { ...input } };
@@ -186,11 +189,7 @@ export async function updateDraftProductDeliveryService(id: string, input: Draft
         throw new NotFoundError("Draft product not found.");
     }
 
-    await updateDraftProductDelivery(id, input.packageWeight, {
-        pickupHubAddress: input.pickupHubAddress,
-        deliveryRadiusRange: input.deliveryRadiusRange,
-        estimatedDeliveryWindow: input.estimatedDeliveryWindow,
-    });
+    await updateDraftProductDelivery(id, input.packageWeight, input as any);
 
     return { ...draft, ...input, metadata: { ...input } };
 }
@@ -205,7 +204,7 @@ export async function updateDraftProductSeoService(id: string, input: DraftSeoIn
         await updateProduct(id, { visibility: input.customVisibility as ("PRIVATE" | "PUBLIC" | "UNLISTED") });
     }
 
-    await updateDraftProductSeo(id, input.searchKeywords);
+    await updateDraftProductSeo(id, input.searchKeywords, input.customVisibility as any, input as any);
 
     return { ...draft, ...input, metadata: { ...input } };
 }

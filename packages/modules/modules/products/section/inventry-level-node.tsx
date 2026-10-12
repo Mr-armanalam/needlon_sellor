@@ -86,6 +86,39 @@ const InventryLevelNode = () => {
                     <span className="text-[11px] text-neutral-400">Barcode or scan identifier for boutique warehouse management.</span>
                 </div>
 
+                {/* Warehouse Bin / Position & Reserved Stock */}
+                <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between">
+                        <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Bin / Storage Position</label>
+                        {formData.lastAdjustedAt && (
+                            <span className="text-[10px] text-neutral-400">
+                                Last adjusted: {new Date(formData.lastAdjustedAt).toLocaleDateString()}
+                            </span>
+                        )}
+                    </div>
+                    <input
+                        type="number"
+                        min="0"
+                        placeholder="0"
+                        value={formData.position}
+                        onChange={(e) => handleInputChange('position', e.target.value)}
+                        className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all font-medium"
+                    />
+                    <span className="text-[11px] text-neutral-400">Shelf sorting index or boutique rack position identifier.</span>
+                </div>
+
+                {/* Reserved Quantity Info Card */}
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Reserved / In-Transit Stock</label>
+                    <div className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] text-neutral-700 flex items-center justify-between font-medium">
+                        <span>{formData.reservedQuantity || '0'} units</span>
+                        <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/60">
+                            Hold for Orders
+                        </span>
+                    </div>
+                    <span className="text-[11px] text-neutral-400">Units committed to active customer checkouts and in-processing orders.</span>
+                </div>
+
                 <div className="sm:col-span-2 flex items-center justify-between p-3.5 bg-neutral-50 border border-neutral-200/60 rounded-xl mt-1">
                     <div className="flex flex-col gap-0.5">
                         <span className="text-[13px] font-semibold text-neutral-900">Allow Backorders When Out of Stock</span>

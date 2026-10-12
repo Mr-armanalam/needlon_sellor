@@ -43,8 +43,12 @@ import { customerMeasurementsTable } from "./schema/customization/measurements";
 import { fittingAppointmentsTable } from "./schema/customization/fitting-appointments";
 import { sellerCustomers } from "./schema/seller/seller-customers";
 import { chatPermissions } from "./schema/messaging/chat-permissions";
+import { brands } from "./schema/seller/brand";
+import { shippingPartners } from "./schema/delivery/shipping-partners";
+import { shippingMethods } from "./schema/delivery/shipping-method";
+import { shipmentOrders } from "./schema/delivery/shipping-orders";
 
-export { sellerCustomers, chatPermissions, customerMeasurementsTable, fittingAppointmentsTable };
+export { sellerCustomers, chatPermissions, customerMeasurementsTable, fittingAppointmentsTable, brands, shippingPartners, shippingMethods, shipmentOrders };
 
 export const schema = {
   ...ordersSchema,
@@ -93,7 +97,11 @@ export const schema = {
   productVariantOptionsTable,
   productVariantsTable,
   productVariantsRelations,
-  shippingTable
+  shippingTable,
+  brands,
+  shippingPartners,
+  shippingMethods,
+  shipmentOrders,
 };
 
 const client = postgres(process.env.DATABASE_URL!);

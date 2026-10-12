@@ -11,7 +11,7 @@ export async function fetchProductsClient(
 ) {
   const params = new URLSearchParams();
   if (activeTab && activeTab !== "All") {
-    params.append("status", activeTab.toUpperCase().replaceAll(" ", "_"));
+    params.append("status", activeTab.toUpperCase().replace(/\s+/g, "_"));
   }
   if (searchQuery) {
     params.append("search", searchQuery);
@@ -105,6 +105,18 @@ export async function bulkUploadProductsClient(products: any[]) {
 
 export async function fetchCategoriesClient() {
   return apiClient.get<any>("/api/seller/products/categories");
+}
+
+export async function fetchBrandsClient() {
+  return apiClient.get<any>("/api/seller/brands");
+}
+
+export async function fetchDeliverySettingsClient() {
+  return apiClient.get<any>("/api/seller/delivery/settings");
+}
+
+export async function fetchShippingPartnersClient() {
+  return apiClient.get<any>("/api/seller/delivery/partners");
 }
 
 export async function publishProductClient(productId: string, status: 'DRAFT' | 'PUBLISHED' = 'PUBLISHED') {

@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import { categoriesTable as categories } from "@/db/schema/catalog/categories/table";
 import { inventoryTable } from "@/db/schema/catalog/products/inventory/table";
+import { pricingTable } from "@/db/schema/catalog/products/pricing/table";
 import { productImagesTable } from "@/db/schema/catalog/products/product-images/table";
 import { generateUniqueSlug } from "@/modules/shared/slug/generate-unique-slug";
 import { createProduct, createProductVariant, existsProductSlug, getProductVariantBySku } from "../repository";
@@ -66,12 +67,21 @@ export async function createWizardProductService({ sellerId, data }: CreateWizar
   const variant = await createProductVariant({
     productId: product.id,
     sku: data.uniqueSku.trim(),
-    price: data.retailPrice,
-    compareAtPrice: data.discountOfferRate ? data.retailPrice : undefined,
     weightGrams: data.packageWeight ? Math.round(parseFloat(data.packageWeight) * 1000) || 350 : 350,
     status: "ACTIVE",
     position: 0,
   });
+
+  // 5b. Insert pricing record
+  if (data.retailPrice) {
+    await db.insert(pricingTable).values({
+      variantId: variant.id,
+      currencyCode: "INR",
+      price: data.retailPrice,
+      discountRate: data.discountOfferRate || "0.00",
+      compareAtPrice: data.discountOfferRate ? data.retailPrice : undefined,
+    });
+  }
 
   // 6. Insert inventory record
   const [invRecord] = await db

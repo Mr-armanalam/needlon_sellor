@@ -47,6 +47,9 @@ export const createCloneProduct = async ({productId, seller}:{productId:string; 
                 publishedAt: null,
                 visibility: originalProduct.visibility,
                 productType: originalProduct.productType,
+                subcategoryId: originalProduct.subcategoryId,
+                brandId: originalProduct.brandId,
+                brandName: originalProduct.brandName,
                 isFeatured: originalProduct.isFeatured,
                 isCustomizable: originalProduct.isCustomizable,
             })
@@ -66,10 +69,8 @@ export const createCloneProduct = async ({productId, seller}:{productId:string; 
                     name: origVar.name || "Standard Variant",
                     sku: `${origVar.sku}-COPY-${Date.now().toString().slice(-4)}`,
                     barcode: origVar.barcode ? `${origVar.barcode}-COPY` : null,
-                    price: origVar.price,
-                    compareAtPrice: origVar.compareAtPrice,
-                    costPrice: origVar.costPrice,
                     weightGrams: origVar.weightGrams,
+                    estimatedDeliveryWindow: origVar.estimatedDeliveryWindow,
                     status: origVar.status,
                     position: origVar.position,
                 })

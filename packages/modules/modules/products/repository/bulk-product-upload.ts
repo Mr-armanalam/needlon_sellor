@@ -74,7 +74,6 @@ export const bulkProductUpload = async ( seller: AuthSeller, items: any) => {
                     productId: prod.id,
                     name: item.variantName || "Standard Variant",
                     sku: baseSku,
-                    price,
                     weightGrams: Math.round(parseFloat(weight) * 1000) || 350,
                     position: 0,
                     status: "ACTIVE",

@@ -102,7 +102,7 @@ const VariantsMatrixNode = () => {
                 <div className="flex flex-col gap-1.5">
                     <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Sleeves Style</label>
                     <select
-                        value={formData.sleevesStyle}
+                        value={formData.sleevesStyle || SLEEVES_OPTIONS[0]}
                         onChange={(e) => handleInputChange('sleevesStyle', e.target.value)}
                         className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all cursor-pointer"
                     >
@@ -110,11 +110,11 @@ const VariantsMatrixNode = () => {
                     </select>
                 </div>
 
-                {/* Fit Type Dropdown */}
+                {/* Fit Type Dropdown (Guarded against vanishing defaults) */}
                 <div className="flex flex-col gap-1.5">
                     <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Fit Type</label>
                     <select
-                        value={formData.fitType}
+                        value={formData.fitType || FIT_OPTIONS[0]}
                         onChange={(e) => handleInputChange('fitType', e.target.value)}
                         className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all cursor-pointer"
                     >
@@ -126,7 +126,7 @@ const VariantsMatrixNode = () => {
                 <div className="flex flex-col gap-1.5">
                     <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Occasion Focus</label>
                     <select
-                        value={formData.occasionFocus}
+                        value={formData.occasionFocus || OCCASION_OPTIONS[0]}
                         onChange={(e) => handleInputChange('occasionFocus', e.target.value)}
                         className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all cursor-pointer"
                     >
@@ -138,7 +138,7 @@ const VariantsMatrixNode = () => {
                 <div className="flex flex-col gap-1.5">
                     <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Gender Profile</label>
                     <select
-                        value={formData.genderProfile}
+                        value={formData.genderProfile || GENDER_OPTIONS[0]}
                         onChange={(e) => handleInputChange('genderProfile', e.target.value)}
                         className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all cursor-pointer"
                     >
@@ -150,7 +150,7 @@ const VariantsMatrixNode = () => {
                 <div className="flex flex-col sm:col-span-2 gap-1.5">
                     <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Target Age Group</label>
                     <select
-                        value={formData.targetAgeGroup}
+                        value={formData.targetAgeGroup || AGE_GROUP_OPTIONS[0]}
                         onChange={(e) => handleInputChange('targetAgeGroup', e.target.value)}
                         className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all cursor-pointer"
                     >
