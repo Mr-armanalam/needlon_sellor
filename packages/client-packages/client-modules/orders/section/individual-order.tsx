@@ -45,6 +45,10 @@ const IndividualOrder = ({
               properties={order?.orderProperties}
               orderItemId={order.orderItemId || order.orderId}
               timeline={order?.timeline}
+              hasMeasurement={(order as any)?.hasMeasurement}
+              measurementData={(order as any)?.measurementData}
+              rawOrderId={(order as any)?.rawOrderId}
+              orderId={(order as any)?.orderId}
             />
           ))} 
         </>

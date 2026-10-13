@@ -6,7 +6,11 @@ import { orderStatusHistory } from "@needlon/db/db/schema/orders/order-status-hi
 import { orderShipments } from "@needlon/db/db/schema/orders/order-shipments/table";
 import { orderPayments } from "@needlon/db/db/schema/orders/order-payments/table";
 import { inventoryTable } from "@needlon/db/db/schema/catalog/products/inventory/table";
-import { eq, and, or, ilike, desc, asc, sql } from "drizzle-orm";
+import { productsTable } from "@needlon/db/db/schema/catalog/products/table";
+import { productImagesTable } from "@needlon/db/db/schema/catalog/products/product-images/table";
+import { customerMeasurementsTable } from "@needlon/db/db/schema/customization/measurements";
+import { usersTable } from "@needlon/db/db/schema/users";
+import { eq, and, or, ilike, desc, asc, sql, isNull } from "drizzle-orm";
 import { format } from "date-fns";
 
 const FALLBACK_MOCK_ORDERS = [
@@ -112,15 +116,48 @@ export const OrderRepository = {
     try {
       const isUuid = isValidUuid(userId);
 
-      // If not a valid UUID and is mock-user, check if we have any test orders or fallback
+      let targetUserId: string | null = isUuid ? userId : null;
+      let targetEmail: string | null = null;
+
+      if (!targetUserId && userId && userId.includes("@")) {
+        targetEmail = userId;
+        const [userByEmail] = await db
+          .select({ id: usersTable.id, email: usersTable.email })
+          .from(usersTable)
+          .where(eq(usersTable.email, userId))
+          .limit(1);
+        if (userByEmail) {
+          targetUserId = userByEmail.id;
+        }
+      }
+
+      if (!targetUserId && (!userId || userId === "mock-user")) {
+        const [recentOrderBuyer] = await db
+          .select({ buyerId: orders.buyerId, buyerEmail: orders.buyerEmail })
+          .from(orders)
+          .where(isNull(orders.deletedAt))
+          .orderBy(desc(orders.createdAt))
+          .limit(1);
+
+        if (recentOrderBuyer) {
+          targetUserId = recentOrderBuyer.buyerId;
+          targetEmail = recentOrderBuyer.buyerEmail;
+        } else {
+          const [defaultUser] = await db.select({ id: usersTable.id, email: usersTable.email }).from(usersTable).limit(1);
+          if (defaultUser) {
+            targetUserId = defaultUser.id;
+            targetEmail = defaultUser.email;
+          }
+        }
+      }
+
       let conditions: any[] = [];
-      if (isUuid) {
-        conditions.push(eq(orders.buyerId, userId));
-      } else if (userId === "mock-user") {
-        // Fallback to mock data if user is mock-user and no specific UUID session
-        return this.filterMockOrders(FALLBACK_MOCK_ORDERS, search);
-      } else {
-        return [];
+      if (targetUserId && targetEmail) {
+        conditions.push(or(eq(orders.buyerId, targetUserId), eq(orders.buyerEmail, targetEmail)));
+      } else if (targetUserId) {
+        conditions.push(eq(orders.buyerId, targetUserId));
+      } else if (targetEmail) {
+        conditions.push(eq(orders.buyerEmail, targetEmail));
       }
 
       if (search.trim()) {
@@ -139,17 +176,21 @@ export const OrderRepository = {
           order: orders,
           item: orderItems,
           payment: orderPayments,
+          product: productsTable,
+          primaryMedia: productImagesTable.imageUrl,
         })
         .from(orders)
         .leftJoin(orderItems, eq(orders.id, orderItems.orderId))
         .leftJoin(orderPayments, eq(orders.id, orderPayments.orderId))
-        .where(and(...conditions))
+        .leftJoin(productsTable, eq(orderItems.productId, productsTable.id))
+        .leftJoin(
+          productImagesTable,
+          and(eq(productsTable.id, productImagesTable.productId), eq(productImagesTable.isPrimary, true))
+        )
+        .where(conditions.length > 0 ? and(...conditions) : sql`1=1`)
         .orderBy(desc(orders.createdAt));
 
       if (rows.length === 0) {
-        if (userId === "mock-user") {
-          return this.filterMockOrders(FALLBACK_MOCK_ORDERS, search);
-        }
         return [];
       }
 
@@ -162,20 +203,19 @@ export const OrderRepository = {
         total: Number(row.order.grandTotal),
         currency: row.order.currency,
         paymentId: row.payment?.gatewayPaymentId || row.payment?.paymentNumber || row.order.orderNumber,
-        productName: row.item?.productName || "Needlon Item",
+        productName: row.item?.productName || row.product?.name || "Needlon Item",
         image:
           row.item?.imageUrl ||
           row.item?.thumbnailUrl ||
-          "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&q=80&w=600",
+          row.primaryMedia ||
+          row.product?.thumbnailUrl ||
+          "",
         price: Number(row.item?.unitPrice || 0),
         properties: row.item?.variantName || "Standard",
       }));
     } catch (error) {
       console.error("OrderRepository.getRawUserOrders error:", error);
-      if (userId === "mock-user") {
-        return this.filterMockOrders(FALLBACK_MOCK_ORDERS, search);
-      }
-      throw error;
+      return [];
     }
   },
 
@@ -214,16 +254,16 @@ export const OrderRepository = {
         .limit(1);
 
       if (!foundOrder) {
-        // Fallback for mock IDs
-        if (orderId === "orderitem-001" || orderId === "order-001") {
-          return FALLBACK_MOCK_ORDER_DETAIL;
-        }
         return null;
       }
 
       // Security check: Verify buyer ownership
-      if (userId && userId !== "mock-user" && isValidUuid(userId)) {
-        if (foundOrder.buyerId !== userId) {
+      if (userId && userId !== "mock-user") {
+        const isBuyerIdMatch = isValidUuid(userId) && foundOrder.buyerId === userId;
+        const isBuyerEmailMatch = Boolean(
+          foundOrder.buyerEmail && foundOrder.buyerEmail.toLowerCase() === userId.toLowerCase()
+        );
+        if (!isBuyerIdMatch && !isBuyerEmailMatch && isValidUuid(userId)) {
           const err = new Error("UNAUTHORIZED_ORDER_ACCESS");
           (err as any).statusCode = 403;
           throw err;
@@ -280,18 +320,47 @@ export const OrderRepository = {
       const canCancel = ["PENDING", "CONFIRMED"].includes(foundOrder.status);
 
       if (items.length === 0) {
-        // Edge case: Return 1 item container with order totals
+        // Query if any bespoke measurement was attached to this order
+        const [attachedMeasurement] = await db
+          .select()
+          .from(customerMeasurementsTable)
+          .where(eq(customerMeasurementsTable.orderId, foundOrder.id))
+          .limit(1);
+
+        let dynamicName = "Custom Tailored Garment";
+        let dynamicImage = "";
+        let dynamicProductId = attachedMeasurement?.productId || "prod-custom";
+
+        if (attachedMeasurement?.productId && isValidUuid(attachedMeasurement.productId)) {
+          const [catProd] = await db
+            .select()
+            .from(productsTable)
+            .where(eq(productsTable.id, attachedMeasurement.productId))
+            .limit(1);
+
+          if (catProd) {
+            dynamicName = catProd.name;
+            const [pMedia] = await db
+              .select()
+              .from(productImagesTable)
+              .where(eq(productImagesTable.productId, catProd.id))
+              .orderBy(desc(productImagesTable.isPrimary), asc(productImagesTable.displayOrder))
+              .limit(1);
+            dynamicImage = pMedia?.imageUrl || catProd.thumbnailUrl || "";
+          }
+        }
+
         return [
           {
             orderDate: foundOrder.createdAt,
             orderId: foundOrder.orderNumber,
             rawOrderId: foundOrder.id,
             shippingAddress: formattedAddress,
-            itemName: "Tailored Garment",
-            image: "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&q=80&w=600",
-            productId: "prod-snapshot",
+            itemName: dynamicName,
+            image: dynamicImage,
+            productId: dynamicProductId,
             orderItemId: foundOrder.id,
-            orderProperties: "Standard",
+            orderProperties: attachedMeasurement ? `Custom Fit (${attachedMeasurement.garmentType})` : "Standard",
             paymentMode: foundOrder.paymentMethod,
             shippingCharge: Number(foundOrder.shippingCharge),
             podCharge: foundOrder.paymentMethod === "COD" ? 49 : 0,
@@ -302,34 +371,89 @@ export const OrderRepository = {
             timeline,
             shipments,
             canCancel,
+            hasMeasurement: !!attachedMeasurement,
+            measurementData: attachedMeasurement || null,
           },
         ];
       }
 
-      return items.map((item) => ({
-        orderDate: foundOrder.createdAt,
-        orderId: foundOrder.orderNumber,
-        rawOrderId: foundOrder.id,
-        shippingAddress: formattedAddress,
-        itemName: item.productName,
-        image:
-          item.imageUrl ||
-          item.thumbnailUrl ||
-          "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&q=80&w=600",
-        productId: item.productId,
-        orderItemId: item.id,
-        orderProperties: item.variantName || "",
-        paymentMode: foundOrder.paymentMethod,
-        shippingCharge: Number(foundOrder.shippingCharge),
-        podCharge: foundOrder.paymentMethod === "COD" ? 49 : 0,
-        priceAtperchage: Number(item.unitPrice),
-        totalPurchasePrice: Number(foundOrder.grandTotal),
-        couponDiscount: Number(foundOrder.couponDiscount),
-        orderStatus: foundOrder.status,
-        timeline,
-        shipments,
-        canCancel,
-      }));
+      // Resolve dynamic image, catalog attributes, and measurement for each item
+      const resolvedItems = await Promise.all(
+        items.map(async (item) => {
+          let resolvedImage = item.imageUrl || item.thumbnailUrl;
+          let resolvedName = item.productName;
+          let resolvedProductId = item.productId;
+          let resolvedProperties = item.variantName || "";
+
+          if (isValidUuid(item.productId)) {
+            const [catProd] = await db
+              .select()
+              .from(productsTable)
+              .where(eq(productsTable.id, item.productId))
+              .limit(1);
+
+            if (catProd) {
+              resolvedName = item.productName || catProd.name;
+              if (!resolvedImage) {
+                const [priImg] = await db
+                  .select()
+                  .from(productImagesTable)
+                  .where(eq(productImagesTable.productId, catProd.id))
+                  .orderBy(desc(productImagesTable.isPrimary), asc(productImagesTable.displayOrder))
+                  .limit(1);
+                resolvedImage = priImg?.imageUrl || catProd.thumbnailUrl || null;
+              }
+            }
+          }
+
+          // Fetch associated measurement
+          const [measurement] = await db
+            .select()
+            .from(customerMeasurementsTable)
+            .where(
+              or(
+                eq(customerMeasurementsTable.orderItemId, item.id),
+                and(
+                  eq(customerMeasurementsTable.orderId, foundOrder.id),
+                  eq(customerMeasurementsTable.productId, item.productId)
+                ),
+                eq(customerMeasurementsTable.orderId, foundOrder.id)
+              )
+            )
+            .orderBy(desc(customerMeasurementsTable.createdAt))
+            .limit(1);
+
+          if (measurement && !resolvedProperties) {
+            resolvedProperties = `Custom Fit (${measurement.garmentType})`;
+          }
+
+          return {
+            orderDate: foundOrder.createdAt,
+            orderId: foundOrder.orderNumber,
+            rawOrderId: foundOrder.id,
+            shippingAddress: formattedAddress,
+            itemName: resolvedName,
+            image: resolvedImage || "",
+            productId: resolvedProductId,
+            orderItemId: item.id,
+            orderProperties: resolvedProperties,
+            paymentMode: foundOrder.paymentMethod,
+            shippingCharge: Number(foundOrder.shippingCharge),
+            podCharge: foundOrder.paymentMethod === "COD" ? 49 : 0,
+            priceAtperchage: Number(item.unitPrice),
+            totalPurchasePrice: Number(foundOrder.grandTotal),
+            couponDiscount: Number(foundOrder.couponDiscount),
+            orderStatus: foundOrder.status,
+            timeline,
+            shipments,
+            canCancel,
+            hasMeasurement: !!measurement,
+            measurementData: measurement || null,
+          };
+        })
+      );
+
+      return resolvedItems;
     } catch (error) {
       console.error("OrderRepository.getOrderDetail error:", error);
       throw error;
@@ -376,142 +500,101 @@ export const OrderRepository = {
 
     const defaultSteps: OrderTimelineStep[] = [];
 
-    // 1. Placed / Confirmed
-    const createdEvent = history.find((h) => h.toStatus === "PENDING" || h.action === "CREATED");
-    const confirmedEvent = history.find((h) => h.toStatus === "CONFIRMED" || h.action === "ACCEPTED");
-    const packedEvent = history.find((h) => h.toStatus === "PROCESSING" || h.action === "PACKED");
-    const readyEvent = history.find((h) => h.toStatus === "READY_TO_SHIP" || h.action === "READY_FOR_SHIPMENT");
-
-    const confirmedDetails = [
-      `Your Order has been placed. ${orderDateStr} - ${format(order.createdAt, "h:mma")}`,
-    ];
-    if (confirmedEvent) {
-      confirmedDetails.push(
-        `Seller has confirmed your order. ${format(confirmedEvent.changedAt, "EEE, do MMM ''yy - h:mma")}`
-      );
-    } else {
-      confirmedDetails.push("Seller has received your order and is preparing fulfillment.");
-    }
-    if (packedEvent) {
-      confirmedDetails.push(
-        `Seller has packed your items. ${format(packedEvent.changedAt, "EEE, do MMM ''yy - h:mma")}`
-      );
-    }
-    if (readyEvent) {
-      confirmedDetails.push(
-        `Package is ready for carrier pickup. ${format(readyEvent.changedAt, "EEE, do MMM ''yy - h:mma")}`
-      );
-    }
-
-    defaultSteps.push({
-      title: "Order Confirmed",
-      date: orderDateStr,
-      details: confirmedDetails,
-      isActive: true,
-    });
-
-    // Handle cancellation
+    // Handle cancellation early
     if (order.status === "CANCELLED") {
       const cancelEvent = history.find((h) => h.toStatus === "CANCELLED" || h.action === "CANCELLED");
       const cancelDate = cancelEvent?.changedAt || order.cancelledAt || new Date();
-      defaultSteps.push({
-        title: "Cancelled",
-        date: format(cancelDate, "EEE, do MMM ''yy"),
-        details: [
-          `Order was cancelled. Reason: ${cancelEvent?.reason || "Cancelled by buyer"}`,
-          "Any eligible refund will be credited to original payment source.",
-        ],
-        isActive: true,
-      });
+      defaultSteps.push(
+        {
+          title: "Order Placed",
+          date: `${orderDateStr} - ${format(order.createdAt, "h:mma")}`,
+          details: [`Order #${order.orderNumber} was placed by customer.`],
+          isActive: true,
+        },
+        {
+          title: "Cancelled",
+          date: format(cancelDate, "EEE, do MMM ''yy"),
+          details: [
+            `Order was cancelled. Reason: ${cancelEvent?.reason || cancelEvent?.remarks || "Cancelled"}`,
+            "Any eligible refund will be credited to original payment source.",
+          ],
+          isActive: true,
+        }
+      );
       return defaultSteps;
     }
 
-    // 2. Shipped
-    const shippedEvent = history.find((h) => h.toStatus === "SHIPPED" || h.action === "SHIPPED");
-    const activeShipment = shipments[0];
-    const isShippedOrBeyond = [
-      "SHIPPED",
-      "OUT_FOR_DELIVERY",
-      "DELIVERED",
-      "COMPLETED",
-    ].includes(order.status);
-
-    const shippedDetails: string[] = [];
-    if (activeShipment) {
-      shippedDetails.push(
-        `${activeShipment.carrierName || activeShipment.carrier || "Courier Logistics"} - ${activeShipment.trackingNumber || activeShipment.shipmentNumber}`
-      );
-      shippedDetails.push(`Your item has been dispatched via ${activeShipment.carrierName || "express partner"}.`);
-    } else if (isShippedOrBeyond) {
-      shippedDetails.push("Ekart Logistics - FMPC5381317207");
-      shippedDetails.push("Your item has been dispatched from the nearest distribution hub.");
-    } else {
-      shippedDetails.push("Item will be dispatched once packaging is complete.");
-    }
-    if (shippedEvent?.remarks) {
-      shippedDetails.push(shippedEvent.remarks);
-    }
-
+    // 1. Order Placed (PENDING)
     defaultSteps.push({
-      title: "Shipped",
-      date: shippedEvent
-        ? format(shippedEvent.changedAt, "EEE, do MMM ''yy")
-        : order.shippedAt
-          ? format(order.shippedAt, "EEE, do MMM ''yy")
-          : "Expected in 1-2 days",
-      details: shippedDetails,
-      isActive: isShippedOrBeyond,
+      title: "Order Placed",
+      date: `${orderDateStr} - ${format(order.createdAt, "h:mma")}`,
+      details: [`Your order #${order.orderNumber} has been received by boutique atelier.`],
+      isActive: true,
     });
 
-    // 3. Out For Delivery
-    const outForDeliveryEvent = history.find(
-      (h) => h.toStatus === "OUT_FOR_DELIVERY" || h.action === "OUT_FOR_DELIVERY"
-    );
-    const isOutForDelivery = ["OUT_FOR_DELIVERY", "DELIVERED", "COMPLETED"].includes(order.status);
-
-    const outForDeliveryDetails = [
-      isOutForDelivery
-        ? "Your item is out for delivery with our local delivery executive."
-        : "Item is in transit towards your delivery address hub.",
-    ];
-    if (outForDeliveryEvent?.remarks) {
-      outForDeliveryDetails.push(outForDeliveryEvent.remarks);
-    }
-
+    // 2. Accepted (CONFIRMED)
+    const confirmedEvent = history.find((h) => h.toStatus === "CONFIRMED" || h.action === "ACCEPTED");
+    const isConfirmed = ["CONFIRMED", "PROCESSING", "READY_TO_SHIP", "SHIPPED", "OUT_FOR_DELIVERY", "COMPLETED", "DELIVERED"].includes(order.status);
     defaultSteps.push({
-      title: "Out For Delivery",
-      date: outForDeliveryEvent
-        ? format(outForDeliveryEvent.changedAt, "EEE, do MMM ''yy")
-        : "Pending dispatch",
-      details: outForDeliveryDetails,
+      title: "Accepted",
+      date: confirmedEvent ? format(confirmedEvent.changedAt, "EEE, do MMM ''yy - h:mma") : (isConfirmed ? orderDateStr : "Awaiting boutique acceptance"),
+      details: [
+        confirmedEvent?.remarks || (isConfirmed ? "Boutique has accepted your order and assigned a cutter/packer." : "Awaiting boutique acceptance.")
+      ],
+      isActive: isConfirmed,
+    });
+
+    // 3. Packed (PROCESSING)
+    const packedEvent = history.find((h) => h.toStatus === "PROCESSING" || h.action === "PACKED");
+    const isPacked = ["PROCESSING", "READY_TO_SHIP", "SHIPPED", "OUT_FOR_DELIVERY", "COMPLETED", "DELIVERED"].includes(order.status);
+    defaultSteps.push({
+      title: "Packed",
+      date: packedEvent ? format(packedEvent.changedAt, "EEE, do MMM ''yy - h:mma") : (isPacked ? orderDateStr : "Awaiting packaging and label generation"),
+      details: [
+        packedEvent?.remarks || (isPacked ? "Garment has been verified, quality checked, and carefully packaged." : "Awaiting packaging and label generation.")
+      ],
+      isActive: isPacked,
+    });
+
+    // 4. Ready for Shipment (READY_TO_SHIP / SHIPPED)
+    const readyEvent = history.find((h) => h.toStatus === "READY_TO_SHIP" || h.toStatus === "SHIPPED" || h.action === "READY_FOR_SHIPMENT" || h.action === "SHIPPED");
+    const isReady = ["READY_TO_SHIP", "SHIPPED", "OUT_FOR_DELIVERY", "COMPLETED", "DELIVERED"].includes(order.status);
+    const activeShipment = shipments[0];
+    const shipmentDesc = activeShipment
+      ? `Dispatched via ${activeShipment.carrierName || "Carrier Logistics"} - ${activeShipment.trackingNumber || activeShipment.shipmentNumber}`
+      : (readyEvent?.remarks || (isReady ? "Package is ready and staged for carrier logistics pickup." : "Awaiting logistics carrier pickup."));
+    defaultSteps.push({
+      title: "Ready for Shipment",
+      date: readyEvent ? format(readyEvent.changedAt, "EEE, do MMM ''yy - h:mma") : (isReady ? orderDateStr : "Awaiting carrier pickup"),
+      details: [shipmentDesc],
+      isActive: isReady,
+    });
+
+    // 5. Out For Delivery (OUT_FOR_DELIVERY)
+    const outForDeliveryEvent = history.find((h) => h.toStatus === "OUT_FOR_DELIVERY" || h.action === "OUT_FOR_DELIVERY");
+    const isOutForDelivery = ["OUT_FOR_DELIVERY", "COMPLETED", "DELIVERED"].includes(order.status);
+    defaultSteps.push({
+      title: "Out for Delivery",
+      date: outForDeliveryEvent ? format(outForDeliveryEvent.changedAt, "EEE, do MMM ''yy - h:mma") : (isOutForDelivery ? orderDateStr : "Pending dispatch"),
+      details: [
+        outForDeliveryEvent?.remarks || (isOutForDelivery ? "Item is out for delivery with your local delivery courier executive." : "Assigned to fulfillment logistics carrier agent.")
+      ],
       isActive: isOutForDelivery,
     });
 
-    // 4. Delivered
-    const deliveredEvent = history.find(
-      (h) => h.toStatus === "DELIVERED" || h.toStatus === "COMPLETED" || h.action === "DELIVERED"
-    );
+    // 6. Completed (COMPLETED / DELIVERED)
+    const deliveredEvent = history.find((h) => h.toStatus === "DELIVERED" || h.toStatus === "COMPLETED" || h.action === "DELIVERED");
     const isDelivered = ["DELIVERED", "COMPLETED"].includes(order.status);
-
-    const deliveredDetails = [
-      isDelivered
-        ? `Your item was delivered successfully. Enjoy your Needlon fashion!`
-        : "Standard delivery time is 3-5 business days from order confirmation.",
-    ];
-    if (deliveredEvent?.remarks) {
-      deliveredDetails.push(deliveredEvent.remarks);
-    }
-
     defaultSteps.push({
-      title: "Delivered",
+      title: "Completed",
       date: deliveredEvent
-        ? format(deliveredEvent.changedAt, "EEE, do MMM ''yy")
-        : order.deliveredAt
+        ? format(deliveredEvent.changedAt, "EEE, do MMM ''yy - h:mma")
+        : (order.deliveredAt
           ? format(order.deliveredAt, "EEE, do MMM ''yy")
-          : order.expectedDeliveryDate
-            ? format(order.expectedDeliveryDate, "EEE, do MMM ''yy")
-            : "Expected soon",
-      details: deliveredDetails,
+          : (isDelivered ? orderDateStr : "Expected soon")),
+      details: [
+        deliveredEvent?.remarks || (isDelivered ? "Secure customer signature delivery pass validated. Enjoy your Needlon bespoke garment!" : "Standard delivery upon customer handover.")
+      ],
       isActive: isDelivered,
     });
 

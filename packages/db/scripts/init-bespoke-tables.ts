@@ -40,6 +40,17 @@ async function initBespokeTables() {
     `;
     console.log("✓ Verified customer_measurements table.");
 
+    // 2b. Add revision columns to customer_measurements if missing
+    await sql`
+      ALTER TABLE customer_measurements 
+      ADD COLUMN IF NOT EXISTS is_editable BOOLEAN NOT NULL DEFAULT false,
+      ADD COLUMN IF NOT EXISTS edit_requested BOOLEAN NOT NULL DEFAULT false,
+      ADD COLUMN IF NOT EXISTS edit_request_reason TEXT,
+      ADD COLUMN IF NOT EXISTS edit_requested_at TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS last_edited_at TIMESTAMPTZ;
+    `;
+    console.log("✓ Verified customer_measurements revision columns.");
+
     // 3. Create helpful indexes
     await sql`
       CREATE INDEX IF NOT EXISTS idx_customer_measurements_user 

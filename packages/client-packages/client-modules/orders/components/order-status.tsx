@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import OrderRating from "../ui/order-rating";
 import Link from "next/link";
 import { useIsMobile } from "@/hooks/use-mobile";
+import MeasurementModal from "./measurement-modal";
 
 type props = {
   image?: string;
@@ -25,6 +26,10 @@ type props = {
   productId: string;
   orderItemId: string;
   timeline?: any[];
+  hasMeasurement?: boolean;
+  measurementData?: any;
+  rawOrderId?: string;
+  orderId?: string;
 };
 
 const OrderStatus = ({
@@ -36,9 +41,14 @@ const OrderStatus = ({
   productId,
   orderItemId,
   timeline,
+  hasMeasurement,
+  measurementData,
+  rawOrderId,
+  orderId,
 }: props) => {
   const router = useRouter();
   const isMobile = useIsMobile();
+  const [isMeasurementModalOpen, setIsMeasurementModalOpen] = React.useState(false);
 
   const formattedProperties = (() => {
     if (properties && size) {
@@ -81,13 +91,23 @@ const OrderStatus = ({
           )}
           <p className="font-medium dark:text-white/70 text-stone-700 mt-2">₹ {itemPrice}</p>
           <div className="flex max-md:items-center md:gap-x-6">
-            <Button
-              onClick={() => router.push(`/product/${productId}`)}
-              variant={isMobile ? "link" : "outline"}
-              className="rounded-full max-md:pl-0 max-md:hover:underline text-xs md:mt-4 cursor-pointer"
-            >
-              {isMobile ? "🔺Product" :"View product"}
-            </Button>
+            {hasMeasurement && measurementData ? (
+              <Button
+                onClick={() => setIsMeasurementModalOpen(true)}
+                variant={isMobile ? "link" : "outline"}
+                className="rounded-full max-md:pl-0 max-md:hover:underline text-xs md:mt-4 cursor-pointer text-blue-600 dark:text-blue-400 font-semibold"
+              >
+                {isMobile ? "📏Measurements" : "View Measurements"}
+              </Button>
+            ) : (
+              <Button
+                onClick={() => router.push(`/product/${productId}`)}
+                variant={isMobile ? "link" : "outline"}
+                className="rounded-full max-md:pl-0 max-md:hover:underline text-xs md:mt-4 cursor-pointer"
+              >
+                {isMobile ? "🔺Product" : "View product"}
+              </Button>
+            )}
             <div className="w-px h-4 md:hidden bg-stone-700" />
             <Button variant={isMobile ? "link" : "default"} className="rounded-full text-xs md:mt-4 cursor-pointer">
               {isMobile ? "🖋️ Review" : "write a product review"}
@@ -115,6 +135,16 @@ const OrderStatus = ({
       <Separator orientation="horizontal" className="bg-gray-100 dark:bg-gray-800" />
 
       <OrderRating isMobile={isMobile} orderItemId={orderItemId} productId={productId} />
+
+      {hasMeasurement && measurementData && (
+        <MeasurementModal
+          isOpen={isMeasurementModalOpen}
+          onClose={() => setIsMeasurementModalOpen(false)}
+          measurement={measurementData}
+          orderId={rawOrderId || orderItemId}
+          orderNumber={orderId}
+        />
+      )}
     </div>
   );
 };

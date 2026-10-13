@@ -185,12 +185,54 @@ export default function CustomerDetail({ customer, onOpenChat }: CustomerDetailP
                         Source: {m.source === "IN_STORE_TAILOR_MASTER" ? "In-Store Tailor Master" : "Customer Online Intake"} • Recorded: {m.date}
                       </p>
                     </div>
-                    {m.orderId && (
-                      <span className="text-[11px] font-medium text-neutral-500">
-                        Order #{m.orderId.slice(-6)}
-                      </span>
-                    )}
+                    <div>
+                      {m.orderNumber ? (
+                        <span className="text-[11px] font-bold text-neutral-800 bg-neutral-100 px-2 py-0.5 rounded border border-neutral-200">
+                          {m.orderNumber}
+                        </span>
+                      ) : m.orderId ? (
+                        <span className="text-[11px] font-medium text-neutral-500">
+                          Order #{m.orderId.slice(-6)}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-medium text-neutral-400 bg-neutral-50 px-1.5 py-0.5 rounded">
+                          In-Store Spec
+                        </span>
+                      )}
+                    </div>
                   </div>
+
+                  {/* Customer Revision Request Banner */}
+                  {m.editRequested && (
+                    <div className="flex items-center justify-between gap-2 p-2 bg-amber-50/80 rounded-lg border border-amber-200/70 text-xs">
+                      <span className="text-[11px] font-semibold text-amber-900">
+                        Customer requested revision{m.editRequestReason ? `: "${m.editRequestReason}"` : ""}
+                      </span>
+                      {!m.isEditable ? (
+                        <button
+                          onClick={async () => {
+                            try {
+                              const res = await fetch(`/api/seller/measurements/${m.id}/allow-edit`, { method: "POST" });
+                              if (res.ok) {
+                                refetch();
+                              } else {
+                                alert("Failed to enable edit permission");
+                              }
+                            } catch (e) {
+                              alert("Network error");
+                            }
+                          }}
+                          className="px-2.5 py-1 text-[10px] font-bold bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all cursor-pointer shadow-xs shrink-0"
+                        >
+                          Allow Customer Edit
+                        </button>
+                      ) : (
+                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-200">
+                          Edit Enabled for Customer
+                        </span>
+                      )}
+                    </div>
+                  )}
 
                   {/* Essential Measurements Grid */}
                   <div>
@@ -280,6 +322,15 @@ export default function CustomerDetail({ customer, onOpenChat }: CustomerDetailP
                       {order.source === 'IN_STORE' && (
                         <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                           In-Store Atelier
+                        </span>
+                      )}
+                      {order.isBespoke ? (
+                        <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                          Bespoke ({order.garmentType || 'Custom Fit'})
+                        </span>
+                      ) : (
+                        <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-neutral-100 text-neutral-600 border border-neutral-200">
+                          {order.size || 'Ready-to-Wear'}
                         </span>
                       )}
                     </div>

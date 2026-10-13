@@ -21,11 +21,14 @@ export const findOrderById = async ({
 }: FindOrderByIdParams) => {
     const database = getDatabase(tx);
 
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId);
+    const lookupCondition = isUuid ? eq(orders.id, orderId) : eq(orders.orderNumber, orderId);
+
     // Fetch order header
     const orderList = await database
         .select()
         .from(orders)
-        .where(and(eq(orders.id, orderId), eq(orders.sellerId, sellerId), isNull(orders.deletedAt)))
+        .where(and(lookupCondition, eq(orders.sellerId, sellerId), isNull(orders.deletedAt)))
         .limit(1);
 
     if (orderList.length === 0) {
@@ -33,31 +36,32 @@ export const findOrderById = async ({
     }
 
     const order = orderList[0];
+    const actualOrderId = order.id;
 
     // Fetch order items
     const items = await database
         .select()
         .from(orderItems)
-        .where(eq(orderItems.orderId, orderId));
+        .where(eq(orderItems.orderId, actualOrderId));
 
     // Fetch order address snapshots
     const addresses = await database
         .select()
         .from(orderAddresses)
-        .where(eq(orderAddresses.orderId, orderId));
+        .where(eq(orderAddresses.orderId, actualOrderId));
 
     // Fetch order status history
     const history = await database
         .select()
         .from(orderStatusHistory)
-        .where(eq(orderStatusHistory.orderId, orderId))
+        .where(eq(orderStatusHistory.orderId, actualOrderId))
         .orderBy(orderStatusHistory.changedAt);
 
     // Fetch order payments
     const payments = await database
         .select()
         .from(orderPayments)
-        .where(eq(orderPayments.orderId, orderId))
+        .where(eq(orderPayments.orderId, actualOrderId))
         .orderBy(orderPayments.createdAt);
 
     return {

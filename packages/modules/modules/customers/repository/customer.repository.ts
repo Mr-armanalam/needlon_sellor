@@ -12,7 +12,7 @@ import { fittingAppointmentsTable } from "@/db/schema/customization/fitting-appo
 import { sellerCustomers } from "@/db/schema/seller/seller-customers";
 import { chatPermissions } from "@/db/schema/messaging/chat-permissions";
 import { notifications } from "@/db/schema/notifications/notification-events";
-import { and, desc, eq, isNull, or, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, or, sql, inArray } from "drizzle-orm";
 import type { CreateWalkInCustomerDto } from "../dto/walk-in-customer.dto";
 import type { RecordInStoreMeasurementDto } from "../dto/in-store-measurement.dto";
 import type { CreateInStoreOrderDto, UpdateTailoringStageDto } from "../dto/create-in-store-order.dto";
@@ -159,12 +159,26 @@ export async function getCustomerDetailsRepo(sellerId: string, buyerId: string) 
     .orderBy(sql`${reviewsTable.createdAt} DESC`)
     .limit(10);
 
+  const orderIds = customerOrders.map((o) => o.orderId);
+  const itemsForOrders =
+    orderIds.length > 0
+      ? await db
+          .select({
+            orderId: orderItems.orderId,
+            variantName: orderItems.variantName,
+            productName: orderItems.productName,
+          })
+          .from(orderItems)
+          .where(inArray(orderItems.orderId, orderIds))
+      : [];
+
   let measurements: any[] = [];
   try {
     measurements = await db
       .select({
         id: customerMeasurementsTable.id,
         orderId: customerMeasurementsTable.orderId,
+        orderNumber: orders.orderNumber,
         gender: customerMeasurementsTable.gender,
         garmentType: customerMeasurementsTable.garmentType,
         measurementUnit: customerMeasurementsTable.measurementUnit,
@@ -174,13 +188,25 @@ export async function getCustomerDetailsRepo(sellerId: string, buyerId: string) 
         tailorNotes: customerMeasurementsTable.tailorNotes,
         source: customerMeasurementsTable.source,
         status: customerMeasurementsTable.status,
+        isEditable: customerMeasurementsTable.isEditable,
+        editRequested: customerMeasurementsTable.editRequested,
+        editRequestReason: customerMeasurementsTable.editRequestReason,
         createdAt: customerMeasurementsTable.createdAt,
       })
       .from(customerMeasurementsTable)
+      .leftJoin(orders, eq(customerMeasurementsTable.orderId, orders.id))
       .where(
         and(
-          eq(customerMeasurementsTable.userId, buyerId),
-          eq(customerMeasurementsTable.sellerId, sellerId)
+          orderIds.length > 0
+            ? or(
+                eq(customerMeasurementsTable.userId, buyerId),
+                inArray(customerMeasurementsTable.orderId, orderIds)
+              )
+            : eq(customerMeasurementsTable.userId, buyerId),
+          or(
+            eq(customerMeasurementsTable.sellerId, sellerId),
+            isNull(customerMeasurementsTable.sellerId)
+          )
         )
       )
       .orderBy(sql`${customerMeasurementsTable.createdAt} DESC`)
@@ -190,16 +216,26 @@ export async function getCustomerDetailsRepo(sellerId: string, buyerId: string) 
   }
     
   return {
-    history: customerOrders.map((o) => ({
-      id: o.id,
-      orderId: o.orderId,
-      date: o.date ? new Date(o.date).toLocaleDateString() : "N/A",
-      total: `₹${parseFloat(o.total || "0").toFixed(2)}`,
-      status: o.status,
-      tailoringStage: o.tailoringStage || null,
-      tailoringNotes: o.tailoringNotes || null,
-      source: o.source || "WEB",
-    })),
+    history: customerOrders.map((o) => {
+      const orderItemsList = itemsForOrders.filter((it) => it.orderId === o.orderId);
+      const matchingMeasurement = measurements.find((m) => m.orderId === o.orderId);
+      const isBespoke = !!matchingMeasurement || !!o.tailoringStage;
+      const sizeTag = orderItemsList[0]?.variantName || null;
+
+      return {
+        id: o.id,
+        orderId: o.orderId,
+        date: o.date ? new Date(o.date).toLocaleDateString() : "N/A",
+        total: `₹${parseFloat(o.total || "0").toFixed(2)}`,
+        status: o.status,
+        tailoringStage: o.tailoringStage || null,
+        tailoringNotes: o.tailoringNotes || null,
+        source: o.source || "WEB",
+        isBespoke,
+        garmentType: matchingMeasurement?.garmentType || null,
+        size: !isBespoke ? sizeTag || "Ready-to-Wear" : "Custom Fit",
+      };
+    }),
     reviews: customerReviews.map((r) => ({
       id: r.id,
       rating: r.rating || 5,
@@ -210,6 +246,7 @@ export async function getCustomerDetailsRepo(sellerId: string, buyerId: string) 
     measurements: measurements.map((m) => ({
       id: m.id,
       orderId: m.orderId,
+      orderNumber: m.orderNumber || (m.orderId ? `Order #${m.orderId.slice(-6)}` : null),
       gender: m.gender,
       garmentType: m.garmentType,
       unit: m.measurementUnit,
@@ -219,9 +256,35 @@ export async function getCustomerDetailsRepo(sellerId: string, buyerId: string) 
       tailorNotes: m.tailorNotes,
       source: m.source,
       status: m.status,
+      isEditable: m.isEditable,
+      editRequested: m.editRequested,
+      editRequestReason: m.editRequestReason,
       date: m.createdAt ? new Date(m.createdAt).toLocaleDateString() : "N/A",
     })),
   };
+}
+
+export async function allowCustomerMeasurementEditRepo(sellerId: string, measurementId: string) {
+  const [existing] = await db
+    .select()
+    .from(customerMeasurementsTable)
+    .where(eq(customerMeasurementsTable.id, measurementId))
+    .limit(1);
+
+  if (!existing) {
+    throw new Error("Measurement record not found.");
+  }
+
+  const [updated] = await db
+    .update(customerMeasurementsTable)
+    .set({
+      isEditable: true,
+      updatedAt: new Date(),
+    })
+    .where(eq(customerMeasurementsTable.id, measurementId))
+    .returning();
+
+  return updated;
 }
 
 export async function createOrLinkWalkInCustomerRepo(sellerId: string, data: CreateWalkInCustomerDto) {

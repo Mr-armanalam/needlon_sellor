@@ -33,7 +33,7 @@ export const useOrderInspector = (orderId: string) => {
     async function handleAdvance() {
         setActionLoading(true);
         try {
-            await updateOrderStatusClient(orderId, "ADVANCE");
+            await updateOrderStatusClient(orderId, "ADVANCE", "Advanced step pipeline via seller portal");
             await loadDetails();
         } catch (err: any) {
             alert(err.message || "Failed to advance order");
@@ -43,10 +43,11 @@ export const useOrderInspector = (orderId: string) => {
     }
 
     async function handleCancel() {
-        if (!confirm("Are you sure you want to cancel this order?")) return;
+        const reason = prompt("Enter cancellation reason (optional):", "Order cancelled by seller");
+        if (reason === null) return;
         setActionLoading(true);
         try {
-            await updateOrderStatusClient(orderId, "CANCEL");
+            await updateOrderStatusClient(orderId, "CANCEL", reason.trim() || "Order cancelled by seller");
             await loadDetails();
         } catch (err: any) {
             alert(err.message || "Failed to cancel order");
