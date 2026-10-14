@@ -23,6 +23,7 @@ export const getOrderByIdService = async (
         dbResult.addresses,
         dbResult.history,
         dbResult.payments,
-        dbResult.measurement
+        dbResult.measurement,
+        dbResult.shipment
     );
 };

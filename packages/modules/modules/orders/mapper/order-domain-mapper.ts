@@ -160,7 +160,8 @@ export function toOrderDomain(
     addresses?: any[], 
     history?: any[], 
     payments?: any[],
-    measurement?: any
+    measurement?: any,
+    shipment?: any
 ): OrderDomain {
     return {
         id: dbOrder.id,
@@ -212,5 +213,6 @@ export function toOrderDomain(
         history: history ? history.map(toOrderStatusHistoryDomain) : undefined,
         payments: payments ? payments.map(toOrderPaymentDomain) : undefined,
         measurement: measurement ? toOrderMeasurementDomain(measurement) : null,
+        shipment: shipment || null,
     };
 }

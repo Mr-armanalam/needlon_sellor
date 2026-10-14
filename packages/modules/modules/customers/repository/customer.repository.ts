@@ -548,7 +548,7 @@ export async function createInStoreOrderRepo(sellerId: string, data: CreateInSto
           shipmentNumber: shpNum,
           awbNumber: `AWB-${Math.floor(10000000 + Math.random() * 90000000)}`,
           trackingNumber: `TRK-${Math.floor(10000000 + Math.random() * 90000000)}`,
-          status: "READY_FOR_PICKUP",
+          status: "READY_TO_SHIP",
           shippingCost: "0",
           estimatedDeliveryAt: data.estimatedDeliveryAt ? new Date(data.estimatedDeliveryAt) : null,
           notes: "In-store bespoke commission booked for home delivery",

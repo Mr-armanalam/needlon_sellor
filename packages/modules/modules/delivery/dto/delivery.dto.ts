@@ -68,14 +68,15 @@ export const updateShipmentStatusSchema = z.object({
   shipmentId: z.string().min(1, "Invalid shipment ID"),
   status: z.enum([
     "PENDING",
-    "READY_FOR_PICKUP",
-    "PICKUP_SCHEDULED",
+    "READY_TO_SHIP",
+    "LABEL_GENERATED",
+    "MANIFEST_GENERATED",
     "PICKED_UP",
     "IN_TRANSIT",
     "OUT_FOR_DELIVERY",
     "DELIVERED",
-    "FAILED_DELIVERY",
-    "RETURN_INITIATED",
+    "DELIVERY_FAILED",
+    "RETURN_TO_ORIGIN",
     "RETURNED",
     "CANCELLED",
   ]),
@@ -89,6 +90,30 @@ export const getShipmentsQuerySchema = z.object({
   search: z.string().optional(),
 });
 
+export const assignDeliveryExecutiveSchema = z.object({
+  executiveName: z.string().min(2, "Executive name is required"),
+  executivePhone: z.string().min(5, "Executive phone number is required"),
+  vehicleType: z.string().optional().default("Bike / Two Wheeler"),
+  courierPartner: z.string().optional().default("In-House Local Delivery"),
+  trackingNumber: z.string().optional(),
+  status: z.enum(["READY_TO_SHIP", "IN_TRANSIT", "OUT_FOR_DELIVERY", "DELIVERED"]).optional().default("OUT_FOR_DELIVERY"),
+  notes: z.string().optional(),
+});
+
+
+export const addOrderDeliveryAddressSchema = z.object({
+  recipientName: z.string().min(2, "Recipient name is required"),
+  phoneNumber: z.string().min(5, "Contact phone is required"),
+  addressLine1: z.string().min(3, "Address line 1 is required"),
+  addressLine2: z.string().optional(),
+  landmark: z.string().optional(),
+  city: z.string().min(2, "City is required"),
+  state: z.string().min(2, "State is required"),
+  postalCode: z.string().min(3, "Postal code / PIN is required"),
+  country: z.string().optional().default("India"),
+  deliveryNotes: z.string().optional(),
+});
+
 export type CreateShippingPartnerDto = z.infer<typeof createShippingPartnerSchema>;
 export type ConnectCarrierDto = z.infer<typeof connectCarrierSchema>;
 export type LocalDeliverySettingsDto = z.infer<typeof localDeliverySettingsSchema>;
@@ -98,10 +123,14 @@ export type CreateShippingMethodDto = z.infer<typeof createShippingMethodSchema>
 export type CreateShipmentOrderDto = z.infer<typeof createShipmentOrderSchema>;
 export type UpdateShipmentStatusDto = z.infer<typeof updateShipmentStatusSchema>;
 export type GetShipmentsQueryDto = z.infer<typeof getShipmentsQuerySchema>;
+export type AssignDeliveryExecutiveDto = z.infer<typeof assignDeliveryExecutiveSchema>;
+export type AddOrderDeliveryAddressDto = z.infer<typeof addOrderDeliveryAddressSchema>;
 
 export interface ShipmentResponseDto {
   id: string;
   orderId: string;
+  rawOrderId?: string | null;
+  buyerName?: string | null;
   shipmentNumber: string;
   awbNumber: string | null;
   trackingNumber: string | null;
@@ -112,4 +141,6 @@ export interface ShipmentResponseDto {
   estimatedDeliveryAt: string | null;
   shippedAt: string | null;
   deliveredAt: string | null;
+  executive?: any;
 }
+

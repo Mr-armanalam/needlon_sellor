@@ -81,4 +81,6 @@ export interface OrderDetailResponseDto extends OrderListItemDto {
     addresses: OrderDetailAddressDto[];
     history: OrderDetailHistoryDto[];
     payments: OrderDetailPaymentDto[];
+    measurement?: any;
+    shipment?: any;
 }

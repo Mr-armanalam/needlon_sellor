@@ -10,6 +10,8 @@ import {
   createShipmentOrder,
   getSellerShipments,
   updateShipmentStatus,
+  assignDeliveryExecutiveRepo,
+  addOrderDeliveryAddressRepo,
 } from "../repository/delivery.repository";
 import {
   CreateShipmentOrderDto,
@@ -18,7 +20,10 @@ import {
   LocalDeliverySettingsDto,
   PickupHubDto,
   ShippingZoneDto,
+  AssignDeliveryExecutiveDto,
+  AddOrderDeliveryAddressDto,
 } from "../dto/delivery.dto";
+
 
 export async function getShippingPartnersService() {
   const partners = await getShippingPartners();
@@ -73,3 +78,14 @@ export async function updateShipmentStatusService(dto: UpdateShipmentStatusDto) 
   await getCurrentSellerOrThrow();
   return updateShipmentStatus(dto);
 }
+
+export async function assignDeliveryExecutiveService(orderId: string, dto: AssignDeliveryExecutiveDto) {
+  const seller = await getCurrentSellerOrThrow();
+  return assignDeliveryExecutiveRepo(seller.id, orderId, dto);
+}
+
+export async function addOrderDeliveryAddressService(orderId: string, dto: AddOrderDeliveryAddressDto) {
+  const seller = await getCurrentSellerOrThrow();
+  return addOrderDeliveryAddressRepo(seller.id, orderId, dto);
+}
+

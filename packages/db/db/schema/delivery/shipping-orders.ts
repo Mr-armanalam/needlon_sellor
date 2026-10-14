@@ -17,20 +17,19 @@ import { shippingMethods } from "./shipping-method";
 // Enums
 export const shipmentStatusEnum = pgEnum("shipment_status", [
   "PENDING",
-  "READY_FOR_PICKUP",
-  "PICKUP_SCHEDULED",
+  "READY_TO_SHIP",
+  "LABEL_GENERATED",
+  "MANIFEST_GENERATED",
   "PICKED_UP",
   "IN_TRANSIT",
   "OUT_FOR_DELIVERY",
   "DELIVERED",
-  "FAILED_DELIVERY",
-  "RETURN_INITIATED",
+  "DELIVERY_FAILED",
+  "RETURN_TO_ORIGIN",
   "RETURNED",
   "CANCELLED",
-  "LOST",
-  "DAMAGED",
-  "RTO",
 ]);
+
 
 export const shipmentOrders = pgTable("shipment_orders", {
   id: uuid("id").defaultRandom().primaryKey(),

@@ -160,5 +160,11 @@ export function toOrderDetailResponse(order: OrderDomain): OrderDetailResponseDt
         addresses,
         history,
         payments,
+        measurement: order.measurement ? {
+            ...order.measurement,
+            createdAt: order.measurement.createdAt instanceof Date ? order.measurement.createdAt.toISOString() : (order.measurement.createdAt ? String(order.measurement.createdAt) : undefined),
+            updatedAt: order.measurement.updatedAt instanceof Date ? order.measurement.updatedAt.toISOString() : (order.measurement.updatedAt ? String(order.measurement.updatedAt) : undefined),
+        } : null,
+        shipment: order.shipment ? { ...order.shipment } : null,
     };
 }

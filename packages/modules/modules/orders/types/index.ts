@@ -167,6 +167,7 @@ export interface OrderDomain {
     history?: OrderStatusHistoryDomain[];
     payments?: OrderPaymentDomain[];
     measurement?: OrderMeasurementDomain | null;
+    shipment?: any;
 }
 
 export interface OrderMeasurementDomain {
