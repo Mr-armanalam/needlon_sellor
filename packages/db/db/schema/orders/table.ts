@@ -9,6 +9,7 @@
 import {
   boolean,
   index,
+  jsonb,
   numeric,
   pgTable,
   text,
@@ -181,6 +182,7 @@ export const orders = pgTable(
      */
     tailoringStage: varchar("tailoring_stage", { length: 50 }),
     tailoringNotes: text("tailoring_notes"),
+    mediaUrls: jsonb("media_urls").$type<string[]>().default([]),
 
     /**
      * ------------------------------------------------------------------------

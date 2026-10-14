@@ -14,7 +14,9 @@ const DoubleColumnInspectorLayout = (
         handleAdvance,
         isFinalState,
         actionLoading,
-        handleCancel
+        handleCancel,
+        isBespoke,
+        reload,
     }:{
         data: any;
         currentStatus: string;
@@ -31,6 +33,8 @@ const DoubleColumnInspectorLayout = (
         isFinalState: boolean;
         actionLoading:  boolean;
         handleCancel:  () => Promise<void>;
+        isBespoke?: boolean;
+        reload?: () => Promise<void>;
     }
 ) => {
     return (
@@ -42,6 +46,7 @@ const DoubleColumnInspectorLayout = (
                 items={items}
                 formatCurrency={formatCurrency}
                 deliveryAddress={deliveryAddress}
+                reload={reload}
             />
             {/* RIGHT COMPONENT COLUMN: Comprehensive Pipeline Tracking */}
             <PipelineTracking
@@ -51,6 +56,7 @@ const DoubleColumnInspectorLayout = (
                 isFinalState={isFinalState}
                 actionLoading={actionLoading}
                 handleCancel={handleCancel}
+                isBespoke={isBespoke}
             />
         </div>
 

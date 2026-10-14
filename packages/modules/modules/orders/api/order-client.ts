@@ -53,3 +53,16 @@ export async function updateOrderStatusClient(
   >(`/api/seller/orders/${orderId}/action`, { action, remarks });
   return { success: true, data };
 }
+
+export async function updateTailoringStageClient(
+  orderId: string,
+  stage: string,
+  notes?: string
+) {
+  const data = await apiClient.patch<any, { stage: string; notes?: string }>(
+    `/api/seller/orders/${orderId}/tailoring-stage`,
+    { stage, notes }
+  );
+  return { success: true, data };
+}
+

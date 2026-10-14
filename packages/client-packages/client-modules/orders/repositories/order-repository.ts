@@ -205,13 +205,20 @@ export const OrderRepository = {
         paymentId: row.payment?.gatewayPaymentId || row.payment?.paymentNumber || row.order.orderNumber,
         productName: row.item?.productName || row.product?.name || "Needlon Item",
         image:
-          row.item?.imageUrl ||
-          row.item?.thumbnailUrl ||
-          row.primaryMedia ||
-          row.product?.thumbnailUrl ||
-          "",
+          row.order.source === "IN_STORE"
+            ? (row.item?.imageUrl ||
+               row.item?.thumbnailUrl ||
+               (Array.isArray(row.order.mediaUrls) && row.order.mediaUrls[0] ? row.order.mediaUrls[0] : ""))
+            : (row.item?.imageUrl ||
+               row.item?.thumbnailUrl ||
+               row.primaryMedia ||
+               row.product?.thumbnailUrl ||
+               ""),
         price: Number(row.item?.unitPrice || 0),
         properties: row.item?.variantName || "Standard",
+        mediaUrls: (row.order.mediaUrls as string[]) || [],
+        source: row.order.source,
+        tailoringStage: row.order.tailoringStage,
       }));
     } catch (error) {
       console.error("OrderRepository.getRawUserOrders error:", error);
@@ -331,7 +338,13 @@ export const OrderRepository = {
         let dynamicImage = "";
         let dynamicProductId = attachedMeasurement?.productId || "prod-custom";
 
-        if (attachedMeasurement?.productId && isValidUuid(attachedMeasurement.productId)) {
+        if (foundOrder.source === "IN_STORE") {
+          if (Array.isArray(foundOrder.mediaUrls) && foundOrder.mediaUrls.length > 0) {
+            dynamicImage = foundOrder.mediaUrls[0];
+          } else {
+            dynamicImage = "";
+          }
+        } else if (attachedMeasurement?.productId && isValidUuid(attachedMeasurement.productId)) {
           const [catProd] = await db
             .select()
             .from(productsTable)
@@ -368,6 +381,8 @@ export const OrderRepository = {
             totalPurchasePrice: Number(foundOrder.grandTotal),
             couponDiscount: Number(foundOrder.couponDiscount),
             orderStatus: foundOrder.status,
+            source: foundOrder.source,
+            mediaUrls: Array.isArray(foundOrder.mediaUrls) ? foundOrder.mediaUrls : [],
             timeline,
             shipments,
             canCancel,
@@ -385,7 +400,15 @@ export const OrderRepository = {
           let resolvedProductId = item.productId;
           let resolvedProperties = item.variantName || "";
 
-          if (isValidUuid(item.productId)) {
+          if (foundOrder.source === "IN_STORE") {
+            if (Array.isArray(foundOrder.mediaUrls) && foundOrder.mediaUrls.length > 0) {
+              resolvedImage = foundOrder.mediaUrls[0];
+            } else if (item.imageUrl) {
+              resolvedImage = item.imageUrl;
+            } else {
+              resolvedImage = "";
+            }
+          } else if (isValidUuid(item.productId)) {
             const [catProd] = await db
               .select()
               .from(productsTable)
@@ -444,6 +467,8 @@ export const OrderRepository = {
             totalPurchasePrice: Number(foundOrder.grandTotal),
             couponDiscount: Number(foundOrder.couponDiscount),
             orderStatus: foundOrder.status,
+            source: foundOrder.source,
+            mediaUrls: Array.isArray(foundOrder.mediaUrls) ? foundOrder.mediaUrls : [],
             timeline,
             shipments,
             canCancel,

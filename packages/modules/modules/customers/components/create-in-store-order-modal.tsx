@@ -3,7 +3,7 @@
 
 import { apiFetch } from "@/modules/auth/lib/auth-client";
 import React, { useState } from 'react';
-import { X, ShoppingBag, Ruler, Banknote, FileText, Loader2 } from 'lucide-react';
+import { X, ShoppingBag, Ruler, Banknote, FileText, Loader2, Camera, Video, UploadCloud, Trash2 } from 'lucide-react';
 
 interface CreateInStoreOrderModalProps {
   isOpen: boolean;
@@ -29,6 +29,8 @@ export default function CreateInStoreOrderModal({
   const [tailoringNotes, setTailoringNotes] = useState('');
   const [paymentStatus, setPaymentStatus] = useState<'PAID' | 'PENDING' | 'PARTIAL'>('PAID');
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'UPI' | 'COD'>('CASH');
+  const [mediaPreview, setMediaPreview] = useState<string | null>(null);
+  const [mediaType, setMediaType] = useState<'IMAGE' | 'VIDEO' | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,6 +64,8 @@ export default function CreateInStoreOrderModal({
           tailoringNotes: tailoringNotes.trim() || null,
           paymentStatus,
           paymentMethod,
+          imageUrl: mediaPreview || null,
+          mediaUrls: mediaPreview ? [mediaPreview] : [],
         }),
       });
 
@@ -76,6 +80,8 @@ export default function CreateInStoreOrderModal({
       setGarmentName('');
       setAmount('');
       setTailoringNotes('');
+      setMediaPreview(null);
+      setMediaType(null);
     } catch (err: any) {
       setError(err.message || 'Failed to create in-store order');
     } finally {
@@ -241,6 +247,71 @@ export default function CreateInStoreOrderModal({
                 className="w-full pl-9 pr-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
               />
             </div>
+          </div>
+
+          {/* Garment Media Upload (Photos or Videos) */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Camera className="w-3.5 h-3.5 text-neutral-600" />
+                Garment Reference Photo or Video (Optional)
+              </span>
+              <span className="text-[10px] text-gray-400">JPG, PNG, MP4, WEBM</span>
+            </label>
+            
+            {mediaPreview ? (
+              <div className="relative rounded-xl border border-neutral-200 overflow-hidden bg-black/5 p-2.5 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  {mediaType === 'VIDEO' ? (
+                    <video src={mediaPreview} className="w-14 h-14 rounded-lg object-cover bg-black" controls muted />
+                  ) : (
+                    <img src={mediaPreview} alt="Preview" className="w-14 h-14 rounded-lg object-cover border border-neutral-200" />
+                  )}
+                  <div className="truncate">
+                    <p className="text-xs font-semibold text-neutral-800">
+                      {mediaType === 'VIDEO' ? 'Garment Video Attached' : 'Garment Photo Attached'}
+                    </p>
+                    <p className="text-[10px] text-neutral-500 truncate">
+                      Will be visible to buyer in their live tracking
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMediaPreview(null);
+                    setMediaType(null);
+                  }}
+                  className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer shrink-0"
+                  title="Remove media"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center p-3.5 border-2 border-dashed border-gray-200 hover:border-emerald-500 rounded-xl bg-gray-50/70 hover:bg-emerald-50/20 cursor-pointer transition-all">
+                <UploadCloud className="w-5 h-5 text-gray-400 mb-1" />
+                <span className="text-xs font-medium text-gray-600">Click to upload photo or short video</span>
+                <span className="text-[10px] text-gray-400">Fabric swatch, mannequin, or sample</span>
+                <input
+                  type="file"
+                  accept="image/*,video/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const isVid = file.type.startsWith('video');
+                      setMediaType(isVid ? 'VIDEO' : 'IMAGE');
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setMediaPreview(reader.result as string);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                />
+              </label>
+            )}
           </div>
 
           {/* Action buttons */}

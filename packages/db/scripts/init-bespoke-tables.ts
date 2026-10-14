@@ -49,7 +49,12 @@ async function initBespokeTables() {
       ADD COLUMN IF NOT EXISTS edit_requested_at TIMESTAMPTZ,
       ADD COLUMN IF NOT EXISTS last_edited_at TIMESTAMPTZ;
     `;
-    console.log("✓ Verified customer_measurements revision columns.");
+    // 2c. Add media_urls column to product_orders for bespoke garment photos and videos
+    await sql`
+      ALTER TABLE product_orders 
+      ADD COLUMN IF NOT EXISTS media_urls JSONB DEFAULT '[]'::jsonb;
+    `;
+    console.log("✓ Verified product_orders media_urls column.");
 
     // 3. Create helpful indexes
     await sql`

@@ -155,6 +155,9 @@ export interface OrderDomain {
     deliveredAt: Date | null;
     cancelledAt: Date | null;
     returnedAt: Date | null;
+    tailoringStage?: string | null;
+    tailoringNotes?: string | null;
+    mediaUrls?: string[];
     createdAt: Date;
     updatedAt: Date;
     deletedAt: Date | null;

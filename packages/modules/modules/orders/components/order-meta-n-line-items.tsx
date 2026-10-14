@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import {STATUS_LABELS} from "@/modules/orders/constants";
-import {FileText, User} from "lucide-react";
+import {FileText, User, Camera, Video, UploadCloud, Loader2, Play} from "lucide-react";
 
 const OrderMetaNLineItems = (
     {
@@ -9,14 +9,55 @@ const OrderMetaNLineItems = (
         items,
         formatCurrency,
         deliveryAddress,
+        reload,
     }:{
         data: any;
         currentStatus: string;
         items: any;
         formatCurrency: (val: string) => string ;
         deliveryAddress: any;
+        reload?: () => Promise<void>;
     }
 ) => {
+    const [uploading, setUploading] = useState(false);
+    const [uploadError, setUploadError] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const mediaList: string[] = Array.isArray(data?.mediaUrls) && data.mediaUrls.length > 0
+        ? data.mediaUrls
+        : (items?.[0]?.imageUrl ? [items[0].imageUrl] : []);
+
+    const handleUploadMedia = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploading(true);
+        setUploadError(null);
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('caption', file.type.startsWith('video') ? 'Bespoke garment movement / swinging progress video' : 'Bespoke garment craft progress photo');
+
+            const res = await fetch(`/api/seller/orders/${data.id}/media`, {
+                method: 'POST',
+                body: formData,
+            });
+
+            const json = await res.json();
+            if (!res.ok || !json.success) {
+                throw new Error(json.message || 'Failed to upload media');
+            }
+
+            if (reload) {
+                await reload();
+            }
+        } catch (err: any) {
+            setUploadError(err.message || 'Failed to upload craft media');
+        } finally {
+            setUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
 
     return (
         <div className="lg:col-span-2 flex flex-col gap-5">
@@ -43,8 +84,8 @@ const OrderMetaNLineItems = (
                 {items.map((item: any) => (
                     <div key={item.id} className="flex items-center justify-between py-2 border-b border-neutral-50/50 last:border-none">
                         <div className="flex items-center gap-3">
-                            {item.thumbnailUrl ? (
-                                <img src={item.thumbnailUrl} alt={item.productName} className="w-12 h-12 rounded-xl object-cover border border-neutral-100" />
+                            {item.imageUrl || item.thumbnailUrl ? (
+                                <img src={item.imageUrl || item.thumbnailUrl} alt={item.productName} className="w-12 h-12 rounded-xl object-cover border border-neutral-100" />
                             ) : (
                                 <div className="w-12 h-12 rounded-xl bg-orange-50 text-orange-700 font-bold flex items-center justify-center text-[13px] shadow-inner shrink-0">
                                     {item.productName ? item.productName.substring(0, 2).toUpperCase() : "PR"}
@@ -130,6 +171,89 @@ const OrderMetaNLineItems = (
                         className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[12px] font-medium outline-none text-neutral-700 leading-relaxed resize-none cursor-default"
                     />
                 </div>
+            </div>
+
+            {/* Bespoke Craft Media & Garment Progress Section */}
+            <div className="bg-white border border-neutral-100 rounded-2xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.01)] flex flex-col gap-4">
+                <div className="flex items-center justify-between border-b border-neutral-50 pb-3">
+                    <div className="flex flex-col">
+                        <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <Camera size={12} /> Garment Craft Media & Proof
+                        </span>
+                        <h4 className="text-[14px] font-bold text-neutral-900 mt-0.5">
+                            Progress Photos & Videos ({mediaList.length})
+                        </h4>
+                    </div>
+
+                    <div>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*,video/*"
+                            className="hidden"
+                            onChange={handleUploadMedia}
+                        />
+                        <button
+                            type="button"
+                            disabled={uploading}
+                            onClick={() => fileInputRef.current?.click()}
+                            className="px-3 py-1.5 rounded-xl bg-neutral-900 hover:bg-black text-white text-[12px] font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                        >
+                            {uploading ? (
+                                <Loader2 size={13} className="animate-spin" />
+                            ) : (
+                                <UploadCloud size={13} />
+                            )}
+                            <span>{uploading ? "Uploading..." : "Add Photo/Video"}</span>
+                        </button>
+                    </div>
+                </div>
+
+                {uploadError && (
+                    <p className="text-xs text-red-600 bg-red-50 p-2 rounded-lg border border-red-200">
+                        {uploadError}
+                    </p>
+                )}
+
+                {mediaList.length === 0 ? (
+                    <div className="py-6 px-4 text-center border-2 border-dashed border-neutral-100 rounded-xl bg-neutral-50/50 flex flex-col items-center gap-2">
+                        <div className="p-2 bg-white rounded-full border border-neutral-200 text-neutral-400">
+                            <Camera size={18} />
+                        </div>
+                        <p className="text-xs text-neutral-500 font-medium">
+                            No craft progress media uploaded yet.
+                        </p>
+                        <p className="text-[11px] text-neutral-400 max-w-sm">
+                            Upload photos or videos of the garment sewing, fabric, or finished clothes swinging to build customer trust.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                        {mediaList.map((url, idx) => {
+                            const isVideo = url.includes('.mp4') || url.includes('.webm') || url.startsWith('data:video');
+                            return (
+                                <div key={idx} className="relative group rounded-xl overflow-hidden border border-neutral-200 bg-neutral-900 aspect-square flex items-center justify-center">
+                                    {isVideo ? (
+                                        <video
+                                            src={url}
+                                            controls
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <img
+                                            src={url}
+                                            alt={`Garment craft ${idx + 1}`}
+                                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                                        />
+                                    )}
+                                    <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/60 text-white text-[9px] font-bold tracking-wider uppercase backdrop-blur-xs">
+                                        {isVideo ? "Video" : "Photo"} #{idx + 1}
+                                    </span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
         </div>
 

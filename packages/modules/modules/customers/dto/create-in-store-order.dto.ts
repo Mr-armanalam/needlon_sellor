@@ -10,6 +10,8 @@ export const createInStoreOrderSchema = z.object({
   tailoringNotes: z.string().optional().nullable(),
   paymentStatus: z.enum(["PENDING", "PAID", "PARTIAL"]).default("PAID"),
   paymentMethod: z.enum(["CASH", "CARD", "UPI", "COD"]).default("CASH"),
+  imageUrl: z.string().optional().nullable(),
+  mediaUrls: z.array(z.string()).optional(),
 });
 
 export type CreateInStoreOrderDto = z.infer<typeof createInStoreOrderSchema>;

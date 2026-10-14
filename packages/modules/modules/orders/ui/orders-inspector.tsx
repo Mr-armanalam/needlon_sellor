@@ -24,7 +24,9 @@ export default function OrderInspector({ orderId, onBack }: OrderInspectorProps)
       handleAdvance,
       isFinalState,
       actionLoading,
-      handleCancel
+      handleCancel,
+      isBespoke,
+      reload,
   } = useOrderInspector(orderId);
   const [isDocumentModalOpen, setIsDocumentModalOpen] = useState(false);
 
@@ -69,6 +71,8 @@ export default function OrderInspector({ orderId, onBack }: OrderInspectorProps)
         isFinalState={isFinalState}
         handleCancel={handleCancel}
         actionLoading={actionLoading}
+        isBespoke={isBespoke}
+        reload={reload}
       />
       {/* Order Document Preview Modal */}
       <DocumentPreviewModal

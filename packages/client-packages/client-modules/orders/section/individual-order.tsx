@@ -49,6 +49,7 @@ const IndividualOrder = ({
               measurementData={(order as any)?.measurementData}
               rawOrderId={(order as any)?.rawOrderId}
               orderId={(order as any)?.orderId}
+              mediaUrls={(order as any)?.mediaUrls}
             />
           ))} 
         </>

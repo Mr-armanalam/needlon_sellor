@@ -165,6 +165,7 @@ export async function getCustomerDetailsRepo(sellerId: string, buyerId: string) 
       ? await db
           .select({
             orderId: orderItems.orderId,
+            productId: orderItems.productId,
             variantName: orderItems.variantName,
             productName: orderItems.productName,
           })
@@ -178,6 +179,8 @@ export async function getCustomerDetailsRepo(sellerId: string, buyerId: string) 
       .select({
         id: customerMeasurementsTable.id,
         orderId: customerMeasurementsTable.orderId,
+        orderItemId: customerMeasurementsTable.orderItemId,
+        productId: customerMeasurementsTable.productId,
         orderNumber: orders.orderNumber,
         gender: customerMeasurementsTable.gender,
         garmentType: customerMeasurementsTable.garmentType,
@@ -218,7 +221,12 @@ export async function getCustomerDetailsRepo(sellerId: string, buyerId: string) 
   return {
     history: customerOrders.map((o) => {
       const orderItemsList = itemsForOrders.filter((it) => it.orderId === o.orderId);
-      const matchingMeasurement = measurements.find((m) => m.orderId === o.orderId);
+      const matchingMeasurement = measurements.find(
+        (m) =>
+          m.orderId === o.orderId ||
+          (m.orderNumber && (m.orderNumber === o.id || m.orderNumber === o.orderId)) ||
+          orderItemsList.some((it) => (m.productId && it.productId === m.productId) || (m.orderItemId && it.orderId === m.orderId))
+      );
       const isBespoke = !!matchingMeasurement || !!o.tailoringStage;
       const sizeTag = orderItemsList[0]?.variantName || null;
 
@@ -233,7 +241,7 @@ export async function getCustomerDetailsRepo(sellerId: string, buyerId: string) 
         source: o.source || "WEB",
         isBespoke,
         garmentType: matchingMeasurement?.garmentType || null,
-        size: !isBespoke ? sizeTag || "Ready-to-Wear" : "Custom Fit",
+        size: !isBespoke ? sizeTag || "Ready-to-Wear" : (sizeTag || "Custom Fit"),
       };
     }),
     reviews: customerReviews.map((r) => ({
@@ -243,24 +251,33 @@ export async function getCustomerDetailsRepo(sellerId: string, buyerId: string) 
       product: r.productName || "Purchased Product",
       date: r.date ? new Date(r.date).toLocaleDateString() : "N/A",
     })),
-    measurements: measurements.map((m) => ({
-      id: m.id,
-      orderId: m.orderId,
-      orderNumber: m.orderNumber || (m.orderId ? `Order #${m.orderId.slice(-6)}` : null),
-      gender: m.gender,
-      garmentType: m.garmentType,
-      unit: m.measurementUnit,
-      essentialMeasurements: m.essentialMeasurements,
-      postureSpecifics: m.postureSpecifics,
-      fitPreference: m.fitPreference,
-      tailorNotes: m.tailorNotes,
-      source: m.source,
-      status: m.status,
-      isEditable: m.isEditable,
-      editRequested: m.editRequested,
-      editRequestReason: m.editRequestReason,
-      date: m.createdAt ? new Date(m.createdAt).toLocaleDateString() : "N/A",
-    })),
+    measurements: measurements.map((m) => {
+      const matchedOrder = customerOrders.find((co) => {
+        if (m.orderId && (m.orderId === co.orderId || m.orderId === co.id)) return true;
+        if (m.orderNumber && (m.orderNumber === co.id || m.orderNumber === co.orderId)) return true;
+        const oItems = itemsForOrders.filter((it) => it.orderId === co.orderId);
+        return oItems.some((it) => m.productId && it.productId === m.productId);
+      });
+
+      return {
+        id: m.id,
+        orderId: m.orderId || matchedOrder?.orderId || null,
+        orderNumber: m.orderNumber || matchedOrder?.id || (m.orderId ? `Order #${m.orderId.slice(-6)}` : null),
+        gender: m.gender,
+        garmentType: m.garmentType,
+        unit: m.measurementUnit,
+        essentialMeasurements: m.essentialMeasurements,
+        postureSpecifics: m.postureSpecifics,
+        fitPreference: m.fitPreference,
+        tailorNotes: m.tailorNotes,
+        source: m.source,
+        status: m.status,
+        isEditable: m.isEditable,
+        editRequested: m.editRequested,
+        editRequestReason: m.editRequestReason,
+        date: m.createdAt ? new Date(m.createdAt).toLocaleDateString() : "N/A",
+      };
+    }),
   };
 }
 
@@ -459,6 +476,10 @@ export async function createInStoreOrderRepo(sellerId: string, data: CreateInSto
       ? "PARTIALLY_PAID"
       : data.paymentStatus || "PAID";
 
+  const initialMediaUrls = Array.isArray(data.mediaUrls) && data.mediaUrls.length > 0
+    ? data.mediaUrls
+    : (data.imageUrl ? [data.imageUrl] : []);
+
   // 5. Insert order
   const [createdOrder] = await db
     .insert(orders)
@@ -471,6 +492,7 @@ export async function createInStoreOrderRepo(sellerId: string, data: CreateInSto
       status: "CONFIRMED",
       tailoringStage: data.tailoringStage || "ORDER_PLACED",
       tailoringNotes: data.tailoringNotes || null,
+      mediaUrls: initialMediaUrls,
       paymentStatus: mappedPaymentStatus,
       paymentMethod: (data.paymentMethod === "CASH" ? "COD" : (data.paymentMethod as any)) || "COD",
       shippingMethod: "STANDARD",
@@ -494,6 +516,8 @@ export async function createInStoreOrderRepo(sellerId: string, data: CreateInSto
       sku: orderNum,
       productSlug: data.garmentName.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
       productName: data.garmentName,
+      imageUrl: data.imageUrl || (initialMediaUrls[0] || null),
+      thumbnailUrl: data.imageUrl || (initialMediaUrls[0] || null),
       unitPrice: amountStr,
       quantity: 1,
       subtotal: amountStr,
@@ -955,4 +979,85 @@ export async function recordInStoreHandoverRepo(
 
   return updated;
 }
+
+export async function addOrderMediaRepo(
+  sellerId: string,
+  orderId: string,
+  mediaUrl: string,
+  caption?: string
+) {
+  const [existingOrder] = await db
+    .select()
+    .from(orders)
+    .where(and(eq(orders.id, orderId), eq(orders.sellerId, sellerId)))
+    .limit(1);
+
+  if (!existingOrder) {
+    throw new Error("Order not found or unauthorized");
+  }
+
+  const currentMediaUrls: string[] = Array.isArray(existingOrder.mediaUrls) ? [...existingOrder.mediaUrls] : [];
+  if (!currentMediaUrls.includes(mediaUrl)) {
+    currentMediaUrls.push(mediaUrl);
+  }
+
+  const [updatedOrder] = await db
+    .update(orders)
+    .set({
+      mediaUrls: currentMediaUrls,
+      updatedAt: new Date(),
+    })
+    .where(eq(orders.id, orderId))
+    .returning();
+
+  // Also update primary image on orderItems if empty
+  const [firstItem] = await db
+    .select()
+    .from(orderItems)
+    .where(eq(orderItems.orderId, orderId))
+    .limit(1);
+
+  if (firstItem && (!firstItem.imageUrl || firstItem.imageUrl.trim() === "")) {
+    await db
+      .update(orderItems)
+      .set({
+        imageUrl: mediaUrl,
+        thumbnailUrl: mediaUrl,
+        updatedAt: new Date(),
+      })
+      .where(eq(orderItems.id, firstItem.id));
+  }
+
+  // Audit history
+  await db.insert(orderStatusHistory).values({
+    orderId,
+    sellerId,
+    fromStatus: existingOrder.status,
+    toStatus: existingOrder.status,
+    action: "UPDATED",
+    remarks: caption || "Added garment craft progress media (photo/video)",
+  });
+
+  // Notify buyer of craft progress
+  if (existingOrder.buyerId) {
+    try {
+      await db.insert(notifications).values({
+        recipientType: "BUYER",
+        recipientId: existingOrder.buyerId,
+        notificationType: "ORDER_STATUS",
+        title: "Craft Progress Media Added",
+        message: `Master tailor added craft progress photos/video for your order ${existingOrder.orderNumber}. View live updates in your account!`,
+        referenceType: "ORDER",
+        referenceId: orderId,
+        priority: "NORMAL",
+        isRead: false,
+      });
+    } catch (err) {
+      console.warn("Failed to dispatch craft media notification:", err);
+    }
+  }
+
+  return { success: true, mediaUrls: currentMediaUrls, order: updatedOrder };
+}
+
 
