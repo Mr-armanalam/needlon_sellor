@@ -33,6 +33,8 @@ const IndividualOrder = ({
             itemsSubtotal={itemsSubtotal}
             totalPurchasePrice={firstOrder.totalPurchasePrice}
             couponDiscount={firstOrder.couponDiscount}
+            isClientOrder={(firstOrder as any)?.isClientOrder}
+            isPickup={(firstOrder as any)?.isPickup}
           />
 
            {orderItem?.map((order, index) => (
@@ -49,6 +51,8 @@ const IndividualOrder = ({
               measurementData={(order as any)?.measurementData}
               rawOrderId={(order as any)?.rawOrderId}
               orderId={(order as any)?.orderId}
+              orderStatus={(order as any)?.orderStatus}
+              sellerId={(order as any)?.sellerId}
               mediaUrls={(order as any)?.mediaUrls}
             />
           ))} 

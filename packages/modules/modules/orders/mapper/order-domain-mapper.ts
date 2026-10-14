@@ -133,7 +133,35 @@ export function toOrderPaymentDomain(dbPayment: any): OrderPaymentDomain {
     };
 }
 
-export function toOrderDomain(dbOrder: any, items?: any[], addresses?: any[], history?: any[], payments?: any[]): OrderDomain {
+export function toOrderMeasurementDomain(dbMeasurement: any): any {
+    if (!dbMeasurement) return null;
+    return {
+        id: dbMeasurement.id,
+        garmentType: dbMeasurement.garmentType,
+        gender: dbMeasurement.gender || null,
+        measurementUnit: dbMeasurement.measurementUnit || "INCHES",
+        fitPreference: dbMeasurement.fitPreference || "REGULAR",
+        essentialMeasurements: dbMeasurement.essentialMeasurements || {},
+        postureSpecifics: dbMeasurement.postureSpecifics || {},
+        tailorNotes: dbMeasurement.tailorNotes || null,
+        status: dbMeasurement.status || "SUBMITTED",
+        source: dbMeasurement.source || "ONLINE_CUSTOMER",
+        isEditable: dbMeasurement.isEditable ?? false,
+        editRequested: dbMeasurement.editRequested ?? false,
+        editRequestReason: dbMeasurement.editRequestReason || null,
+        createdAt: dbMeasurement.createdAt ? new Date(dbMeasurement.createdAt) : undefined,
+        updatedAt: dbMeasurement.updatedAt ? new Date(dbMeasurement.updatedAt) : undefined,
+    };
+}
+
+export function toOrderDomain(
+    dbOrder: any, 
+    items?: any[], 
+    addresses?: any[], 
+    history?: any[], 
+    payments?: any[],
+    measurement?: any
+): OrderDomain {
     return {
         id: dbOrder.id,
         sellerId: dbOrder.sellerId,
@@ -183,5 +211,6 @@ export function toOrderDomain(dbOrder: any, items?: any[], addresses?: any[], hi
         addresses: addresses ? addresses.map(toOrderAddressDomain) : undefined,
         history: history ? history.map(toOrderStatusHistoryDomain) : undefined,
         payments: payments ? payments.map(toOrderPaymentDomain) : undefined,
+        measurement: measurement ? toOrderMeasurementDomain(measurement) : null,
     };
 }

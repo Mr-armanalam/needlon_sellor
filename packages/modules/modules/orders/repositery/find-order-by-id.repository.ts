@@ -3,6 +3,7 @@ import { orderItems } from "@/db/schema/orders/order-items/table";
 import { orderAddresses } from "@/db/schema/orders/order-address";
 import { orderStatusHistory } from "@/db/schema/orders/order-status-history/table";
 import { orderPayments } from "@/db/schema/orders/order-payments/table";
+import { customerMeasurementsTable } from "@/db/schema/customization/measurements";
 import { and, eq, isNull } from "drizzle-orm";
 import { OrderNotFoundError } from "../errors/order-not-found-error";
 import { DbTransaction } from "@/db/transactions";
@@ -64,11 +65,19 @@ export const findOrderById = async ({
         .where(eq(orderPayments.orderId, actualOrderId))
         .orderBy(orderPayments.createdAt);
 
+    // Fetch bespoke customer measurements if associated with this order
+    const measurements = await database
+        .select()
+        .from(customerMeasurementsTable)
+        .where(eq(customerMeasurementsTable.orderId, actualOrderId))
+        .limit(1);
+
     return {
         order,
         items,
         addresses,
         history,
         payments,
+        measurement: measurements[0] || null,
     };
 };

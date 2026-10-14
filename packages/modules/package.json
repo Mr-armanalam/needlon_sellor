@@ -6,7 +6,7 @@
   "types": "./modules/index.ts",
   "exports": {
     ".": "./modules/index.ts",
-    "./*": "./*"
+    "./*": "./modules/*"
   },
   "scripts": {
     "test": "jest",

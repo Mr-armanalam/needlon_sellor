@@ -10,6 +10,7 @@ import { db } from "@/db";
 import { seller } from "@/db/schema/seller";
 import { sellerProfiles } from "@/db/schema/seller/seller-profile";
 import {
+    conversationsTable,
     messagesTable,
     messageAttachmentsTable,
     messageReactionsTable,
@@ -17,7 +18,8 @@ import {
     sharedProductsTable,
     sharedOrdersTable,
 } from "@/db/schema/messages";
-import { eq, inArray } from "drizzle-orm";
+import { usersTable } from "@/db/schema/users";
+import { eq, inArray, sql } from "drizzle-orm";
 import { supabaseServer } from "@/lib/supabase/server";
 
 import {
@@ -77,6 +79,27 @@ export class MessageService {
                 },
             ]),
         );
+
+        // Fetch remaining senders from users table (for buyers)
+        const missingSenderIds = senderIds.filter((id) => id && !senderMap.has(id));
+        if (missingSenderIds.length > 0) {
+            const buyers = await db
+                .select({
+                    id: usersTable.id,
+                    name: usersTable.name,
+                    email: usersTable.email,
+                })
+                .from(usersTable)
+                .where(inArray(usersTable.id, missingSenderIds));
+
+            for (const b of buyers) {
+                senderMap.set(b.id, {
+                    id: b.id,
+                    name: b.name || b.email?.split("@")[0] || "Customer",
+                    avatarUrl: null,
+                });
+            }
+        }
 
         // 2. Fetch reply-to parent messages
         const parentIds = Array.from(
@@ -240,7 +263,7 @@ export class MessageService {
         return rawMessages.map((message) => {
             const senderInfo = senderMap.get(message.senderId) || {
                 id: message.senderId,
-                name: "User",
+                name: message.senderType === "BUYER" ? "Customer" : "User",
                 avatarUrl: null,
             };
 
@@ -256,20 +279,22 @@ export class MessageService {
             // Compute isReadByEveryone. If there are reads in messageReads, it's read by participants.
             const isReadByEveryone = messageReads.length > 0;
 
+            const isOwn = message.senderId === currentSellerId && message.senderType !== "BUYER";
+
             return toMessageDto({
                 id: message.id,
                 conversationId: message.conversationId,
                 sender: senderInfo,
-                messageType: message.type,
+                messageType: message.type || message.messageType || "TEXT",
                 status: message.status,
-                body: message.text,
+                body: message.text || message.content || "",
                 replyTo: parentInfo,
                 attachments: messageAttachments,
                 reactions: messageReactions,
                 isReadByEveryone,
                 isEdited: message.updatedAt > message.createdAt,
                 isDeleted: message.deletedAt !== null,
-                isOwnMessage: message.senderId === currentSellerId,
+                isOwnMessage: isOwn,
                 createdAt: message.createdAt,
                 updatedAt: message.updatedAt,
                 editedAt: message.editedAt || null,
@@ -293,15 +318,38 @@ export class MessageService {
     ) {
         const now = new Date();
 
+        // Query max sequence number
+        const [maxSeqRow] = await db
+            .select({ maxSeq: sql<number>`COALESCE(MAX(${messagesTable.sequenceNumber}), 0)` })
+            .from(messagesTable)
+            .where(eq(messagesTable.conversationId, input.conversationId));
+
+        const nextSeq = Number(maxSeqRow?.maxSeq || 0) + 1;
+
         const message = await messageRepository.create({
             conversationId: input.conversationId,
             senderId: currentSellerId,
+            senderType: "SELLER",
             type: input.messageType,
             text: input.body,
+            content: input.body,
+            sequenceNumber: nextSeq,
             replyToMessageId: input.replyToMessageId,
             createdAt: now,
             updatedAt: now,
-        });
+        } as any);
+
+        // Update conversation summary
+        await db
+            .update(conversationsTable)
+            .set({
+                lastMessageId: message.id,
+                lastMessagePreview: input.body ? input.body.slice(0, 255) : (input.attachments?.length ? "Attachment" : "Message"),
+                lastMessageType: input.messageType as any,
+                lastMessageAt: now,
+                updatedAt: now,
+            })
+            .where(eq(conversationsTable.id, input.conversationId));
 
         // Bind attachments to this message
         if (input.attachments && input.attachments.length > 0) {

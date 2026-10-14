@@ -166,6 +166,25 @@ export interface OrderDomain {
     addresses?: OrderAddressDomain[];
     history?: OrderStatusHistoryDomain[];
     payments?: OrderPaymentDomain[];
+    measurement?: OrderMeasurementDomain | null;
+}
+
+export interface OrderMeasurementDomain {
+    id: string;
+    garmentType: string;
+    gender?: string | null;
+    measurementUnit: string;
+    fitPreference?: string | null;
+    essentialMeasurements: Record<string, string | number>;
+    postureSpecifics?: Record<string, string | number>;
+    tailorNotes?: string | null;
+    status: string;
+    source: string;
+    isEditable?: boolean;
+    editRequested?: boolean;
+    editRequestReason?: string | null;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 export type initial_tab = "INVOICE" | "PACKING_SLIP" | "SHIPPING_LABEL";

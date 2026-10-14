@@ -12,6 +12,7 @@
 import { sql } from "drizzle-orm";
 
 import {
+    bigint,
     boolean,
     check,
     index,
@@ -21,6 +22,7 @@ import {
     text,
     timestamp,
     uuid,
+    varchar,
 } from "drizzle-orm/pg-core";
 
 import { seller } from "@/db/schema/seller";
@@ -149,6 +151,9 @@ export const messagesTable = pgTable(
             .notNull(),
 
         text: text("text"),
+        content: text("content"),
+        sequenceNumber: bigint("sequence_number", { mode: "number" }),
+        relatedOrderId: uuid("related_order_id"),
 
         /**
          * ------------------------------------------------------------------------

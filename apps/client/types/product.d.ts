@@ -71,7 +71,8 @@ export interface OrderItemProp {
   orderDate: Date;
   orderId: string;
   rawOrderId?: string;
-  shippingAddress: Address;
+  sellerId?: string;
+  shippingAddress?: Address | null;
   paymentMode: string;
   shippingCharge: number;
   podCharge: number;
@@ -84,9 +85,15 @@ export interface OrderItemProp {
   couponDiscount: number;
   totalPurchasePrice: number;
   orderStatus?: string;
+  source?: string;
+  isClientOrder?: boolean;
+  isPickup?: boolean;
   timeline?: any[];
   shipments?: any[];
   canCancel?: boolean;
+  hasMeasurement?: boolean;
+  measurementData?: any;
+  mediaUrls?: string[];
 }
 
 export interface suggestionAndRecentSearch {

@@ -20,6 +20,7 @@ export const chatPermissions = pgTable(
     buyerId: uuid("buyer_id")
       .notNull()
       .references(() => usersTable.id, { onDelete: "cascade" }),
+    orderId: uuid("order_id"),
 
     // Status: REQUESTED | ACCEPTED | DECLINED | BLOCKED
     status: varchar("status", { length: 30 }).notNull().default("REQUESTED"),
@@ -35,7 +36,7 @@ export const chatPermissions = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
-  (table) => [
-    uniqueIndex("idx_chat_permissions_unique").on(table.sellerId, table.buyerId),
-  ]
+  (table) => ({
+    chatPermissionsUniqueIdx: uniqueIndex("idx_chat_permissions_unique").on(table.sellerId, table.buyerId),
+  })
 );

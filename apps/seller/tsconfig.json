@@ -19,7 +19,7 @@
       "@needlon/ui": ["../../packages/ui"],
       "@needlon/db/*": ["../../packages/db/*"],
       "@needlon/db": ["../../packages/db/db/index.ts"],
-      "@needlon/modules/*": ["../../packages/modules/*"],
+      "@needlon/modules/*": ["../../packages/modules/modules/*", "../../packages/modules/*"],
       "@needlon/modules": ["../../packages/modules/modules/index.ts"],
       "@/*": ["./*"]
     }

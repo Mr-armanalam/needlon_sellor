@@ -307,22 +307,29 @@ export const OrderRepository = {
       // Build tracking timeline
       const timeline = this.buildTimeline(foundOrder, history, shipments);
 
-      const formattedAddress = {
-        id: address?.id || "addr-snapshot",
+      // Determine fulfillment type
+      const isStorePickup = foundOrder.source === "IN_STORE" && foundOrder.shippingMethod === "STORE_PICKUP";
+      const isClientOrder = foundOrder.source !== "IN_STORE";
+      const isPickup = isStorePickup || (!address && foundOrder.source === "IN_STORE");
+
+      const formattedAddress = address ? {
+        id: address.id || "addr-snapshot",
         userId: foundOrder.buyerId,
-        name: address?.recipientName || foundOrder.buyerName,
-        phone: address?.phoneNumber || foundOrder.buyerPhone,
-        pincode: address?.postalCode || "500001",
-        locality: address?.district || address?.addressLine2 || address?.city || "",
-        address: address?.addressLine1 || "Customer Address",
-        city: address?.city || "",
-        state: address?.state || "",
-        landmark: address?.landmark || "",
+        name: address.recipientName || foundOrder.buyerName,
+        phone: address.phoneNumber || foundOrder.buyerPhone,
+        pincode: address.postalCode || "500001",
+        locality: address.district || address.addressLine2 || address.city || "",
+        address: address.addressLine1 || "Customer Address",
+        city: address.city || "",
+        state: address.state || "",
+        landmark: address.landmark || "",
         alternate_phone: "",
-        country: address?.country || "India",
-        createdAt: address?.createdAt || foundOrder.createdAt,
-        updatedAt: address?.createdAt || foundOrder.createdAt,
-      };
+        country: address.country || "India",
+        createdAt: address.createdAt || foundOrder.createdAt,
+        updatedAt: address.createdAt || foundOrder.createdAt,
+      } : null;
+
+      const resolvedShippingAddress = isPickup ? null : formattedAddress;
 
       const canCancel = ["PENDING", "CONFIRMED"].includes(foundOrder.status);
 
@@ -368,14 +375,17 @@ export const OrderRepository = {
             orderDate: foundOrder.createdAt,
             orderId: foundOrder.orderNumber,
             rawOrderId: foundOrder.id,
-            shippingAddress: formattedAddress,
+            sellerId: foundOrder.sellerId,
+            shippingAddress: resolvedShippingAddress,
+            isClientOrder,
+            isPickup,
             itemName: dynamicName,
             image: dynamicImage,
             productId: dynamicProductId,
             orderItemId: foundOrder.id,
             orderProperties: attachedMeasurement ? `Custom Fit (${attachedMeasurement.garmentType})` : "Standard",
             paymentMode: foundOrder.paymentMethod,
-            shippingCharge: Number(foundOrder.shippingCharge),
+            shippingCharge: isPickup ? 0 : Number(foundOrder.shippingCharge),
             podCharge: foundOrder.paymentMethod === "COD" ? 49 : 0,
             priceAtperchage: Number(foundOrder.grandTotal),
             totalPurchasePrice: Number(foundOrder.grandTotal),
@@ -454,14 +464,17 @@ export const OrderRepository = {
             orderDate: foundOrder.createdAt,
             orderId: foundOrder.orderNumber,
             rawOrderId: foundOrder.id,
-            shippingAddress: formattedAddress,
+            sellerId: foundOrder.sellerId,
+            shippingAddress: resolvedShippingAddress,
+            isClientOrder,
+            isPickup,
             itemName: resolvedName,
             image: resolvedImage || "",
             productId: resolvedProductId,
             orderItemId: item.id,
             orderProperties: resolvedProperties,
             paymentMode: foundOrder.paymentMethod,
-            shippingCharge: Number(foundOrder.shippingCharge),
+            shippingCharge: isPickup ? 0 : Number(foundOrder.shippingCharge),
             podCharge: foundOrder.paymentMethod === "COD" ? 49 : 0,
             priceAtperchage: Number(item.unitPrice),
             totalPurchasePrice: Number(foundOrder.grandTotal),

@@ -16,7 +16,9 @@ import OrderRating from "../ui/order-rating";
 import Link from "next/link";
 import { useIsMobile } from "@/hooks/use-mobile";
 import MeasurementModal from "./measurement-modal";
-import { Scissors, Play } from "lucide-react";
+import OrderChatModal from "./order-chat-modal";
+import ProductReviewModal from "./product-review-modal";
+import { Scissors, Play, MessageSquare, Lock } from "lucide-react";
 
 type props = {
   image?: string;
@@ -32,6 +34,8 @@ type props = {
   rawOrderId?: string;
   orderId?: string;
   mediaUrls?: string[];
+  orderStatus?: string;
+  sellerId?: string;
 };
 
 const OrderStatus = ({
@@ -48,10 +52,16 @@ const OrderStatus = ({
   rawOrderId,
   orderId,
   mediaUrls,
+  orderStatus,
+  sellerId,
 }: props) => {
   const router = useRouter();
   const isMobile = useIsMobile();
   const [isMeasurementModalOpen, setIsMeasurementModalOpen] = React.useState(false);
+  const [isChatModalOpen, setIsChatModalOpen] = React.useState(false);
+  const [isReviewModalOpen, setIsReviewModalOpen] = React.useState(false);
+
+  const isDelivered = orderStatus === "DELIVERED" || orderStatus === "COMPLETED";
 
   const formattedProperties = (() => {
     if (properties && size) {
@@ -112,7 +122,7 @@ const OrderStatus = ({
             </p>
           )}
           <p className="font-medium dark:text-white/70 text-stone-700 mt-2">₹ {itemPrice}</p>
-          <div className="flex max-md:items-center md:gap-x-6">
+          <div className="flex max-md:items-center md:gap-x-4 flex-wrap gap-y-2">
             {hasMeasurement && measurementData ? (
               <Button
                 onClick={() => setIsMeasurementModalOpen(true)}
@@ -130,9 +140,34 @@ const OrderStatus = ({
                 {isMobile ? "🔺Product" : "View product"}
               </Button>
             )}
+
+            <Button
+              onClick={() => setIsChatModalOpen(true)}
+              variant={isMobile ? "link" : "outline"}
+              className="rounded-full max-md:pl-0 max-md:hover:underline text-xs md:mt-4 cursor-pointer text-indigo-600 dark:text-indigo-400 font-semibold"
+            >
+              <MessageSquare className="w-3.5 h-3.5 mr-1 inline" />
+              {isMobile ? "Chat" : "Chat with Atelier"}
+            </Button>
+
             <div className="w-px h-4 md:hidden bg-stone-700" />
-            <Button variant={isMobile ? "link" : "default"} className="rounded-full text-xs md:mt-4 cursor-pointer">
-              {isMobile ? "🖋️ Review" : "write a product review"}
+            <Button
+              onClick={() => setIsReviewModalOpen(true)}
+              variant={isMobile ? "link" : "default"}
+              className={`rounded-full text-xs md:mt-4 cursor-pointer ${
+                !isDelivered
+                  ? "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-200"
+                  : ""
+              }`}
+            >
+              {!isDelivered ? (
+                <span className="flex items-center gap-1">
+                  <Lock className="w-3 h-3 text-neutral-500" />
+                  {isMobile ? "Review" : "Review (After Delivery)"}
+                </span>
+              ) : (
+                <>{isMobile ? "🖋️ Review" : "write a product review"}</>
+              )}
             </Button>
           </div>
         </div>
@@ -185,7 +220,12 @@ const OrderStatus = ({
 
       <Separator orientation="horizontal" className="bg-gray-100 dark:bg-gray-800" />
 
-      <OrderRating isMobile={isMobile} orderItemId={orderItemId} productId={productId} />
+      <OrderRating
+        isMobile={isMobile}
+        orderItemId={orderItemId}
+        productId={productId}
+        isDelivered={isDelivered}
+      />
 
       {hasMeasurement && measurementData && (
         <MeasurementModal
@@ -196,6 +236,24 @@ const OrderStatus = ({
           orderNumber={orderId}
         />
       )}
+
+      <OrderChatModal
+        isOpen={isChatModalOpen}
+        onClose={() => setIsChatModalOpen(false)}
+        orderId={rawOrderId || orderItemId}
+        orderNumber={orderId}
+        itemName={itemName}
+        orderStatus={orderStatus}
+      />
+
+      <ProductReviewModal
+        isOpen={isReviewModalOpen}
+        onClose={() => setIsReviewModalOpen(false)}
+        productId={productId}
+        orderItemId={orderItemId}
+        itemName={itemName}
+        isDelivered={isDelivered}
+      />
     </div>
   );
 };

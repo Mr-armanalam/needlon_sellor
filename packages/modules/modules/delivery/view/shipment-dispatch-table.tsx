@@ -7,7 +7,7 @@ import ShippingLabelModal from './modals/shipping-label-modal';
 import TrackingTimelineModal from './modals/tracking-timeline-modal';
 
 export default function ShipmentDispatchTable() {
-  const { shipments, loading } = useDelivery();
+  const { shipments, loading, updateStatus } = useDelivery();
   const [selectedShipment, setSelectedShipment] = useState<any | null>(null);
   const [activeModal, setActiveModal] = useState<'label' | 'track' | null>(null);
 
@@ -70,15 +70,25 @@ export default function ShipmentDispatchTable() {
                   <span className="text-[10px] text-gray-400">{shp.methodName}</span>
                 </td>
                 <td className="p-3">
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                    shp.status === 'DELIVERED'
-                      ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                      : shp.status === 'IN_TRANSIT'
-                      ? 'bg-blue-50 text-blue-700 border-blue-100'
-                      : 'bg-amber-50 text-amber-700 border-amber-100'
-                  }`}>
-                    {shp.status.replace(/_/g, ' ')}
-                  </span>
+                  <select
+                    value={shp.status}
+                    onChange={async (e) => {
+                      await updateStatus(shp.id, e.target.value);
+                    }}
+                    className={`text-[11px] font-bold px-2 py-1 rounded-lg border focus:outline-none cursor-pointer transition-colors ${
+                      shp.status === 'DELIVERED'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        : shp.status === 'IN_TRANSIT' || shp.status === 'OUT_FOR_DELIVERY'
+                        ? 'bg-blue-50 text-blue-700 border-blue-200'
+                        : 'bg-amber-50 text-amber-700 border-amber-200'
+                    }`}
+                  >
+                    <option value="READY_FOR_PICKUP">Ready for Pickup</option>
+                    <option value="PICKED_UP">Picked Up</option>
+                    <option value="IN_TRANSIT">In Transit</option>
+                    <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
+                    <option value="DELIVERED">Delivered</option>
+                  </select>
                 </td>
                 <td className="p-3 text-right">
                   <div className="flex items-center justify-end gap-2">

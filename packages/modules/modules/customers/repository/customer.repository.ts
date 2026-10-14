@@ -12,6 +12,9 @@ import { fittingAppointmentsTable } from "@/db/schema/customization/fitting-appo
 import { sellerCustomers } from "@/db/schema/seller/seller-customers";
 import { chatPermissions } from "@/db/schema/messaging/chat-permissions";
 import { notifications } from "@/db/schema/notifications/notification-events";
+import { orderAddresses } from "@/db/schema/orders/order-address";
+import { shipmentOrders } from "@/db/schema/delivery/shipping-orders";
+import { shippingMethods } from "@/db/schema/delivery/shipping-method";
 import { and, desc, eq, isNull, or, sql, inArray } from "drizzle-orm";
 import type { CreateWalkInCustomerDto } from "../dto/walk-in-customer.dto";
 import type { RecordInStoreMeasurementDto } from "../dto/in-store-measurement.dto";
@@ -468,7 +471,8 @@ export async function createInStoreOrderRepo(sellerId: string, data: CreateInSto
   }
 
   const orderNum = `BESPOKE-${Date.now().toString(36).toUpperCase()}`;
-  const amountStr = data.amount.toFixed(2);
+  const finalAmount = Number(data.amount ?? (data as any).estimatedAmount ?? 0);
+  const amountStr = finalAmount.toFixed(2);
 
   // Map DTO payment status to DB order_payment_status enum
   const mappedPaymentStatus =
@@ -481,6 +485,7 @@ export async function createInStoreOrderRepo(sellerId: string, data: CreateInSto
     : (data.imageUrl ? [data.imageUrl] : []);
 
   // 5. Insert order
+  const isHomeDelivery = data.deliveryMethod === "HOME_DELIVERY";
   const [createdOrder] = await db
     .insert(orders)
     .values({
@@ -495,7 +500,7 @@ export async function createInStoreOrderRepo(sellerId: string, data: CreateInSto
       mediaUrls: initialMediaUrls,
       paymentStatus: mappedPaymentStatus,
       paymentMethod: (data.paymentMethod === "CASH" ? "COD" : (data.paymentMethod as any)) || "COD",
-      shippingMethod: "STANDARD",
+      shippingMethod: isHomeDelivery ? "STANDARD" : "STORE_PICKUP",
       priority: "NORMAL",
       source: "IN_STORE",
       currency: "INR",
@@ -506,6 +511,53 @@ export async function createInStoreOrderRepo(sellerId: string, data: CreateInSto
       grandTotal: amountStr,
     })
     .returning();
+
+  // If customer asked for home delivery, record the delivery address snapshot & dispatch entry
+  if (isHomeDelivery && data.shippingAddress) {
+    try {
+      await db.insert(orderAddresses).values({
+        orderId: createdOrder.id,
+        addressType: "DELIVERY",
+        recipientName: data.shippingAddress.recipientName || buyer.name,
+        phoneNumber: data.shippingAddress.phoneNumber || buyer.number || "+91 9999999999",
+        addressLine1: data.shippingAddress.addressLine1,
+        addressLine2: data.shippingAddress.addressLine2 || null,
+        city: data.shippingAddress.city,
+        state: data.shippingAddress.state,
+        postalCode: data.shippingAddress.postalCode,
+        country: "India",
+      });
+    } catch (addrErr) {
+      console.warn("Failed to insert order delivery address:", addrErr);
+    }
+
+    if (data.shippingPartnerId) {
+      try {
+        const [method] = await db
+          .select()
+          .from(shippingMethods)
+          .where(eq(shippingMethods.partnerId, data.shippingPartnerId))
+          .limit(1);
+        const shpNum = `SHP-${Date.now().toString(36).toUpperCase()}`;
+        await db.insert(shipmentOrders).values({
+          orderId: createdOrder.id,
+          sellerId,
+          buyerId: data.customerId,
+          shippingPartnerId: data.shippingPartnerId,
+          shippingMethodId: method?.id || data.shippingPartnerId,
+          shipmentNumber: shpNum,
+          awbNumber: `AWB-${Math.floor(10000000 + Math.random() * 90000000)}`,
+          trackingNumber: `TRK-${Math.floor(10000000 + Math.random() * 90000000)}`,
+          status: "READY_FOR_PICKUP",
+          shippingCost: "0",
+          estimatedDeliveryAt: data.estimatedDeliveryAt ? new Date(data.estimatedDeliveryAt) : null,
+          notes: "In-store bespoke commission booked for home delivery",
+        });
+      } catch (shpErr) {
+        console.warn("Failed to create dispatch shipment order:", shpErr);
+      }
+    }
+  }
 
   // 6. Insert order item snapshot
   if (product) {

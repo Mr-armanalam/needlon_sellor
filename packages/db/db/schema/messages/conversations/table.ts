@@ -108,6 +108,10 @@ export const conversationsTable = pgTable(
             length: CONVERSATION_TITLE_MAX_LENGTH,
         }),
 
+        orderId: uuid("order_id"),
+        buyerId: uuid("buyer_id"),
+        conversationType: varchar("conversation_type"),
+
         /**
          * ------------------------------------------------------------------------
          * Last Message

@@ -2,6 +2,7 @@ import {
   pgTable,
   uuid,
   boolean,
+  integer,
   timestamp,
   pgEnum,
   index,
@@ -44,6 +45,7 @@ export const conversations = pgTable(
     lastMessageId: uuid("last_message_id"), // Denormalized for rapid summary lookups
     lastMessageAt: timestamp("last_message_at", { withTimezone: true }),
 
+    participantCount: integer("participant_count").default(2).notNull(),
     isArchived: boolean("is_archived").default(false).notNull(),
 
     createdAt: timestamp("created_at", { withTimezone: true })

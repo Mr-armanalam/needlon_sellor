@@ -3,6 +3,7 @@ import { DocumentPreviewModal } from "../section/document-preview-modal";
 import InspectorSubHeader from "@/modules/orders/section/inspector-sub-header";
 import DoubleColumnInspectorLayout from "@/modules/orders/section/double-column-inspector-layout";
 import {useOrderInspector} from "@/modules/orders/hooks/use-order-inspector";
+import SellerOrderChatModal from "@/modules/orders/components/seller-order-chat-modal";
 
 interface OrderInspectorProps {
   orderId: string;
@@ -29,6 +30,7 @@ export default function OrderInspector({ orderId, onBack }: OrderInspectorProps)
       reload,
   } = useOrderInspector(orderId);
   const [isDocumentModalOpen, setIsDocumentModalOpen] = useState(false);
+  const [isChatModalOpen, setIsChatModalOpen] = useState(false);
 
 
   if (loading) {
@@ -57,6 +59,7 @@ export default function OrderInspector({ orderId, onBack }: OrderInspectorProps)
         onBack={onBack}
         buyerFirstName={buyerFirstName}
         setIsDocumentModalOpen={setIsDocumentModalOpen}
+        onOpenChat={() => setIsChatModalOpen(true)}
       />
       {/* 2. DOUBLE-COLUMN INTERACTIVE FULFILLMENT LAYOUT */}
       <DoubleColumnInspectorLayout
@@ -81,6 +84,14 @@ export default function OrderInspector({ orderId, onBack }: OrderInspectorProps)
         orderId={orderId}
         orderNumber={data.orderNumber}
         initialTab="INVOICE"
+      />
+      {/* Seller Order Chat Modal */}
+      <SellerOrderChatModal
+        isOpen={isChatModalOpen}
+        onClose={() => setIsChatModalOpen(false)}
+        orderId={orderId}
+        orderNumber={data.orderNumber}
+        buyerName={buyerFirstName}
       />
     </div>
   );

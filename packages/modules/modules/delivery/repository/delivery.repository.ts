@@ -2,6 +2,7 @@ import { db } from "@/db";
 import { shippingPartners } from "@/db/schema/delivery/shipping-partners";
 import { shippingMethods } from "@/db/schema/delivery/shipping-method";
 import { shipmentOrders } from "@/db/schema/delivery/shipping-orders";
+import { orders } from "@/db/schema/orders/table";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import {
   CreateShipmentOrderDto,
@@ -185,6 +186,8 @@ export async function getSellerShipments(sellerId: string, statusFilter?: string
     .select({
       id: shipmentOrders.id,
       orderId: shipmentOrders.orderId,
+      orderNumber: orders.orderNumber,
+      buyerName: orders.buyerName,
       shipmentNumber: shipmentOrders.shipmentNumber,
       awbNumber: shipmentOrders.awbNumber,
       trackingNumber: shipmentOrders.trackingNumber,
@@ -199,6 +202,7 @@ export async function getSellerShipments(sellerId: string, statusFilter?: string
     .from(shipmentOrders)
     .innerJoin(shippingPartners, eq(shipmentOrders.shippingPartnerId, shippingPartners.id))
     .innerJoin(shippingMethods, eq(shipmentOrders.shippingMethodId, shippingMethods.id))
+    .leftJoin(orders, eq(shipmentOrders.orderId, orders.id))
     .where(and(...conditions))
     .orderBy(sql`${shipmentOrders.createdAt} DESC`);
 
@@ -208,6 +212,8 @@ export async function getSellerShipments(sellerId: string, statusFilter?: string
       {
         id: "shp-1",
         orderId: "ORD-98234",
+        rawOrderId: null,
+        buyerName: "Arman Alam",
         shipmentNumber: "SHP-K891-921",
         awbNumber: "FDX-AWB-89127381",
         trackingNumber: "TRK-98127389",
@@ -222,6 +228,8 @@ export async function getSellerShipments(sellerId: string, statusFilter?: string
       {
         id: "shp-2",
         orderId: "ORD-98235",
+        rawOrderId: null,
+        buyerName: "Walk-in Guest",
         shipmentNumber: "SHP-K891-922",
         awbNumber: "SR-AWB-47192831",
         trackingNumber: "TRK-47192831",
@@ -238,7 +246,9 @@ export async function getSellerShipments(sellerId: string, statusFilter?: string
 
   return rows.map((r) => ({
     id: r.id,
-    orderId: r.orderId,
+    orderId: r.orderNumber || r.orderId,
+    rawOrderId: r.orderId,
+    buyerName: r.buyerName || null,
     shipmentNumber: r.shipmentNumber,
     awbNumber: r.awbNumber,
     trackingNumber: r.trackingNumber,
@@ -273,6 +283,34 @@ export async function updateShipmentStatus(dto: UpdateShipmentStatusDto) {
     .set(updatePayload)
     .where(eq(shipmentOrders.id, dto.shipmentId))
     .returning();
+
+  // Synchronize master order status in product_orders table
+  if (dto.status === "DELIVERED" && updated?.orderId) {
+    try {
+      await db
+        .update(orders)
+        .set({
+          status: "DELIVERED",
+          deliveredAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(orders.id, updated.orderId));
+    } catch (ordErr) {
+      console.warn("Failed to sync orders.status to DELIVERED:", ordErr);
+    }
+  } else if (dto.status === "OUT_FOR_DELIVERY" && updated?.orderId) {
+    try {
+      await db
+        .update(orders)
+        .set({
+          status: "OUT_FOR_DELIVERY",
+          updatedAt: new Date(),
+        })
+        .where(eq(orders.id, updated.orderId));
+    } catch (ordErr) {
+      console.warn("Failed to sync orders.status to OUT_FOR_DELIVERY:", ordErr);
+    }
+  }
 
   return updated || { id: dto.shipmentId, status: dto.status };
 }

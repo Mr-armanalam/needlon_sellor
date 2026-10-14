@@ -12,6 +12,21 @@ export const createInStoreOrderSchema = z.object({
   paymentMethod: z.enum(["CASH", "CARD", "UPI", "COD"]).default("CASH"),
   imageUrl: z.string().optional().nullable(),
   mediaUrls: z.array(z.string()).optional(),
+  deliveryMethod: z.enum(["STORE_PICKUP", "HOME_DELIVERY"]).default("STORE_PICKUP"),
+  shippingPartnerId: z.string().optional().nullable(),
+  estimatedDeliveryAt: z.string().optional().nullable(),
+  shippingAddress: z
+    .object({
+      recipientName: z.string().optional(),
+      phoneNumber: z.string().optional(),
+      addressLine1: z.string().min(1, "Street address is required"),
+      addressLine2: z.string().optional(),
+      city: z.string().min(1, "City is required"),
+      state: z.string().min(1, "State is required"),
+      postalCode: z.string().min(1, "Postal code is required"),
+    })
+    .optional()
+    .nullable(),
 });
 
 export type CreateInStoreOrderDto = z.infer<typeof createInStoreOrderSchema>;

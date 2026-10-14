@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import {STATUS_LABELS} from "@/modules/orders/constants";
-import {FileText, User, Camera, Video, UploadCloud, Loader2, Play} from "lucide-react";
+import {FileText, User, Camera, Video, UploadCloud, Loader2, Play, Ruler, AlertCircle, CheckCircle2} from "lucide-react";
 
 const OrderMetaNLineItems = (
     {
@@ -22,6 +22,20 @@ const OrderMetaNLineItems = (
     const [uploading, setUploading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const measurement = data?.measurement;
+    const essentialEntries = measurement?.essentialMeasurements 
+        ? Object.entries(measurement.essentialMeasurements).filter(([_, v]) => v !== undefined && v !== null && v !== "")
+        : [];
+    const postureEntries = measurement?.postureSpecifics 
+        ? Object.entries(measurement.postureSpecifics).filter(([_, v]) => v !== undefined && v !== null && v !== "")
+        : [];
+
+    const formatMeasurementLabel = (key: string) => {
+        return key
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, (char) => char.toUpperCase());
+    };
 
     const mediaList: string[] = Array.isArray(data?.mediaUrls) && data.mediaUrls.length > 0
         ? data.mediaUrls
@@ -130,6 +144,107 @@ const OrderMetaNLineItems = (
                     </div>
                 </div>
             </div>
+
+            {/* Bespoke Garment Measurement Details Section (Placed above Customer Records) */}
+            {measurement ? (
+                <div className="bg-white border border-neutral-100 rounded-2xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.01)] flex flex-col gap-4">
+                    <div className="flex items-center justify-between border-b border-neutral-50 pb-3">
+                        <div className="flex flex-col">
+                            <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
+                                <Ruler size={13} className="text-neutral-600" /> Order Measurement Details
+                            </span>
+                            <div className="flex items-center gap-2 mt-1">
+                                <h4 className="text-[14px] font-bold text-neutral-900 capitalize">
+                                    {measurement.garmentType} {measurement.gender ? `(${measurement.gender})` : ''}
+                                </h4>
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-700">
+                                    {measurement.measurementUnit || "INCHES"}
+                                </span>
+                                {measurement.fitPreference && (
+                                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+                                        {measurement.fitPreference} Fit
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center gap-1">
+                                <CheckCircle2 size={12} /> {measurement.status}
+                            </span>
+                        </div>
+                    </div>
+
+                    {measurement.editRequested && (
+                        <div className="p-3 bg-amber-50 border border-amber-200/60 rounded-xl flex items-center gap-2 text-xs text-amber-800">
+                            <AlertCircle size={14} className="text-amber-600 shrink-0" />
+                            <span>Customer requested measurement update: <i>{measurement.editRequestReason || "Pending approval"}</i></span>
+                        </div>
+                    )}
+
+                    {essentialEntries.length > 0 ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                            {essentialEntries.map(([k, v]) => (
+                                <div key={k} className="p-2.5 bg-neutral-50/70 border border-neutral-100 rounded-xl flex flex-col">
+                                    <span className="text-[10px] font-semibold text-neutral-400 uppercase tracking-tight truncate">
+                                        {formatMeasurementLabel(k)}
+                                    </span>
+                                    <span className="text-[13px] font-bold text-neutral-900 mt-0.5">
+                                        {String(v)} {measurement.measurementUnit === 'CM' ? 'cm' : '"'}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-xs text-neutral-400 italic">No specific metric points recorded.</p>
+                    )}
+
+                    {postureEntries.length > 0 && (
+                        <div className="pt-2 border-t border-neutral-50">
+                            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-1.5">
+                                Posture Nuances & Anatomical Nuances
+                            </span>
+                            <div className="flex flex-wrap gap-1.5">
+                                {postureEntries.map(([k, v]) => (
+                                    <span key={k} className="text-[11px] bg-neutral-50 border border-neutral-200/60 px-2 py-1 rounded-lg text-neutral-700">
+                                        <b>{formatMeasurementLabel(k)}:</b> {String(v)}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {measurement.tailorNotes && (
+                        <div className="pt-2 border-t border-neutral-50">
+                            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-1">
+                                Master Tailor Craft Notes
+                            </span>
+                            <p className="text-[12px] text-neutral-600 bg-neutral-50 p-2.5 rounded-xl border border-neutral-100">
+                                {measurement.tailorNotes}
+                            </p>
+                        </div>
+                    )}
+                </div>
+            ) : data?.tailoringStage ? (
+                <div className="bg-white border border-neutral-100 rounded-2xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.01)] flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Ruler size={14} className="text-neutral-400" />
+                        <span className="text-xs font-semibold text-neutral-700">
+                            Bespoke Tailoring Commission (Stage: {data.tailoringStage.replace(/_/g, ' ')})
+                        </span>
+                    </div>
+                    <span className="text-[11px] text-neutral-400 font-medium">Standard atelier sizing applied</span>
+                </div>
+            ) : (
+                <div className="bg-white border border-neutral-100 rounded-2xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.01)] flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Ruler size={14} className="text-neutral-400" />
+                        <span className="text-xs font-semibold text-neutral-700">
+                            Ready-to-Wear Order ({items?.[0]?.variantName || "Standard Sizing"})
+                        </span>
+                    </div>
+                    <span className="text-[11px] text-neutral-400 font-medium">No custom measurements required</span>
+                </div>
+            )}
 
             {/* Customer Records & Interactive Admin Notes Section */}
             <div className="bg-white border border-neutral-100 rounded-2xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.01)] grid grid-cols-1 sm:grid-cols-2 gap-6">

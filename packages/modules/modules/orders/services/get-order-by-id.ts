@@ -22,6 +22,7 @@ export const getOrderByIdService = async (
         dbResult.items,
         dbResult.addresses,
         dbResult.history,
-        dbResult.payments
+        dbResult.payments,
+        dbResult.measurement
     );
 };

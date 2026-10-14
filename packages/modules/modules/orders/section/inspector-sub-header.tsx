@@ -11,10 +11,12 @@ const InspectorSubHeader = (
         onBack,
         buyerFirstName,
         setIsDocumentModalOpen,
+        onOpenChat,
     }:{
         onBack: () => void;
         buyerFirstName: string;
         setIsDocumentModalOpen: Dispatch<SetStateAction<boolean>>;
+        onOpenChat?: () => void;
     }
 ) => {
     return (
@@ -28,7 +30,10 @@ const InspectorSubHeader = (
             </button>
 
             <div className="flex items-center gap-2">
-                <button className="px-3.5 py-2 bg-white border border-neutral-200/80 hover:border-neutral-400 text-neutral-600 hover:text-neutral-900 text-[12px] font-medium rounded-xl transition-all flex items-center gap-1.5 outline-none">
+                <button
+                    onClick={onOpenChat}
+                    className="px-3.5 py-2 bg-white border border-neutral-200/80 hover:border-neutral-400 text-neutral-600 hover:text-neutral-900 text-[12px] font-medium rounded-xl transition-all flex items-center gap-1.5 outline-none cursor-pointer"
+                >
                     <MessageSquare size={14} />
                     <span>Chat with {buyerFirstName}</span>
                 </button>
