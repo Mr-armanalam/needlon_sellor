@@ -1,6 +1,32 @@
 import type { ProductCardViewModel } from "../types";
 
-export function toProductCardViewModel(item: any): ProductCardViewModel {
+/**
+ * Raw product row consumed by {@link toProductCardViewModel}. Fields other
+ * than `id` are optional because list endpoints and callers populate
+ * different subsets of them; the mapper falls back for each missing field.
+ */
+export interface ProductCardSourceItem {
+  id: string;
+  name?: string | null;
+  category?: string | { name?: string | null } | null;
+  shortDescription?: string | null;
+  subcategory?: string | null;
+  price?: string | number | null;
+  variants?: Array<{ price?: string | number | null }> | null;
+  inventory?: { quantity?: number | null } | null;
+  stock?: number | null;
+  discount?: string | null;
+  views?: number | null;
+  likes?: number | null;
+  orders?: number | null;
+  reviews?: number | null;
+  status?: string | null;
+  bg?: string | null;
+  primaryImage?: string | null;
+  imageUrl?: string | null;
+}
+
+export function toProductCardViewModel(item: ProductCardSourceItem): ProductCardViewModel {
   const primaryVariant = item.variants?.[0];
   const rawPrice = primaryVariant?.price ?? item.price;
   const priceVal = rawPrice
@@ -25,7 +51,7 @@ export function toProductCardViewModel(item: any): ProductCardViewModel {
   return {
     id: item.id,
     name: item.name || "Untitled Product",
-    category: item.category?.name || item.category || "Apparel",
+    category: (typeof item.category === "string" ? item.category : item.category?.name) || "Apparel",
     subcategory: item.shortDescription || item.subcategory || "Boutique",
     price: priceVal,
     discount: item.discount || "10% OFF",

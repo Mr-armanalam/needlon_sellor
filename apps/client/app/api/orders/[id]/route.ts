@@ -2,6 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { OrderService } from "@/modules/orders/services/orderServices";
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = (error as { message: unknown }).message;
+    return typeof message === "string" ? message : "";
+  }
+  return "";
+}
+
+function getErrorStatusCode(error: unknown): number {
+  if (typeof error === "object" && error !== null && "statusCode" in error) {
+    const statusCode = (error as { statusCode: unknown }).statusCode;
+    return typeof statusCode === "number" ? statusCode : 500;
+  }
+  return 500;
+}
+
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -21,8 +39,8 @@ export async function GET(
     }
 
     return NextResponse.json(orderDetail, { status: 200 });
-  } catch (error: any) {
-    if (error?.statusCode === 403 || error?.message?.includes("UNAUTHORIZED")) {
+  } catch (error) {
+    if (getErrorStatusCode(error) === 403 || getErrorMessage(error).includes("UNAUTHORIZED")) {
       return NextResponse.json(
         { error: "Forbidden: You do not have access to this order" },
         { status: 403 }
@@ -65,10 +83,10 @@ export async function PATCH(
       { error: "Invalid action. Supported actions: cancel" },
       { status: 400 }
     );
-  } catch (error: any) {
-    const statusCode = error?.statusCode || 500;
+  } catch (error) {
+    const statusCode = getErrorStatusCode(error);
     return NextResponse.json(
-      { error: error?.message || "Failed to update order" },
+      { error: getErrorMessage(error) || "Failed to update order" },
       { status: statusCode }
     );
   }

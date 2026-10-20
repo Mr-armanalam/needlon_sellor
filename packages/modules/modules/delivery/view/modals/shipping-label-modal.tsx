@@ -2,11 +2,12 @@
 
 import React from 'react';
 import { X, Printer, Package, ShieldCheck } from 'lucide-react';
+import { ShipmentResponseDto } from '../../dto/delivery.dto';
 
 interface ShippingLabelModalProps {
   isOpen: boolean;
   onClose: () => void;
-  shipment?: any;
+  shipment?: ShipmentResponseDto;
 }
 
 export default function ShippingLabelModal({ isOpen, onClose, shipment }: ShippingLabelModalProps) {

@@ -19,6 +19,15 @@ export interface AddToCartDto {
   color?: string;
 }
 
+/** A guest (localStorage) cart entry used when syncing a guest cart into the DB cart. */
+export interface GuestCartItemInput {
+  id?: string;
+  productId?: string;
+  quantity?: number;
+  size?: string;
+  color?: string;
+}
+
 export interface CartItemDto {
   id: string;
   userId: string;
@@ -372,7 +381,7 @@ export const CartService = {
   /**
    * Synchronize guest localStorage cart items into the user's persistent DB cart on login.
    */
-  async syncGuestCart(userId: string, guestItems: any[]) {
+  async syncGuestCart(userId: string, guestItems: GuestCartItemInput[]) {
     if (!Array.isArray(guestItems) || guestItems.length === 0) {
       return this.getCart(userId);
     }

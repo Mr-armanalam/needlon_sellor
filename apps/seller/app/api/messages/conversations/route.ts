@@ -82,7 +82,7 @@ export async function POST(
 
             const conversation =
                 await conversationService.createConversation(
-                    body as any,
+                    body,
                     sellerProfile.sellerId,
                 );
 

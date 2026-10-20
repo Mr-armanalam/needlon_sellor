@@ -23,8 +23,12 @@ export function useSubscription() {
         setPlans(json.data.plans || []);
         setSubscription(json.data.subscription || null);
       }
-    } catch (err: any) {
-      setError(err.message || "Failed to load subscription data");
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error && err.message
+          ? err.message
+          : "Failed to load subscription data"
+      );
     }
   }, []);
 
@@ -36,7 +40,7 @@ export function useSubscription() {
       if (json.success && json.data) {
         setLedger(json.data);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to load billing ledger:", err);
     } finally {
       setLedgerLoading(false);
@@ -79,8 +83,11 @@ export function useSubscription() {
         return { success: true, data: json.data };
       }
       return { success: false, error: json.error?.message || "Failed to update plan" };
-    } catch (err: any) {
-      return { success: false, error: err.message };
+    } catch (err: unknown) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : undefined,
+      };
     }
   };
 

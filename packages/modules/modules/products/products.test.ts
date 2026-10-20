@@ -1,6 +1,14 @@
 import "reflect-metadata";
 import * as dotenv from "dotenv";
 import path from "path";
+import { NextRequest } from "next/server";
+import type { Product } from "@/db/schema/catalog/products";
+import type { AuthSeller } from "@/types/auth";
+
+type ProductStructuredData = {
+  "@type"?: string;
+  offers?: { price?: unknown };
+};
 
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 process.env.TEST_SELLER_ID = "e98e4537-b11e-4f04-9c68-06dcfcfdd691";
@@ -218,9 +226,9 @@ async function runProductsModuleTests() {
     .limit(1);
   console.log(`✅ Test category resolved (ID: ${testCategory.id})`);
 
-  let createdProduct1: any = null;
-  let createdProduct2: any = null;
-  let createdDraft: any = null;
+  let createdProduct1: Awaited<ReturnType<typeof createProductService>> | null = null;
+  let createdProduct2: Awaited<ReturnType<typeof createWizardProductService>> | null = null;
+  let createdDraft: Product | null = null;
 
   try {
     // 2. Test createProductService
@@ -302,7 +310,7 @@ async function runProductsModuleTests() {
     try {
       await getProductService(createdProduct1.id);
       throw new Error("Product should have been soft deleted!");
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.log(`✅ Soft delete verified (Product no longer retrieved)`);
     }
 
@@ -377,10 +385,10 @@ async function runProductsModuleTests() {
       discountOfferRate: "10",
     });
 
-    if ((updatedDraftPricing?.metadata as any)?.retailPrice !== "2450") {
+    if (updatedDraftPricing?.metadata?.retailPrice !== "2450") {
       throw new Error("DraftProductService failed to update pricing metrics!");
     }
-    console.log(`✅ updatePricing succeeded (Retail Price: "${(updatedDraftPricing?.metadata as any)?.retailPrice}")`);
+    console.log(`✅ updatePricing succeeded (Retail Price: "${updatedDraftPricing?.metadata?.retailPrice}")`);
 
     // 12. Test DraftProductService updateVariants
     console.log("\n12. Testing DraftProductService updateVariants...");
@@ -390,10 +398,10 @@ async function runProductsModuleTests() {
       fabricMaterial: "100% Chanderi Cotton",
     });
 
-    if ((updatedDraftVariants?.metadata as any)?.sizesMatrix !== "S, M, L, XL, XXL") {
+    if (updatedDraftVariants?.metadata?.sizesMatrix !== "S, M, L, XL, XXL") {
       throw new Error("DraftProductService failed to update variants!");
     }
-    console.log(`✅ updateVariants succeeded (Sizes Matrix: "${(updatedDraftVariants?.metadata as any)?.sizesMatrix}")`);
+    console.log(`✅ updateVariants succeeded (Sizes Matrix: "${updatedDraftVariants?.metadata?.sizesMatrix}")`);
 
     // 13. Test DraftProductService updateInventory
     console.log("\n13. Testing DraftProductService updateInventory...");
@@ -419,10 +427,10 @@ async function runProductsModuleTests() {
       estimatedDeliveryWindow: "3 - 5 business days delivery timeline",
     });
 
-    if ((updatedDraftDelivery?.metadata as any)?.packageWeight !== "0.35") {
+    if (updatedDraftDelivery?.metadata?.packageWeight !== "0.35") {
       throw new Error("DraftProductService failed to update delivery logistics!");
     }
-    console.log(`✅ updateDelivery succeeded (Package Weight: "${(updatedDraftDelivery?.metadata as any)?.packageWeight}")`);
+    console.log(`✅ updateDelivery succeeded (Package Weight: "${updatedDraftDelivery?.metadata?.packageWeight}")`);
 
     // 15. Test DraftProductService updateSeo
     console.log("\n15. Testing DraftProductService updateSeo...");
@@ -431,10 +439,10 @@ async function runProductsModuleTests() {
       customVisibility: "PUBLIC",
     });
 
-    if ((updatedDraftSeo?.metadata as any)?.customVisibility !== "PUBLIC") {
+    if (updatedDraftSeo?.metadata?.customVisibility !== "PUBLIC") {
       throw new Error("DraftProductService failed to update SEO tags!");
     }
-    console.log(`✅ updateSeo succeeded (Custom Visibility: "${(updatedDraftSeo?.metadata as any)?.customVisibility}")`);
+    console.log(`✅ updateSeo succeeded (Custom Visibility: "${updatedDraftSeo?.metadata?.customVisibility}")`);
 
     // 16. Test DraftProductService publishProduct
     console.log("\n16. Testing DraftProductService publishProduct...");
@@ -486,12 +494,12 @@ async function runProductsModuleTests() {
     const { POST: bulkUploadHandler } = await import("../../../../apps/seller/app/api/seller/products/bulk-upload/route");
 
     // Test invalid non-array payload
-    const invalidReq = new Request("http://localhost:3000/api/seller/products/bulk-upload", {
+    const invalidReq = new NextRequest("http://localhost:3000/api/seller/products/bulk-upload", {
       method: "POST",
       body: JSON.stringify({ products: "not-an-array" }),
     });
 
-    const invalidRes = await bulkUploadHandler(invalidReq as any);
+    const invalidRes = await bulkUploadHandler(invalidReq);
     if (invalidRes.status !== 400 && invalidRes.status !== 500) {
       throw new Error("Bulk upload endpoint failed to reject non-array payload!");
     }
@@ -499,7 +507,7 @@ async function runProductsModuleTests() {
 
     // Test valid bulk upload array
     const timestampBulk = Date.now();
-    const validBulkReq = new Request("http://localhost:3000/api/seller/products/bulk-upload", {
+    const validBulkReq = new NextRequest("http://localhost:3000/api/seller/products/bulk-upload", {
       method: "POST",
       body: JSON.stringify({
         products: [
@@ -523,7 +531,7 @@ async function runProductsModuleTests() {
       }),
     });
 
-    const validRes = await bulkUploadHandler(validBulkReq as any);
+    const validRes = await bulkUploadHandler(validBulkReq);
     const validJson = await validRes.json();
 
     if (!validJson.data?.items || validJson.data.items.length !== 2) {
@@ -534,12 +542,14 @@ async function runProductsModuleTests() {
     // 19. Test getProductById Dynamic Attributes & Metadata Resolution
     console.log("\n19. Testing getProductById Dynamic Attribute & Shipping Metadata Resolution...");
     const { getProductById } = await import("./repository/get-product-by-id");
-    const retrievedDraft = await getProductById(createdDraft.id, {
+    const defaultSeller: AuthSeller = {
       id: DEFAULT_SELLER_ID,
       role: "seller",
       name: "Default Test Seller",
       email: "default-seller@test.com",
-    } as any);
+      emailVerified: false,
+    };
+    const retrievedDraft = await getProductById(createdDraft.id, defaultSeller);
 
     if (retrievedDraft instanceof Error) {
       throw retrievedDraft;
@@ -576,12 +586,7 @@ async function runProductsModuleTests() {
     const { createCloneProduct } = await import("./repository/create-clone-product");
     const clonedProduct = await createCloneProduct({
       productId: createdDraft.id,
-      seller: {
-        id: DEFAULT_SELLER_ID,
-        role: "seller",
-        name: "Default Test Seller",
-        email: "default-seller@test.com",
-      } as any,
+      seller: defaultSeller,
     });
 
     if (!clonedProduct || clonedProduct.status !== "DRAFT") {
@@ -619,10 +624,11 @@ async function runProductsModuleTests() {
     if (!testSeo.metaTitle.includes("Needlon Atelier")) {
       throw new Error(`SEO metaTitle missing brand: ${testSeo.metaTitle}`);
     }
-    if ((testSeo.structuredData as any)["@type"] !== "Product") {
+    const structuredData = testSeo.structuredData as ProductStructuredData;
+    if (structuredData["@type"] !== "Product") {
       throw new Error("Structured data must be Schema.org Product");
     }
-    console.log(`✅ SEO Generator tests passed (Slug: "${testSeo.slug}", Title: "${testSeo.metaTitle}", Structured Offers Price: ${(testSeo.structuredData as any).offers?.price})`);
+    console.log(`✅ SEO Generator tests passed (Slug: "${testSeo.slug}", Title: "${testSeo.metaTitle}", Structured Offers Price: ${structuredData.offers?.price})`);
 
     // 22. Test Zero-Drift Pricing Persistence & Verification
     console.log("\n22. Testing Zero-Drift Discount Persistence in Pricing Table...");
@@ -636,12 +642,7 @@ async function runProductsModuleTests() {
       isTaxInclusive: true,
     });
 
-    const refreshedPricingDraft = await getProductById(createdDraft.id, {
-      id: DEFAULT_SELLER_ID,
-      role: "seller",
-      name: "Default Test Seller",
-      email: "default-seller@test.com",
-    } as any);
+    const refreshedPricingDraft = await getProductById(createdDraft.id, defaultSeller);
 
     if (refreshedPricingDraft instanceof Error) throw refreshedPricingDraft;
 
@@ -662,12 +663,7 @@ async function runProductsModuleTests() {
       isCustomizable: true,
     });
 
-    const refreshedBasicDraft = await getProductById(createdDraft.id, {
-      id: DEFAULT_SELLER_ID,
-      role: "seller",
-      name: "Default Test Seller",
-      email: "default-seller@test.com",
-    } as any);
+    const refreshedBasicDraft = await getProductById(createdDraft.id, defaultSeller);
 
     if (refreshedBasicDraft instanceof Error) throw refreshedBasicDraft;
     if (refreshedBasicDraft.brandName !== "Boutique Artisan" && refreshedBasicDraft.brandLabel !== "Boutique Artisan") {
@@ -693,12 +689,7 @@ async function runProductsModuleTests() {
       estimatedDeliveryWindow: "2 - 4 business days expedited delivery",
     });
 
-    const refreshedLogisticsDraft = await getProductById(createdDraft.id, {
-      id: DEFAULT_SELLER_ID,
-      role: "seller",
-      name: "Default Test Seller",
-      email: "default-seller@test.com",
-    } as any);
+    const refreshedLogisticsDraft = await getProductById(createdDraft.id, defaultSeller);
 
     if (refreshedLogisticsDraft instanceof Error) throw refreshedLogisticsDraft;
     if (refreshedLogisticsDraft.estimatedDeliveryWindow !== "2 - 4 business days expedited delivery") {

@@ -4,11 +4,12 @@ import React, { useState } from 'react';
 import { Package, Printer, Compass, ArrowUpRight } from 'lucide-react';
 import { useDelivery } from '../hooks/use-delivery';
 import ShippingLabelModal from './modals/shipping-label-modal';
+import { ShipmentResponseDto } from '../dto/delivery.dto';
 import TrackingTimelineModal from './modals/tracking-timeline-modal';
 
 export default function ShipmentDispatchTable() {
   const { shipments, loading } = useDelivery();
-  const [selectedShipment, setSelectedShipment] = useState<any | null>(null);
+  const [selectedShipment, setSelectedShipment] = useState<ShipmentResponseDto | null>(null);
   const [activeModal, setActiveModal] = useState<'label' | 'track' | null>(null);
 
   const displayShipments = shipments.length > 0 ? shipments : [
@@ -22,6 +23,9 @@ export default function ShipmentDispatchTable() {
       methodName: "FedEx Standard Air",
       status: "IN_TRANSIT",
       shippingCost: "12.00",
+      estimatedDeliveryAt: null,
+      shippedAt: null,
+      deliveredAt: null,
     },
     {
       id: "shp-2",
@@ -33,6 +37,9 @@ export default function ShipmentDispatchTable() {
       methodName: "Surface Express",
       status: "READY_FOR_PICKUP",
       shippingCost: "8.50",
+      estimatedDeliveryAt: null,
+      shippedAt: null,
+      deliveredAt: null,
     },
   ];
 
@@ -111,13 +118,13 @@ export default function ShipmentDispatchTable() {
       <ShippingLabelModal
         isOpen={activeModal === 'label'}
         onClose={() => setActiveModal(null)}
-        shipment={selectedShipment}
+        shipment={selectedShipment ?? undefined}
       />
 
       <TrackingTimelineModal
         isOpen={activeModal === 'track'}
         onClose={() => setActiveModal(null)}
-        shipment={selectedShipment}
+        shipment={selectedShipment ?? undefined}
       />
     </div>
   );

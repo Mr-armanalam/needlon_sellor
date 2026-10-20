@@ -13,7 +13,7 @@ interface CreateCouponModalProps {
 export default function CreateCouponModal({ isOpen, onClose, onSubmit }: CreateCouponModalProps) {
   const [name, setName] = useState('');
   const [couponCode, setCouponCode] = useState('');
-  const [discountType, setDiscountType] = useState<'PERCENTAGE' | 'FIXED_AMOUNT'>('PERCENTAGE');
+  const [discountType, setDiscountType] = useState<CreateCouponDto['discountType']>('PERCENTAGE');
   const [discountValue, setDiscountValue] = useState<number>(10);
   const [minimumOrderAmount, setMinimumOrderAmount] = useState<number | undefined>(undefined);
   const [usageLimit, setUsageLimit] = useState<number | undefined>(100);
@@ -50,8 +50,8 @@ export default function CreateCouponModal({ isOpen, onClose, onSubmit }: CreateC
         usagePerBuyer: 1,
       });
       onClose();
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to create coupon');
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error && err.message ? err.message : 'Failed to create coupon');
     } finally {
       setSubmitting(false);
     }
@@ -118,7 +118,7 @@ export default function CreateCouponModal({ isOpen, onClose, onSubmit }: CreateC
               <label className="block text-xs font-semibold text-gray-700 mb-1">Discount Type</label>
               <select
                 value={discountType}
-                onChange={(e: any) => setDiscountType(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setDiscountType(e.target.value as CreateCouponDto['discountType'])}
                 className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20"
               >
                 <option value="PERCENTAGE">Percentage (%)</option>

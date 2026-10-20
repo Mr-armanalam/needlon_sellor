@@ -80,7 +80,7 @@ export default function HelpDashboard({ onNavigateToSection, onCreateTicketClick
                     {searchResults.articles.length > 0 && (
                       <div className="space-y-1">
                         <span className="text-[10px] font-bold uppercase text-gray-400 block px-2">Knowledge Base Articles</span>
-                        {searchResults.articles.map((art: any) => (
+                        {searchResults.articles.map((art) => (
                           <div 
                             key={art.id} 
                             onClick={() => {
@@ -102,7 +102,7 @@ export default function HelpDashboard({ onNavigateToSection, onCreateTicketClick
                     {searchResults.tickets.length > 0 && (
                       <div className="space-y-1">
                         <span className="text-[10px] font-bold uppercase text-gray-400 block px-2">Your Support Tickets</span>
-                        {searchResults.tickets.map((t: any) => (
+                        {searchResults.tickets.map((t) => (
                           <div 
                             key={t.id} 
                             onClick={() => {
@@ -149,12 +149,12 @@ export default function HelpDashboard({ onNavigateToSection, onCreateTicketClick
               <h3 className="text-sm font-bold text-gray-900">Your Setup Milestone Checklist</h3>
             </div>
             <span className="text-[10px] text-gray-400 font-semibold uppercase">
-              Step {setupChecklist.filter((t: any) => t.done).length} of {setupChecklist.length} Cleared
+              Step {setupChecklist.filter((t) => t.done).length} of {setupChecklist.length} Cleared
             </span>
           </div>
           
           <div className="divide-y divide-gray-50 border border-gray-50 rounded-xl overflow-hidden">
-            {setupChecklist.map((task: any) => (
+            {setupChecklist.map((task) => (
               <div key={task.id} className="p-3.5 flex items-center justify-between hover:bg-slate-50/50 transition-colors text-xs">
                 <div className="flex items-center gap-3">
                   {task.done ? (
@@ -187,7 +187,7 @@ export default function HelpDashboard({ onNavigateToSection, onCreateTicketClick
             <p className="text-xs text-gray-400">Bite-sized visual strategies for scaling catalog sales volume.</p>
             
             <div className="space-y-3 pt-1">
-              {popularVideos.map((vid: any, idx: number) => (
+              {popularVideos.map((vid, idx: number) => (
                 <div key={idx} className="bg-gray-50 border border-gray-100 p-2.5 rounded-xl space-y-1.5 cursor-pointer hover:border-gray-200 transition-all">
                   <div className="flex justify-between items-start text-xs">
                     <h4 className="font-bold text-gray-800 truncate mr-2">{vid.title}</h4>

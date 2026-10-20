@@ -3,12 +3,13 @@ import React, { useState } from 'react';
 import { Truck, CheckCircle2, Settings } from 'lucide-react';
 import { useDelivery } from '@/modules/delivery/hooks/use-delivery';
 import ConnectCarrierModal from './modals/connect-carrier-modal';
+import { ConnectCarrierPartnerDto } from '../dto/delivery.dto';
 
 export default function DeliveryOverview() {
   const { partners, counts, loading, connectCarrier } = useDelivery();
-  const [selectedPartner, setSelectedPartner] = useState<any | null>(null);
+  const [selectedPartner, setSelectedPartner] = useState<ConnectCarrierPartnerDto | null>(null);
 
-  const displayPartners = partners.length > 0 ? partners : [
+  const displayPartners: ConnectCarrierPartnerDto[] = partners.length > 0 ? partners : [
     { id: 'p1', partnerCode: 'FEDEX', partnerName: 'FedEx Express (Sandbox)', isActive: true },
     { id: 'p2', partnerCode: 'SHIPROCKET', partnerName: 'Shiprocket India (Sandbox API)', isActive: true },
     { id: 'p3', partnerCode: 'SHIPPO', partnerName: 'Shippo Test API (Global)', isActive: true },

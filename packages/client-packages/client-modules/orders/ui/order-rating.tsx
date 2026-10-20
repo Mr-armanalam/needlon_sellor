@@ -17,6 +17,16 @@ import {
 } from "@/features/rating-slice";
 
 import { RootState, AppDispatch } from "@/store/store";
+import type { RatingProps } from "@/features/rating-slice";
+
+/** Reviews returned by the API may carry the linked order item inside metadata. */
+type RatingWithMetadata = RatingProps & {
+  metadata?: { orderItemId?: string | null } | null;
+};
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "";
+}
 
 type Props = {
   orderItemId: string;
@@ -63,16 +73,16 @@ const OrderRating = ({
       }
       alert("Review submitted!");
       dispatch(clearRatingState());
-    } catch (err: any) {
-      alert(err?.message || "Failed to submit review");
+    } catch (err) {
+      alert(getErrorMessage(err) || "Failed to submit review");
     }
   };
 
   const existingReview = allRating?.find(
     (r) =>
       r.orderItemId === orderItemId ||
-      (orderItemId && (r as any)?.metadata?.orderItemId === orderItemId) ||
-      (r.productId === productId && (r.orderItemId === orderItemId || (r as any)?.metadata?.orderItemId === orderItemId))
+      (orderItemId && (r as RatingWithMetadata)?.metadata?.orderItemId === orderItemId) ||
+      (r.productId === productId && (r.orderItemId === orderItemId || (r as RatingWithMetadata)?.metadata?.orderItemId === orderItemId))
   );
 
 

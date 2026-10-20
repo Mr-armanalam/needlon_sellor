@@ -13,6 +13,30 @@ export interface ProcessSubscriptionPaymentRequest {
   };
 }
 
+/** Card block nested under payment_method_details in the gateway response. */
+export interface StripePaymentIntentCardDetails {
+  brand: string;
+  last4: string;
+  cardholder_name?: string;
+  exp_month?: number;
+  exp_year?: number;
+  funding?: string;
+}
+
+/** Shape of the Stripe PaymentIntent object (or sandbox simulator equivalent)
+ *  whose fields this module reads / persists as the gateway raw response. */
+export interface StripePaymentIntentRawResponse {
+  id: string;
+  object: string;
+  amount: number;
+  currency: string;
+  status: string;
+  payment_method?: string;
+  payment_method_details?: {
+    card?: StripePaymentIntentCardDetails;
+  };
+}
+
 export interface ProcessSubscriptionPaymentResult {
   success: boolean;
   paymentGateway: "STRIPE" | "MANUAL";
@@ -24,7 +48,7 @@ export interface ProcessSubscriptionPaymentResult {
   cardBrand?: string;
   cardLast4?: string;
   paidAt: Date;
-  rawResponse: Record<string, any>;
+  rawResponse: StripePaymentIntentRawResponse;
 }
 
 export class SubscriptionPaymentGatewayService {
@@ -58,7 +82,7 @@ export class SubscriptionPaymentGatewayService {
           }),
         });
 
-        const data = await response.json();
+        const data: StripePaymentIntentRawResponse = await response.json();
         if (response.ok && data.id) {
           return {
             success: true,
@@ -74,10 +98,10 @@ export class SubscriptionPaymentGatewayService {
             rawResponse: data,
           };
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.warn(
           "Stripe Test Subscription payment call failed, falling back to Sandbox Simulator:",
-          err?.message
+          err instanceof Error ? err.message : undefined
         );
       }
     }

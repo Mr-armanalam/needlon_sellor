@@ -45,6 +45,8 @@ async function runAddressEditDeleteTests() {
     });
 
     assert.ok(addedAddr, "Address should be created");
+    const addedAddrId = addedAddr.id;
+    assert.ok(addedAddrId, "Created address should have an ID");
     assert.strictEqual(addedAddr.fullName, "Rahul Verma");
     assert.strictEqual(addedAddr.name, "Rahul Verma", "Mapped name should match");
     assert.strictEqual(addedAddr.phone, "+919876543210");
@@ -57,12 +59,14 @@ async function runAddressEditDeleteTests() {
     // Verify it is in database
     const addressesBefore = await AddressService.getUserAddresses(testUserId);
     assert.strictEqual(addressesBefore.length, 1);
-    assert.strictEqual(addressesBefore[0].id, addedAddr.id);
+    const firstAddress = addressesBefore[0];
+    assert.ok(firstAddress, "Created address should be listed");
+    assert.strictEqual(firstAddress.id, addedAddrId);
     console.log("✓ Address verified in DB via getUserAddresses");
 
     // 3. Test Editing / Updating the Address
     console.log("3. Testing Edit/Update on the address in DB...");
-    const updatedAddr = await AddressService.updateAddress(testUserId, addedAddr.id, {
+    const updatedAddr = await AddressService.updateAddress(testUserId, addedAddrId, {
       fullName: "Rahul V. Sharma",
       phone: "+919123456789",
       addressLine1: "456 Indiranagar 100ft Rd",
@@ -88,14 +92,16 @@ async function runAddressEditDeleteTests() {
     // Re-query database directly to confirm persistence
     const addressesAfterUpdate = await AddressService.getUserAddresses(testUserId);
     assert.strictEqual(addressesAfterUpdate.length, 1);
-    assert.strictEqual(addressesAfterUpdate[0].fullName, "Rahul V. Sharma");
-    assert.strictEqual(addressesAfterUpdate[0].postalCode, "560038");
-    assert.strictEqual(addressesAfterUpdate[0].phone, "+919123456789");
+    const listedUpdated = addressesAfterUpdate[0];
+    assert.ok(listedUpdated, "Updated address should be listed");
+    assert.strictEqual(listedUpdated.fullName, "Rahul V. Sharma");
+    assert.strictEqual(listedUpdated.postalCode, "560038");
+    assert.strictEqual(listedUpdated.phone, "+919123456789");
     console.log("✓ Re-queried DB: updated data is persistent in PostgreSQL");
 
     // 4. Test Deleting the Address
     console.log("4. Testing Deletion of the address from DB...");
-    const deleteSuccess = await AddressService.deleteAddress(testUserId, addedAddr.id);
+    const deleteSuccess = await AddressService.deleteAddress(testUserId, addedAddrId);
     assert.strictEqual(deleteSuccess, true, "Delete should succeed");
 
     const addressesAfterDelete = await AddressService.getUserAddresses(testUserId);

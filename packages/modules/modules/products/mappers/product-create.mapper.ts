@@ -9,9 +9,9 @@ export function toPersistenceProduct(dto: CreateProductDto): NewProduct {
     slug: dto.slug,
     shortDescription: dto.shortDescription,
     description: dto.description,
-    productType: dto.productType as any,
-    visibility: dto.visibility as any,
-    status: dto.status as any,
+    productType: dto.productType,
+    visibility: dto.visibility,
+    status: dto.status,
     isFeatured: dto.isFeatured,
   };
 }

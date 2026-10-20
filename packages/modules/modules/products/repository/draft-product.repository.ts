@@ -15,6 +15,8 @@ import { productTagsTable } from "@/db/schema/catalog/products/product-tags/tabl
 import { productTagMappingsTable } from "@/db/schema/catalog/products/product-tag-mappings/table";
 import { categoriesTable } from "@/db/schema/catalog/categories/table";
 import { generateProductSeoData } from "../lib/seo-generator";
+import type { NewProduct } from "@/db/schema/catalog/products";
+import type { PricingMetadata } from "@/db/schema/catalog/products/pricing/types";
 
 export interface UpdateDraftBasicInfoParams {
   name?: string;
@@ -35,7 +37,7 @@ export async function updateDraftProductBasicInfo(
   input: UpdateDraftBasicInfoParams,
   sellerId?: string
 ) {
-  const updateData: any = { updatedAt: new Date() };
+  const updateData: Partial<NewProduct> = { updatedAt: new Date() };
   if (input.name) updateData.name = input.name;
   if (input.descriptionStory !== undefined) updateData.description = input.descriptionStory;
   if (input.slug) updateData.slug = input.slug;
@@ -111,8 +113,23 @@ export interface UpdateDraftPricingParams {
   effectiveFrom?: string | Date | null;
   effectiveUntil?: string | Date | null;
   isTaxInclusive?: boolean;
-  metadata?: Record<string, unknown>;
+  metadata?: PricingMetadata;
   sellerId?: string | null;
+}
+
+interface PricingUpdateData {
+  price: string;
+  discountRate: string;
+  compareAtPrice: string | null;
+  currencyCode: string;
+  isTaxInclusive: boolean;
+  updatedAt: Date;
+  costPrice?: string | null;
+  minimumAdvertisedPrice?: string | null;
+  effectiveFrom?: Date | null;
+  effectiveUntil?: Date | null;
+  metadata?: PricingMetadata;
+  updatedBy?: string;
 }
 
 export async function updateDraftProductPricing(
@@ -143,7 +160,7 @@ export async function updateDraftProductPricing(
       comparePrice = calculatedMrp.toFixed(2);
     }
 
-    const pricingUpdate: any = {
+    const pricingUpdate: PricingUpdateData = {
       price,
       discountRate,
       compareAtPrice: comparePrice,
@@ -198,6 +215,7 @@ export interface UpdateDraftVariantsParams {
   sizesMatrix?: string;
   colorsTrack?: string;
   fabricMaterial?: string;
+  fabric?: string;
   sleevesStyle?: string | null;
   fitType?: string | null;
   occasionFocus?: string | null;
@@ -556,7 +574,7 @@ export async function updateDraftProductVariants(
       return t === "" || t === "none" || t === "none / not applicable" || t === "not applicable" || t === "null";
     };
 
-    const effectiveFabric = extraParams?.fabricMaterial ?? (extraParams as any)?.fabric;
+    const effectiveFabric = extraParams?.fabricMaterial ?? extraParams?.fabric;
     const attributesToSave = [
       { key: "fabric", name: "Fabric Material", val: effectiveFabric },
       { key: "sleeves", name: "Sleeves Style", val: extraParams?.sleevesStyle },
@@ -885,7 +903,7 @@ export async function updateDraftProductInventory(
     allowBackorder?: boolean;
     barcode?: string;
     reservedQuantity?: number | string;
-    lastAdjustedAt?: string | Date;
+    lastAdjustedAt?: string | Date | null;
     position?: number | string;
   },
   sellerId?: string
@@ -1003,24 +1021,24 @@ export async function updateDraftProductDelivery(
 }
 
 export interface UpdateDraftSeoParams {
-  searchKeywords?: string;
+  searchKeywords?: string | null;
   customVisibility?: "PUBLIC" | "PRIVATE" | "UNLISTED";
-  slug?: string;
-  metaTitle?: string;
-  metaDescription?: string;
-  canonicalUrl?: string;
-  ogTitle?: string;
-  ogDescription?: string;
+  slug?: string | null;
+  metaTitle?: string | null;
+  metaDescription?: string | null;
+  canonicalUrl?: string | null;
+  ogTitle?: string | null;
+  ogDescription?: string | null;
   ogImage?: string | null;
-  twitterTitle?: string;
-  twitterDescription?: string;
+  twitterTitle?: string | null;
+  twitterDescription?: string | null;
   twitterImage?: string | null;
   structuredData?: Record<string, unknown>;
 }
 
 export async function updateDraftProductSeo(
   productId: string,
-  searchKeywords?: string,
+  searchKeywords?: string | null,
   customVisibility?: "PUBLIC" | "PRIVATE" | "UNLISTED",
   seoOverrides?: Partial<UpdateDraftSeoParams>,
   sellerId?: string

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ThumbsUp, MessageSquare, Plus, Layers, Flame, CheckCircle2, X, Send } from 'lucide-react';
 import { useFeedback } from '../hooks/use-feedback';
+import type { FeedbackRoadmapItem, FeedbackComment } from '../dto/feedback.dto';
 
 interface FeedbackRoadmapProps {
   onCreateFeedbackClick?: () => void;
@@ -11,8 +12,8 @@ export default function FeedbackRoadmap({ onCreateFeedbackClick }: FeedbackRoadm
   const [filterStatus, setFilterStatus] = useState('all');
 
   // Comments drawer state
-  const [activeFeature, setActiveFeature] = useState<any | null>(null);
-  const [commentsList, setCommentsList] = useState<any[]>([]);
+  const [activeFeature, setActiveFeature] = useState<FeedbackRoadmapItem | null>(null);
+  const [commentsList, setCommentsList] = useState<FeedbackComment[]>([]);
   const [newCommentText, setNewCommentText] = useState('');
   const [loadingComments, setLoadingComments] = useState(false);
 
@@ -21,7 +22,7 @@ export default function FeedbackRoadmap({ onCreateFeedbackClick }: FeedbackRoadm
     refetchRoadmap(status);
   };
 
-  const handleOpenComments = async (item: any) => {
+  const handleOpenComments = async (item: FeedbackRoadmapItem) => {
     setActiveFeature(item);
     setLoadingComments(true);
     const res = await fetchComments(item.id);
@@ -159,7 +160,7 @@ export default function FeedbackRoadmap({ onCreateFeedbackClick }: FeedbackRoadm
               ) : commentsList.length === 0 ? (
                 <p className="text-center text-gray-400 py-4">No comments on this feature request yet. Be the first to start the discussion!</p>
               ) : (
-                commentsList.map((c: any, idx: number) => (
+                commentsList.map((c, idx: number) => (
                   <div key={c.id || idx} className="bg-slate-50 border border-slate-100 p-3 rounded-xl space-y-1">
                     <div className="flex justify-between text-[10px] text-gray-400">
                       <span className="font-bold text-gray-800">{c.sellerName || 'Seller'}</span>

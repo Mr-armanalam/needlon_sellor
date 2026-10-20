@@ -55,8 +55,10 @@ export default function OrderHandoverModal({
 
       onHandoverCompleted();
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Error recording handover');
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message || 'Error recording handover' : 'Error recording handover',
+      );
     } finally {
       setLoading(false);
     }

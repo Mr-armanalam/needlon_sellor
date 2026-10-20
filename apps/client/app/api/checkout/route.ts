@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { OrderCreationService } from "@/modules/orders/services/order-creation-service";
-import { mapCartToLineItems } from "@/modules/checkout/services/map-cart-to-line-items";
+import { mapCartToLineItems, type CheckoutCartItem } from "@/modules/checkout/services/map-cart-to-line-items";
 import { db } from "@needlon/db";
 import { inventoryTable } from "@needlon/db/db/schema/catalog/products/inventory/table";
 import { productVariantsTable } from "@needlon/db/db/schema/catalog/products/product-variants/table";
@@ -9,6 +9,28 @@ import { eq, and } from "drizzle-orm";
 import Stripe from "stripe";
 import { randomUUID } from "node:crypto";
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = (error as { message: unknown }).message;
+    return typeof message === "string" ? message : "";
+  }
+  return "";
+}
+
+interface CheckoutRequestBody {
+  cartItems?: CheckoutCartItem[];
+  currentAddressId?: string;
+  userId?: string;
+  userEmail?: string;
+  discountAmount?: number;
+  couponId?: string;
+  couponCode?: string;
+  price?: number;
+  shippingCharge?: number;
+  embedded?: boolean;
+}
+
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function isValidUuid(id: string): boolean {
   return typeof id === "string" && UUID_REGEX.test(id);
@@ -16,7 +38,7 @@ function isValidUuid(id: string): boolean {
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json().catch(() => ({}));
+    const body: CheckoutRequestBody = await req.json().catch(() => ({}));
     const {
       cartItems = [],
       currentAddressId,
@@ -34,7 +56,7 @@ export async function POST(req: Request) {
 
     // Compute subtotal and shipping policy (Free if subtotal >= 1999, else ₹49)
     const cartSubtotal = Array.isArray(cartItems)
-      ? cartItems.reduce((acc: number, item: any) => acc + (Number(item.price) || 0) * (Number(item.quantity) || 1), 0)
+      ? cartItems.reduce((acc: number, item) => acc + (Number(item.price) || 0) * (Number(item.quantity) || 1), 0)
       : 0;
 
     const computedShippingCharge =
@@ -105,7 +127,7 @@ export async function POST(req: Request) {
     const stripeKey = process.env.STRIPE_SECRET_KEY;
     if (stripeKey && !stripeKey.includes("placeholder") && stripeKey.startsWith("sk_")) {
       const stripe = new Stripe(stripeKey, {
-        apiVersion: "2024-12-18.acacia" as any,
+        apiVersion: "2025-10-29.clover",
       });
 
       const lineItems = mapCartToLineItems(cartItems, 0, false);
@@ -140,8 +162,8 @@ export async function POST(req: Request) {
             name: verifiedCouponCode ? `Needlon Promo: ${verifiedCouponCode}` : "Promotional Discount",
           });
           discounts = [{ coupon: stripeCoupon.id }];
-        } catch (couponErr: any) {
-          console.warn("Stripe coupon creation warning:", couponErr.message);
+        } catch (couponErr) {
+          console.warn("Stripe coupon creation warning:", getErrorMessage(couponErr));
         }
       }
 
@@ -162,7 +184,7 @@ export async function POST(req: Request) {
           shippingCharge: String(computedShippingCharge),
           brand: "Needlon",
           cartSummary: JSON.stringify(
-            cartItems.slice(0, 10).map((ci: any) => ({
+            cartItems.slice(0, 10).map((ci) => ({
               p: ci.productId || ci.id,
               q: Number(ci.quantity) || 1,
               s: ci.size || "M",
@@ -207,8 +229,8 @@ export async function POST(req: Request) {
       sessionId: mockSessionId,
       buyerId: userId,
       buyerAddressId: currentAddressId,
-      cartItems: cartItems.map((ci: any) => ({
-        productId: ci.productId || ci.id,
+      cartItems: cartItems.map((ci) => ({
+        productId: ci.productId || ci.id || "",
         quantity: Number(ci.quantity) || 1,
         size: ci.size,
         color: ci.color,
@@ -230,8 +252,8 @@ export async function POST(req: Request) {
       total: price || orderResult.grandTotal,
       mode: "sandbox",
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("CHECKOUT_ERROR:", error);
-    return NextResponse.json({ error: error.message || "Checkout failed" }, { status: 500 });
+    return NextResponse.json({ error: getErrorMessage(error) || "Checkout failed" }, { status: 500 });
   }
 }

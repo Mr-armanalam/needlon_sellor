@@ -6,17 +6,18 @@ import {
 } from 'lucide-react';
 import { useSupport } from '@/modules/help/hooks/use-support';
 import { useHelpCenter } from '../hooks/use-help-center';
+import type { SupportTicketResponseDto, SupportTicketDetailsDto, SupportTicketTimelineItem, SupportTicketCategory, SupportTicketPriority } from '../dto/support.dto';
 
 export default function SupportCenter({ onBack }: { onBack?: () => void }) {
   const { tickets, loading, createTicket, fetchTicketDetails, sendReply, updateStatus } = useSupport();
   const { requestCallback } = useHelpCenter();
-  const [activeTicket, setActiveTicket] = useState<any | null>(null);
-  const [ticketTimeline, setTicketTimeline] = useState<any[]>([]);
+  const [activeTicket, setActiveTicket] = useState<SupportTicketDetailsDto | null>(null);
+  const [ticketTimeline, setTicketTimeline] = useState<SupportTicketTimelineItem[]>([]);
   const [replyText, setReplyText] = useState('');
   const [newSubject, setNewSubject] = useState('');
   const [newMessage, setNewMessage] = useState('');
-  const [newCategory, setNewCategory] = useState<any>('ORDER_ISSUE');
-  const [newPriority, setNewPriority] = useState<any>('MEDIUM');
+  const [newCategory, setNewCategory] = useState<SupportTicketCategory>('ORDER_ISSUE');
+  const [newPriority, setNewPriority] = useState<SupportTicketPriority>('MEDIUM');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // Callback modal state
@@ -25,7 +26,7 @@ export default function SupportCenter({ onBack }: { onBack?: () => void }) {
   const [callbackTimeSlot, setCallbackTimeSlot] = useState('10:00 AM - 12:00 PM');
   const [callbackReason, setCallbackReason] = useState('');
 
-  const handleSelectTicket = async (ticket: any) => {
+  const handleSelectTicket = async (ticket: SupportTicketResponseDto) => {
     const res = await fetchTicketDetails(ticket.id);
     if (res.success && res.data) {
       setActiveTicket(res.data);
@@ -142,7 +143,7 @@ export default function SupportCenter({ onBack }: { onBack?: () => void }) {
           {/* Conversation Timeline Log */}
           <div className="flex-1 flex flex-col min-h-0 border-b lg:border-b-0 lg:border-r border-gray-100 bg-slate-50">
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {ticketTimeline.map((log: any, idx: number) => {
+              {ticketTimeline.map((log, idx: number) => {
                 const isSeller = log.senderType === 'seller';
                 return (
                   <div key={log.id || idx} className={`flex flex-col max-w-[85%] space-y-1 ${isSeller ? 'ml-auto items-end' : ''}`}>
@@ -268,7 +269,7 @@ export default function SupportCenter({ onBack }: { onBack?: () => void }) {
           <div className="p-8 text-center text-xs text-gray-400">No support tickets created yet.</div>
         ) : (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
-            {tickets.map((ticket: any) => (
+            {tickets.map((ticket) => (
               <div 
                 key={ticket.id}
                 onClick={() => handleSelectTicket(ticket)}
@@ -324,7 +325,7 @@ export default function SupportCenter({ onBack }: { onBack?: () => void }) {
                   <label className="font-bold text-gray-400 uppercase text-[10px]">Category</label>
                   <select 
                     value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value)}
+                    onChange={(e) => setNewCategory(e.target.value as SupportTicketCategory)}
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                   >
                     <option value="ORDER_ISSUE">Order Issue</option>
@@ -338,7 +339,7 @@ export default function SupportCenter({ onBack }: { onBack?: () => void }) {
                   <label className="font-bold text-gray-400 uppercase text-[10px]">Priority</label>
                   <select 
                     value={newPriority}
-                    onChange={(e) => setNewPriority(e.target.value)}
+                    onChange={(e) => setNewPriority(e.target.value as SupportTicketPriority)}
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                   >
                     <option value="LOW">Low</option>

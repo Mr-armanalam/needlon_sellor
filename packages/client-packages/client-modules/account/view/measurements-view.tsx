@@ -10,8 +10,8 @@ export interface CustomerMeasurementItem {
   gender: string;
   garmentType: string;
   measurementUnit: string;
-  essentialMeasurements: Record<string, any>;
-  postureSpecifics?: Record<string, any>;
+  essentialMeasurements: Record<string, string | number>;
+  postureSpecifics?: Record<string, string | number>;
   fitPreference?: string | null;
   tailorNotes?: string | null;
   source: string;

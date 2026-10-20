@@ -8,6 +8,10 @@ import { sellerAddresses } from "@/db/schema/seller/seller-address";
 import { and, eq, inArray, isNull, desc } from "drizzle-orm";
 import { ManifestData, ManifestOrderItem } from "../types";
 
+type ManifestRecord = typeof orderManifests.$inferSelect;
+type SellerStoreRecord = typeof sellerStore.$inferSelect;
+type SellerAddressRecord = typeof sellerAddresses.$inferSelect;
+
 export async function generateManifestNumber(): Promise<string> {
   const currentYear = new Date().getFullYear();
   let sequence = 1;
@@ -41,7 +45,7 @@ export async function createBulkManifest(
   orderIds: string[],
   courierName = "Express Courier",
   pickupDate = new Date()
-): Promise<{ manifestRecord: any; manifestData: ManifestData }> {
+): Promise<{ manifestRecord: ManifestRecord; manifestData: ManifestData }> {
   if (!orderIds || orderIds.length === 0) {
     throw new Error("No orders selected for manifest generation.");
   }
@@ -126,7 +130,7 @@ export async function createBulkManifest(
     .where(eq(orderManifests.id, manifestRecord.id));
 
   // Store & Seller info with safe try/catch fallbacks
-  let store: any = null;
+  let store: SellerStoreRecord | null = null;
   try {
     const storeList = await db
       .select()
@@ -138,7 +142,7 @@ export async function createBulkManifest(
     console.error("Failed to query sellerStore, using default boutique fallback:", e);
   }
 
-  let sellerAddr: any = null;
+  let sellerAddr: SellerAddressRecord | null = null;
   try {
     const sellerAddrList = await db
       .select()
@@ -174,7 +178,7 @@ export async function createBulkManifest(
   return { manifestRecord, manifestData };
 }
 
-export async function getManifestDataById(manifestId: string, sellerId: string): Promise<{ manifestRecord: any; manifestData: ManifestData }> {
+export async function getManifestDataById(manifestId: string, sellerId: string): Promise<{ manifestRecord: ManifestRecord; manifestData: ManifestData }> {
   const manifestList = await db
     .select()
     .from(orderManifests)
@@ -227,7 +231,7 @@ export async function getManifestDataById(manifestId: string, sellerId: string):
     }
   }
 
-  let store: any = null;
+  let store: SellerStoreRecord | null = null;
   try {
     const storeList = await db.select().from(sellerStore).where(eq(sellerStore.sellerId, sellerId)).limit(1);
     store = storeList[0];

@@ -63,7 +63,7 @@ async function runSettingsModuleTests() {
   console.log("👉 Test 4: Rejecting Invalid Themes...");
   const invalidThemeParsed = updateSellerSettingsSchema.safeParse({
     ...validPayload,
-    theme: "NEON_VAPORWAVE" as any,
+    theme: "NEON_VAPORWAVE" as unknown as (typeof SELLER_THEMES)[number],
   });
   if (invalidThemeParsed.success) {
     throw new Error("Invalid theme was unexpectedly allowed by schema");

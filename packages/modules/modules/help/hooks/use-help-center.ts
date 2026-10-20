@@ -1,11 +1,67 @@
 import { apiFetch } from "@/modules/auth/lib/auth-client";
 import { useState, useEffect, useCallback } from "react";
+import type { SupportTicketResponseDto } from "../dto/support.dto";
+
+/** Knowledge-base article as returned by the API (row of `knowledgeBaseArticles`, JSON-serialised). */
+export interface KnowledgeBaseArticle {
+  id: string;
+  category: string;
+  title: string;
+  slug: string;
+  description: string;
+  content: string;
+  readTime: string;
+  icon: string;
+  views: number;
+  helpfulVotes: number;
+  unhelpfulVotes: number;
+  createdAt: string;
+}
+
+export interface HelpSetupChecklistItem {
+  id: number;
+  text: string;
+  done: boolean;
+  route: string;
+}
+
+export interface HelpPopularVideo {
+  id: string;
+  title: string;
+  duration: string;
+  level: string;
+  progress: string;
+}
+
+export interface HelpDashboardData {
+  learningProgress: number;
+  setupChecklist: HelpSetupChecklistItem[];
+  popularVideos: HelpPopularVideo[];
+}
+
+export interface HelpSearchResults {
+  articles: KnowledgeBaseArticle[];
+  tickets: SupportTicketResponseDto[];
+}
+
+/** Articles grouped by category for the knowledge-base view. */
+export interface KnowledgeBaseCategoryGroup {
+  title: string;
+  color: string;
+  articles: KnowledgeBaseArticle[];
+}
+
+export type GroupedKnowledgeBaseArticles = Record<string, KnowledgeBaseCategoryGroup>;
+
+function getErrorMessage(err: unknown, fallback: string): string {
+  return err instanceof Error && err.message ? err.message : fallback;
+}
 
 export function useHelpCenter() {
-  const [dashboardData, setDashboardData] = useState<any>(null);
-  const [kbArticles, setKbArticles] = useState<any[]>([]);
+  const [dashboardData, setDashboardData] = useState<HelpDashboardData | null>(null);
+  const [kbArticles, setKbArticles] = useState<KnowledgeBaseArticle[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchResults, setSearchResults] = useState<{ articles: any[]; tickets: any[] }>({
+  const [searchResults, setSearchResults] = useState<HelpSearchResults>({
     articles: [],
     tickets: [],
   });
@@ -77,8 +133,8 @@ export function useHelpCenter() {
         return { success: true, data: json.data };
       }
       return { success: false, error: json.error?.message || "Failed to schedule callback" };
-    } catch (err: any) {
-      return { success: false, error: err.message };
+    } catch (err: unknown) {
+      return { success: false, error: getErrorMessage(err, "Failed to schedule callback") };
     }
   };
 

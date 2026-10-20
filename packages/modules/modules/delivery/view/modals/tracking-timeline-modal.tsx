@@ -2,11 +2,12 @@
 
 import React from 'react';
 import { X, CheckCircle2, Clock, Truck, MapPin, PackageCheck } from 'lucide-react';
+import { ShipmentResponseDto } from '../../dto/delivery.dto';
 
 interface TrackingTimelineModalProps {
   isOpen: boolean;
   onClose: () => void;
-  shipment?: any;
+  shipment?: ShipmentResponseDto;
 }
 
 export default function TrackingTimelineModal({ isOpen, onClose, shipment }: TrackingTimelineModalProps) {

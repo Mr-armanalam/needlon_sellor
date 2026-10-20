@@ -30,7 +30,7 @@ const NewItemView = ({
     if (!acc[key]) acc[key] = [];
     acc[key].push(item.product);
     return acc;
-  }, {} as Record<string, any[]>);
+  }, {} as Record<string, BestSellerResponse["product"][]>);
   
 
   return (

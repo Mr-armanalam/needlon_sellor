@@ -20,6 +20,16 @@ import AuthProviderButton from "@/modules/auth/components/auth-provider-button";
 import CredentialAuthButton from "@/modules/auth/components/credential-auth-button";
 import MobileSwitchSignup from "@/modules/auth/components/mobile-switch-signup";
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = (error as { message: unknown }).message;
+    return typeof message === "string" ? message : "";
+  }
+  return "";
+}
+
+
 const SignIn = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [isOtp, setIsOtp] = useState(false);
@@ -75,7 +85,7 @@ const SignIn = () => {
       setTimeout(() => {
         router.push("/");
       }, 1000);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Unexpected Error during sign in:", error);
       toast.error("A network error occurred. Please try again.");
     }
@@ -94,10 +104,10 @@ const SignIn = () => {
         setIsloading(false);
         toast.success("OTP sent to your email!");
         return; // STOP HERE. Wait for user to enter PIN and click button again.
-      } catch (error: any) {
+      } catch (error) {
         console.error(error);
         form.setError("email", {
-          message: error?.message || "Failed to send OTP",
+          message: getErrorMessage(error) || "Failed to send OTP",
         });
         setIsloading(false);
         return;
@@ -169,7 +179,7 @@ const SignIn = () => {
         <div>
           <Form
             // key={isSignUp ? "signup" : "signin"}
-            {...(form as any)}
+            {...form}
           >
             <form
               className="flex flex-col gap-2"

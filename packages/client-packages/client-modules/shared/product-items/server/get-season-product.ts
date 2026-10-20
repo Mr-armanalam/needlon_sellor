@@ -10,5 +10,5 @@ export const getSeasonProduct = async ({
     limit: 8,
   });
 
-  return (result || []).map((item: any) => item.product || item);
+  return (result || []).map((item) => item.product || item);
 };

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Send, Paperclip, Terminal } from 'lucide-react';
 import { useFeedback } from '../hooks/use-feedback';
+import type { FeedbackSubmitSuccessPayload } from '../dto/feedback.dto';
 
 const categories = [
   'Bug Report', 'Feature Request', 'General Feedback', 
@@ -10,7 +11,7 @@ const categories = [
 
 interface FeedbackFormProps {
   onBack?: () => void;
-  onSubmitSuccess?: (payload: any) => void;
+  onSubmitSuccess?: (payload: FeedbackSubmitSuccessPayload) => void;
 }
 
 export default function FeedbackForm({ onBack, onSubmitSuccess }: FeedbackFormProps) {

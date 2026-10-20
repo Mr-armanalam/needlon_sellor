@@ -3,6 +3,12 @@ import {useProducts} from "./use-products";
 import {createDraftProductClient} from "../api/product-client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { productKeys } from "../keys";
+import type { ProductCardViewModel } from "../types";
+
+/** Product as passed to the share handler; `slug` is read when present. */
+interface ShareableProduct extends ProductCardViewModel {
+    slug?: string;
+}
 
 function useProductUiSetInternal() {
     const queryClient = useQueryClient();
@@ -39,7 +45,7 @@ function useProductUiSetInternal() {
         try {
             setIsCreatingDraft(true);
             const res = await createDraftMutation.mutateAsync();
-            const newProductId = res?.data?.id || res?.id;
+            const newProductId = res?.id;
             setDraftProductId(newProductId || null);
             setViewMode('wizard');
         } catch (err) {
@@ -61,7 +67,7 @@ function useProductUiSetInternal() {
         setViewMode('wizard');
     };
 
-    const handleShareProduct = (product: any) => {
+    const handleShareProduct = (product: ShareableProduct) => {
         const link = `${window.location.origin}/products/${product.slug}`;
         navigator.clipboard.writeText(link)
             .then(() => alert(`Share link copied: ${link}`))
@@ -80,15 +86,15 @@ function useProductUiSetInternal() {
         reader.onload = async (evt) => {
             try {
                 const text = evt.target?.result as string;
-                let items = [];
+                let items: Array<Record<string, unknown>> = [];
                 if (file.name.endsWith(".json")) {
-                    items = JSON.parse(text);
+                    items = JSON.parse(text) as Array<Record<string, unknown>>;
                 } else {
                     const lines = text.split("\n").filter(l => l.trim() !== "");
                     const headers = lines[0].split(",").map(h => h.trim());
                     for (let i = 1; i < lines.length; i++) {
                         const cols = lines[i].split(",").map(c => c.trim());
-                        const row: any = {};
+                        const row: Record<string, string> = {};
                         headers.forEach((h, idx) => {
                             row[h] = cols[idx] || "";
                         });
@@ -100,8 +106,8 @@ function useProductUiSetInternal() {
                 await bulkUploadProductsClient(items);
                 alert(`Successfully imported ${items.length} products!`);
                 await refetch();
-            } catch (err: any) {
-                alert("Failed to parse/upload bulk file: " + err.message);
+            } catch (err: unknown) {
+                alert("Failed to parse/upload bulk file: " + (err instanceof Error ? err.message : String(err)));
             }
         };
         reader.readAsText(file);

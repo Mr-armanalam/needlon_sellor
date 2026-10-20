@@ -1,3 +1,4 @@
+import * as React from "react"
 import { NavigationMenu as NavigationMenuPrimitive } from "@base-ui/react/navigation-menu"
 import { cva } from "class-variance-authority"
 
@@ -127,7 +128,7 @@ function NavigationMenuLink({
   render,
   children,
   ...props
-}: any) {
+}: NavigationMenuPrimitive.Link.Props & { asChild?: boolean }) {
   return (
     <NavigationMenuPrimitive.Link
       data-slot="navigation-menu-link"
@@ -136,7 +137,10 @@ function NavigationMenuLink({
         !asChild && "flex items-center gap-2",
         className
       )}
-      render={render ?? (asChild ? children : undefined)}
+      render={
+        render ??
+        (asChild && React.isValidElement(children) ? children : undefined)
+      }
       {...(asChild && !render ? {} : { children })}
       {...props}
     />

@@ -2,6 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { OrderService } from "@/modules/orders/services/orderServices";
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = (error as { message: unknown }).message;
+    return typeof message === "string" ? message : "";
+  }
+  return "";
+}
+
+function getErrorStatusCode(error: unknown): number {
+  if (typeof error === "object" && error !== null && "statusCode" in error) {
+    const statusCode = (error as { statusCode: unknown }).statusCode;
+    return typeof statusCode === "number" ? statusCode : 500;
+  }
+  return 500;
+}
+
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -28,10 +46,10 @@ export async function POST(
     );
 
     return NextResponse.json(result, { status: 200 });
-  } catch (error: any) {
-    const statusCode = error?.statusCode || 500;
+  } catch (error) {
+    const statusCode = getErrorStatusCode(error);
     return NextResponse.json(
-      { error: error?.message || "Failed to cancel order" },
+      { error: getErrorMessage(error) || "Failed to cancel order" },
       { status: statusCode }
     );
   }

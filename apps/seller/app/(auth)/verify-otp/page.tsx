@@ -10,6 +10,16 @@ import { OtpInput } from "@/modules/auth/components/otp-input";
 import { ResendOtp } from "@/modules/auth/components/resend-otp";
 import { useVerifyEmailMutation, useVerifyResetOtpMutation } from "@/modules/auth/hooks";
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = (error as { message: unknown }).message;
+    return typeof message === "string" ? message : "";
+  }
+  return "";
+}
+
+
 function VerifyOtpView() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -49,9 +59,9 @@ function VerifyOtpView() {
         toast.success("OTP verified successfully");
         router.replace(`/reset-password?token=${data?.resetToken || data}`);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error(error);
-      toast.error(error?.message || "Invalid or expired OTP");
+      toast.error(getErrorMessage(error) || "Invalid or expired OTP");
     }
   };
 

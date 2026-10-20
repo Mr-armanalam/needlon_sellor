@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 
 export type NotificationType = {
@@ -103,7 +102,7 @@ export const notificationSlice = createSlice({
 export const { pushNotification, setInitialNotifications } =
   notificationSlice.actions;
 
-export const selectUnreadCount = (state: any) => {
+export const selectUnreadCount = (state: { notification: NotificationState }) => {
   const notifications = state?.notification?.notifications;
   return Array.isArray(notifications)
     ? notifications.filter((n: NotificationType) => !n?.read).length

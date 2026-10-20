@@ -11,6 +11,24 @@ import NoUserAddress from "../shared/no-user-address";
 import { HomeIcon, EllipsisVertical } from "lucide-react";
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
 
+/** Address as shown in the UI, or the equivalent DB-shaped fields returned by some endpoints. */
+export interface EditableAddressInput {
+  id: string;
+  name?: string;
+  fullName?: string;
+  phone?: string;
+  pincode?: string;
+  postalCode?: string;
+  locality?: string;
+  address?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  landmark?: string;
+  alternate_phone?: string;
+}
+
 const AddressView = () => {
   const { data: session } = useSession();
   const queryClient = useQueryClient();
@@ -49,7 +67,7 @@ const AddressView = () => {
     deleteMutation.mutate(id);
   };
 
-  const onEditAddress = (addr: any) => {
+  const onEditAddress = (addr: EditableAddressInput) => {
     if (!session?.user?.id) return;
     setAccordionValue(["item-1"]);
     setEditingAddress({

@@ -5,8 +5,19 @@ import {
     OrderStatusHistoryDomain,
     OrderPaymentDomain,
 } from "../types";
+import { orders } from "@/db/schema/orders/table";
+import { orderItems } from "@/db/schema/orders/order-items/table";
+import { orderAddresses } from "@/db/schema/orders/order-address";
+import { orderStatusHistory } from "@/db/schema/orders/order-status-history/table";
+import { orderPayments } from "@/db/schema/orders/order-payments/table";
 
-export function toOrderItemDomain(dbItem: any): OrderItemDomain {
+type OrderRow = typeof orders.$inferSelect;
+type OrderItemRow = typeof orderItems.$inferSelect;
+type OrderAddressRow = typeof orderAddresses.$inferSelect;
+type OrderStatusHistoryRow = typeof orderStatusHistory.$inferSelect;
+type OrderPaymentRow = typeof orderPayments.$inferSelect;
+
+export function toOrderItemDomain(dbItem: OrderItemRow): OrderItemDomain {
     return {
         id: dbItem.id,
         orderId: dbItem.orderId,
@@ -50,7 +61,7 @@ export function toOrderItemDomain(dbItem: any): OrderItemDomain {
     };
 }
 
-export function toOrderAddressDomain(dbAddress: any): OrderAddressDomain {
+export function toOrderAddressDomain(dbAddress: OrderAddressRow): OrderAddressDomain {
     return {
         id: dbAddress.id,
         orderId: dbAddress.orderId,
@@ -72,7 +83,7 @@ export function toOrderAddressDomain(dbAddress: any): OrderAddressDomain {
     };
 }
 
-export function toOrderStatusHistoryDomain(dbHistory: any): OrderStatusHistoryDomain {
+export function toOrderStatusHistoryDomain(dbHistory: OrderStatusHistoryRow): OrderStatusHistoryDomain {
     return {
         id: dbHistory.id,
         orderId: dbHistory.orderId,
@@ -93,7 +104,7 @@ export function toOrderStatusHistoryDomain(dbHistory: any): OrderStatusHistoryDo
     };
 }
 
-export function toOrderPaymentDomain(dbPayment: any): OrderPaymentDomain {
+export function toOrderPaymentDomain(dbPayment: OrderPaymentRow): OrderPaymentDomain {
     return {
         id: dbPayment.id,
         orderId: dbPayment.orderId,
@@ -133,7 +144,7 @@ export function toOrderPaymentDomain(dbPayment: any): OrderPaymentDomain {
     };
 }
 
-export function toOrderDomain(dbOrder: any, items?: any[], addresses?: any[], history?: any[], payments?: any[]): OrderDomain {
+export function toOrderDomain(dbOrder: OrderRow, items?: OrderItemRow[], addresses?: OrderAddressRow[], history?: OrderStatusHistoryRow[], payments?: OrderPaymentRow[]): OrderDomain {
     return {
         id: dbOrder.id,
         sellerId: dbOrder.sellerId,

@@ -18,8 +18,12 @@ export function useAnalytics(timeframe: "7d" | "30d" | "90d" | "1y" = "30d") {
       } else {
         setError(json.error?.message || "Failed to load analytics data");
       }
-    } catch (err: any) {
-      setError(err.message || "Network error fetching analytics");
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? err.message || "Network error fetching analytics"
+          : "Network error fetching analytics",
+      );
     } finally {
       setLoading(false);
     }

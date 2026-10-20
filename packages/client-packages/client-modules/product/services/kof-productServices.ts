@@ -1,7 +1,7 @@
-import { ProductRepository } from "../repositories/product-repository";
+import { ProductRepository, type QueryProductsParams } from "../repositories/product-repository";
 import { transformDbProductToDto } from "./product-transformer";
 
-async function fetchDbProducts(filterParams: any = {}) {
+async function fetchDbProducts(filterParams: QueryProductsParams = {}) {
   if (!process.env.DATABASE_URL) return [];
   try {
     const rows = await ProductRepository.getProducts(filterParams);
@@ -43,7 +43,7 @@ export const ProductService = {
     return await fetchDbProducts({ limit: 12 });
   },
 
-  async getFiltered(filters?: any) {
+  async getFiltered(filters?: QueryProductsParams) {
     return await fetchDbProducts({ ...filters, limit: 20 });
   },
 };

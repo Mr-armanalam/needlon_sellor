@@ -21,11 +21,20 @@ export interface UploadProductMediaResult {
     mimeType: string;
 }
 
-function getSupabaseServerClient(): any {
-    if (typeof supabaseServer === "function") {
-        return (supabaseServer as any)();
+// `@/lib/supabase/server` resolves differently per app: in apps/client it is a
+// factory function returning a client, in apps/seller it is the client itself.
+// This conditional type resolves to the client type in both cases.
+export type SupabaseServerClient =
+    typeof supabaseServer extends (...args: never) => infer R
+        ? R
+        : typeof supabaseServer;
+
+export function getSupabaseServerClient(): SupabaseServerClient {
+    const server: unknown = supabaseServer;
+    if (typeof server === "function") {
+        return (server as () => SupabaseServerClient)();
     }
-    return supabaseServer;
+    return server as SupabaseServerClient;
 }
 
 /**
@@ -36,7 +45,7 @@ async function ensureProductMediaBucket(): Promise<void> {
         const client = getSupabaseServerClient();
         if (!client || !client.storage) return;
         const { data: buckets } = await client.storage.listBuckets();
-        const exists = buckets?.some((b: any) => b.id === PRODUCT_MEDIA_BUCKET || b.name === PRODUCT_MEDIA_BUCKET);
+        const exists = buckets?.some((b) => b.id === PRODUCT_MEDIA_BUCKET || b.name === PRODUCT_MEDIA_BUCKET);
         if (!exists) {
             await client.storage.createBucket(PRODUCT_MEDIA_BUCKET, { public: true });
         }
@@ -73,11 +82,11 @@ export async function uploadProductMediaToSupabase({
         uploadPayload = file;
     } else if (file instanceof ArrayBuffer) {
         uploadPayload = Buffer.from(file);
-    } else if (typeof (file as any).arrayBuffer === "function") {
-        const arrayBuf = await (file as File).arrayBuffer();
+    } else if (file instanceof Blob) {
+        const arrayBuf = await file.arrayBuffer();
         uploadPayload = Buffer.from(arrayBuf);
     } else {
-        uploadPayload = file as any;
+        uploadPayload = file;
     }
 
     const client = getSupabaseServerClient();
@@ -108,7 +117,7 @@ export async function uploadProductMediaToSupabase({
 
 /**
  * Converts a base64 Data URL to a Supabase storage asset if provided,
- * preventing any raw base64 dataURL from being stored in the database.
+ * preventing raw base64 dataURLs from being stored in the database.
  */
 export async function uploadProductMediaDataUrlToSupabase(
     productId: string,

@@ -19,6 +19,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const validated = createCampaignSchema.parse(body);
     const newCampaign = await createCampaignService(validated);
-    return successResponse(newCampaign, "Campaign created successfully");
+    return successResponse(newCampaign);
   });
 }

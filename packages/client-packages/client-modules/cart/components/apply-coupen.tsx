@@ -80,7 +80,7 @@ const ApplyCoupon = ({
   }
 
   return (
-    <Form {...(form as any)}>
+    <Form {...form}>
       <form className="mb-1" onSubmit={form.handleSubmit(onSubmit)}>
         <FormField
           control={form.control}

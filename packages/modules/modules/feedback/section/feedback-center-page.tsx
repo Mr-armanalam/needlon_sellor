@@ -4,11 +4,12 @@ import { Layers, PlusCircle, History } from 'lucide-react';
 import FeedbackRoadmap from '../view/feedback-roadmap';
 import FeedbackForm from '../view/feedback-form';
 import FeedbackTracker from '../view/feedback-tacker';
+import type { FeedbackSubmitSuccessPayload } from '../dto/feedback.dto';
 
 export default function FeedbackCenterPage() {
   const [activeTab, setActiveTab] = useState('roadmap'); // roadmap, form, tracker
 
-  const handleFormSubmitSuccess = (payload: any) => {
+  const handleFormSubmitSuccess = (payload: FeedbackSubmitSuccessPayload) => {
     // Production integration hook: send payload to database route here
     alert(`Thank you! Feedback logged successfully under "${payload.category}" tab.`);
     setActiveTab('tracker');

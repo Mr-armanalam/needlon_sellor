@@ -1,9 +1,10 @@
 import {getOrderDetailsClient, updateOrderStatusClient} from "@/modules/orders/api/order-client";
 import {useEffect, useState} from "react";
 import {PIPELINE_STEPS, STATUS_LABELS} from "@/modules/orders/constants";
+import type {OrderDetailResponseDto} from "@/modules/orders/dto";
 
 export const useOrderInspector = (orderId: string) => {
-    const [data, setData] = useState<any | null>(null);
+    const [data, setData] = useState<OrderDetailResponseDto | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [actionLoading, setActionLoading] = useState(false);
@@ -19,8 +20,8 @@ export const useOrderInspector = (orderId: string) => {
             } else {
                 setError("Failed to load order details.");
             }
-        } catch (err: any) {
-            setError(err.message || "Failed to fetch details");
+        } catch (err: unknown) {
+            setError(err instanceof Error && err.message ? err.message : "Failed to fetch details");
         } finally {
             setLoading(false);
         }
@@ -35,8 +36,8 @@ export const useOrderInspector = (orderId: string) => {
         try {
             await updateOrderStatusClient(orderId, "ADVANCE");
             await loadDetails();
-        } catch (err: any) {
-            alert(err.message || "Failed to advance order");
+        } catch (err: unknown) {
+            alert(err instanceof Error && err.message ? err.message : "Failed to advance order");
         } finally {
             setActionLoading(false);
         }
@@ -48,18 +49,18 @@ export const useOrderInspector = (orderId: string) => {
         try {
             await updateOrderStatusClient(orderId, "CANCEL");
             await loadDetails();
-        } catch (err: any) {
-            alert(err.message || "Failed to cancel order");
+        } catch (err: unknown) {
+            alert(err instanceof Error && err.message ? err.message : "Failed to cancel order");
         } finally {
             setActionLoading(false);
         }
     }
 
     const { items = [], addresses = [], history = [] } = data || {};
-    const deliveryAddress = addresses.find((a: any) => a.addressType === "DELIVERY") || addresses[0];
+    const deliveryAddress = addresses.find((a) => a.addressType === "DELIVERY") || addresses[0];
 
     // Calculate current pipeline step index
-    const currentStatus = data?.status;
+    const currentStatus = data?.status ?? "";
     let currentStepIdx = PIPELINE_STEPS.indexOf(currentStatus);
     if (currentStepIdx === -1) {
         if (currentStatus === "DELIVERED") currentStepIdx = 5;
@@ -69,7 +70,7 @@ export const useOrderInspector = (orderId: string) => {
     // Create display timeline steps
     const stepsTimeline = PIPELINE_STEPS.map((stepKey, idx) => {
         // Check if this step has been completed in history
-        const historyItem = history.find((h: any) => h.toStatus === stepKey);
+        const historyItem = history.find((h) => h.toStatus === stepKey);
         const isCompleted = idx <= currentStepIdx;
 
         let time = "Pending";
@@ -79,7 +80,7 @@ export const useOrderInspector = (orderId: string) => {
             time = new Date(historyItem.changedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             description = historyItem.remarks || "";
         } else if (isCompleted && idx === 0) {
-            time = new Date(data?.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            time = new Date(data?.createdAt ?? "").toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             description = "Order placed by buyer.";
         } else {
             if (stepKey === "CONFIRMED") description = "Awaiting boutique acceptance.";
@@ -96,8 +97,8 @@ export const useOrderInspector = (orderId: string) => {
         };
     });
 
-    const formatCurrency = (val: any) => {
-        const num = parseFloat(val) || 0;
+    const formatCurrency = (val: number | string) => {
+        const num = parseFloat(val.toString()) || 0;
         return new Intl.NumberFormat('en-IN', {
             style: 'currency',
             currency: 'INR',

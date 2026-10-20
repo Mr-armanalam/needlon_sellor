@@ -11,10 +11,48 @@ import { eq, sql } from "drizzle-orm";
 import { generateUniqueSlug } from "@/modules/shared/slug/generate-unique-slug";
 import { existsProductSlug } from "./exists-product-slug";
 import { AuthSeller } from "@/types/auth";
+import type { Product } from "@/db/schema/catalog/products";
+import type { ShippingMetadata } from "@/db/schema/catalog/products/shipping/metadata";
 
-export const bulkProductUpload = async ( seller: AuthSeller, items: any) => {
+export interface BulkProductUploadItem {
+    name?: string;
+    category?: string;
+    retailPrice?: string | number;
+    price?: string | number;
+    boutiqueStockCount?: string | number;
+    stock?: string | number;
+    quantity?: string | number;
+    packageWeight?: string | number;
+    weight?: string | number;
+    uniqueSku?: string;
+    brandLabel?: string;
+    subcategory?: string;
+    descriptionStory?: string;
+    variantName?: string;
+    compareAtPrice?: string | number;
+    costPrice?: string | number;
+    searchKeywords?: string;
+    pickupHubAddress?: string;
+}
+
+type BulkShippingMetadata = ShippingMetadata & { pickupHubAddress?: string };
+
+function extractRows<T>(result: unknown): T[] {
+    if (result && typeof result === "object" && "rows" in result) {
+        const rows: unknown = (result as { rows: unknown }).rows;
+        if (Array.isArray(rows)) {
+            return rows as T[];
+        }
+    }
+    if (Array.isArray(result)) {
+        return result as T[];
+    }
+    return [];
+}
+
+export const bulkProductUpload = async ( seller: AuthSeller, items: BulkProductUploadItem[]) => {
     const storeId = seller.id;
-    const uploaded: any[] = [];
+    const uploaded: Product[] = [];
 
     // Run bulk uploads in a single transaction for efficiency and atomicity
     await db.transaction(async (tx) => {
@@ -35,9 +73,9 @@ export const bulkProductUpload = async ( seller: AuthSeller, items: any) => {
             const baseSku = item.uniqueSku || `SKU-BULK-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`;
 
             let categoryId: string;
-            const existingCatRes: any = await tx.execute(
+            const existingCatRes = extractRows<{ id: string }>(await tx.execute(
                 sql`SELECT id FROM categories WHERE name = ${catName} LIMIT 1`
-            );
+            ));
 
             if (existingCatRes?.[0]?.id) {
                 categoryId = existingCatRes[0].id;
@@ -104,7 +142,7 @@ export const bulkProductUpload = async ( seller: AuthSeller, items: any) => {
                 weightUnit: "KG",
                 requiresShipping: true,
                 isFreeShipping: false,
-                metadata: (item.pickupHubAddress ? { pickupHubAddress: item.pickupHubAddress } : {}) as any,
+                metadata: (item.pickupHubAddress ? { pickupHubAddress: item.pickupHubAddress } : {}) as BulkShippingMetadata,
             });
 
             // Create SEO

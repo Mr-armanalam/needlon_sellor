@@ -53,7 +53,19 @@ interface Props {
   userId?: string;
 }
 
-const normalizeItem = (item: any): WishlistItem => ({
+interface WishlistItemInput {
+  id?: string;
+  productId?: string;
+  product_id?: string;
+  name?: string;
+  price?: number;
+  quantity?: number | string;
+  size?: string;
+  image?: string;
+  updatedAt?: Date | string;
+}
+
+const normalizeItem = (item: WishlistItemInput): WishlistItem => ({
   id: item.id ?? "",
   productId: item.productId ?? item.product_id ?? "",
   name: item.name ?? "Unknown Product",
@@ -63,7 +75,7 @@ const normalizeItem = (item: any): WishlistItem => ({
       ? item.quantity
       : Number(item.quantity) || 0,
   size: item.size ?? "s",
-  image: item.image ?? null,
+  image: item.image ?? "",
   updatedAt: item.updatedAt ? new Date(item.updatedAt) : new Date(),
 });
 
@@ -241,7 +253,7 @@ export default WishlistView;
 //   userId?: string;
 // }
 
-// const normalizeItem = (item: any): WishlistItem => ({
+// const normalizeItem = (item: WishlistItemInput): WishlistItem => ({
 //   id: item.id ?? "",
 //   productId: item.productId ?? item.product_id ?? "",
 //   name: item.name ?? "Unknown Product",
@@ -416,7 +428,7 @@ export default WishlistView;
 // //     serverWishlist.map(normalizeItem)
 // //   );
 
-// //   function normalizeItem(item: any): WishlistItem {
+// //   function normalizeItem(item: WishlistItemInput): WishlistItem {
 // //     return {
 // //       id: item.id ?? "",
 // //       productId: item.productId ?? item.product_id ?? "",
@@ -452,7 +464,7 @@ export default WishlistView;
 // //       try {
 // //         const raw = localStorage.getItem("wishlist");
 // //         if (raw) {
-// //           const parsed = JSON.parse(raw) as Array<any>;
+// //           const parsed = JSON.parse(raw) as WishlistItemInput[];
 // //           dispatch(setGuestWishlist(parsed));
 // //           setLocalList(parsed.map(normalizeItem));
 // //         } else {

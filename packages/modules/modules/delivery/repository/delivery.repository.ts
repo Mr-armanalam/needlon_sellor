@@ -1,7 +1,10 @@
 import { db } from "@/db";
 import { shippingPartners } from "@/db/schema/delivery/shipping-partners";
 import { shippingMethods } from "@/db/schema/delivery/shipping-method";
-import { shipmentOrders } from "@/db/schema/delivery/shipping-orders";
+import {
+  shipmentOrders,
+  shipmentStatusEnum,
+} from "@/db/schema/delivery/shipping-orders";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import {
   CreateShipmentOrderDto,
@@ -178,7 +181,12 @@ export async function createShipmentOrder(sellerId: string, dto: CreateShipmentO
 export async function getSellerShipments(sellerId: string, statusFilter?: string) {
   const conditions = [eq(shipmentOrders.sellerId, sellerId)];
   if (statusFilter && statusFilter !== "ALL") {
-    conditions.push(eq(shipmentOrders.status, statusFilter as any));
+    const status = shipmentStatusEnum.enumValues.find(
+      (value) => value === statusFilter
+    );
+    if (status) {
+      conditions.push(eq(shipmentOrders.status, status));
+    }
   }
 
   const rows = await db
@@ -253,7 +261,7 @@ export async function getSellerShipments(sellerId: string, statusFilter?: string
 }
 
 export async function updateShipmentStatus(dto: UpdateShipmentStatusDto) {
-  const updatePayload: Record<string, any> = {
+  const updatePayload: Partial<(typeof shipmentOrders)["$inferInsert"]> = {
     status: dto.status,
     updatedAt: new Date(),
   };

@@ -2,13 +2,14 @@
 
 
 import { apiFetch } from "@/modules/auth/lib/auth-client";
+import type { WalkInCustomerResponseDto } from '../dto/walk-in-customer.dto';
 import React, { useState } from 'react';
 import { X, UserPlus, Mail, Phone, User, FileText, Loader2 } from 'lucide-react';
 
 interface AddWalkInModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCustomerCreated: (newCustomer: any) => void;
+  onCustomerCreated: (newCustomer: WalkInCustomerResponseDto) => void;
 }
 
 export default function AddWalkInModal({ isOpen, onClose, onCustomerCreated }: AddWalkInModalProps) {
@@ -62,8 +63,10 @@ export default function AddWalkInModal({ isOpen, onClose, onCustomerCreated }: A
       setPhone('');
       setGender('male');
       setNotes('');
-    } catch (err: any) {
-      setError(err.message || 'Network error occurred');
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message || 'Network error occurred' : 'Network error occurred',
+      );
     } finally {
       setSubmitting(false);
     }

@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import OrderRating from "../ui/order-rating";
+import type { OrderTimelineStep } from "../repositories/order-repository";
 import Link from "next/link";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -24,7 +25,7 @@ type props = {
   itemName: string;
   productId: string;
   orderItemId: string;
-  timeline?: any[];
+  timeline?: OrderTimelineStep[];
 };
 
 const OrderStatus = ({

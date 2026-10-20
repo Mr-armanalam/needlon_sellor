@@ -11,6 +11,15 @@ import { AuthShell } from "@/modules/auth/components/auth-shell";
 import { PasswordInput } from "@/modules/auth/components/password-input";
 import { PasswordStrength } from "@/modules/auth/components/password-strength";
 import { useResetPasswordMutation } from "@/modules/auth/hooks";
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = (error as { message: unknown }).message;
+    return typeof message === "string" ? message : "";
+  }
+  return "";
+}
+
 import {
   ResetPasswordFormValues,
   resetPasswordSchema,
@@ -42,8 +51,8 @@ function ResetPasswordForm() {
 
       toast.success("Password updated successfully");
       router.replace("/login");
-    } catch (error: any) {
-      toast.error(error?.message || "Unable to reset password");
+    } catch (error) {
+      toast.error(getErrorMessage(error) || "Unable to reset password");
     }
   };
 

@@ -175,8 +175,10 @@ export default function RecordMeasurementModal({
       onClose();
       setEssentialMetrics({});
       setTailorNotes('');
-    } catch (err: any) {
-      setError(err.message || 'Error recording measurements');
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message || 'Error recording measurements' : 'Error recording measurements',
+      );
     } finally {
       setSubmitting(false);
     }

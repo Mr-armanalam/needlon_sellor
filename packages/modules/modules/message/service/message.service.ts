@@ -10,6 +10,7 @@ import { db } from "@/db";
 import { seller } from "@/db/schema/seller";
 import { sellerProfiles } from "@/db/schema/seller/seller-profile";
 import {
+    MessageAttachmentType,
     messagesTable,
     messageAttachmentsTable,
     messageReactionsTable,
@@ -21,6 +22,8 @@ import { eq, inArray } from "drizzle-orm";
 import { supabaseServer } from "@/lib/supabase/server";
 
 import {
+    SharedOrderSnapshot,
+    SharedProductSnapshot,
     toMessageDto,
 } from "../mapper";
 
@@ -33,9 +36,30 @@ import {
 } from "../errors";
 
 import {
+    MessageAttachmentDto,
+    MessageReactionDto,
     SendMessageDto,
     UpdateMessageDto,
 } from "../dto";
+
+/** Message row as returned by the repository / DB schema. */
+type MessageRow = typeof messagesTable.$inferSelect;
+
+/** Message-read row as returned from messageReadsTable. */
+type MessageReadRow = typeof messageReadsTable.$inferSelect;
+
+/** Reply-target entry as hydrated for the message mapper. */
+interface HydratedReplyMessage {
+    id: string;
+
+    senderName: string;
+
+    body: string | null;
+
+    messageType: MessageRow["type"];
+
+    isDeleted: boolean;
+}
 
 export class MessageService {
     /**
@@ -45,7 +69,7 @@ export class MessageService {
      */
 
     private async hydrateMessages(
-        rawMessages: any[],
+        rawMessages: MessageRow[],
         currentSellerId: string,
     ) {
         if (rawMessages.length === 0) {
@@ -87,7 +111,7 @@ export class MessageService {
             ),
         ) as string[];
 
-        let replyToMap = new Map<string, any>();
+        let replyToMap = new Map<string, HydratedReplyMessage>();
         if (parentIds.length > 0) {
             const parents = await db
                 .select({
@@ -103,17 +127,19 @@ export class MessageService {
                 .leftJoin(sellerProfiles, eq(seller.id, sellerProfiles.sellerId))
                 .where(inArray(messagesTable.id, parentIds));
 
-            replyToMap = new Map(
-                parents.map((p) => [
-                    p.id,
-                    {
-                        id: p.id,
-                        senderName: p.senderDisplayName || p.senderName || "User",
-                        body: p.body,
-                        messageType: p.messageType,
-                        isDeleted: p.deletedAt !== null,
-                    },
-                ]),
+            replyToMap = new Map<string, HydratedReplyMessage>(
+                parents.map(
+                    (p): [string, HydratedReplyMessage] => [
+                        p.id,
+                        {
+                            id: p.id,
+                            senderName: p.senderDisplayName || p.senderName || "User",
+                            body: p.body,
+                            messageType: p.messageType,
+                            isDeleted: p.deletedAt !== null,
+                        },
+                    ],
+                ),
             );
         }
 
@@ -123,7 +149,7 @@ export class MessageService {
             .from(messageAttachmentsTable)
             .where(inArray(messageAttachmentsTable.messageId, messageIds));
 
-        const attachmentsMap = new Map<string, any[]>();
+        const attachmentsMap = new Map<string, MessageAttachmentDto[]>();
         for (const att of attachments) {
             const list = attachmentsMap.get(att.messageId) || [];
             list.push({
@@ -160,7 +186,7 @@ export class MessageService {
             .leftJoin(sellerProfiles, eq(seller.id, sellerProfiles.sellerId))
             .where(inArray(messageReactionsTable.messageId, messageIds));
 
-        const reactionsMap = new Map<string, any[]>();
+        const reactionsMap = new Map<string, MessageReactionDto[]>();
         for (const rx of reactions) {
             const list = reactionsMap.get(rx.reaction.messageId) || [];
             list.push({
@@ -184,7 +210,7 @@ export class MessageService {
             .from(messageReadsTable)
             .where(inArray(messageReadsTable.messageId, messageIds));
 
-        const readsMap = new Map<string, any[]>();
+        const readsMap = new Map<string, MessageReadRow[]>();
         for (const rd of reads) {
             const list = readsMap.get(rd.messageId) || [];
             list.push(rd);
@@ -197,7 +223,7 @@ export class MessageService {
             .from(sharedProductsTable)
             .where(inArray(sharedProductsTable.messageId, messageIds));
 
-        const sharedProductsMap = new Map<string, any>();
+        const sharedProductsMap = new Map<string, SharedProductSnapshot>();
         for (const sp of sharedProducts) {
             sharedProductsMap.set(sp.messageId, {
                 id: sp.id,
@@ -219,7 +245,7 @@ export class MessageService {
             .from(sharedOrdersTable)
             .where(inArray(sharedOrdersTable.messageId, messageIds));
 
-        const sharedOrdersMap = new Map<string, any>();
+        const sharedOrdersMap = new Map<string, SharedOrderSnapshot>();
         for (const so of sharedOrders) {
             sharedOrdersMap.set(so.messageId, {
                 id: so.id,
@@ -245,7 +271,7 @@ export class MessageService {
             };
 
             const parentInfo = message.replyToMessageId
-                ? replyToMap.get(message.replyToMessageId)
+                ? replyToMap.get(message.replyToMessageId) ?? null
                 : null;
             const messageAttachments = attachmentsMap.get(message.id) || [];
             const messageReactions = reactionsMap.get(message.id) || [];
@@ -306,7 +332,7 @@ export class MessageService {
         // Bind attachments to this message
         if (input.attachments && input.attachments.length > 0) {
             for (const att of input.attachments) {
-                let attachmentType = "OTHER";
+                let attachmentType: MessageAttachmentType = "OTHER";
                 const contentType = att.contentType || "";
                 if (contentType.startsWith("image/")) {
                     attachmentType = "IMAGE";
@@ -325,7 +351,7 @@ export class MessageService {
                 await db.insert(messageAttachmentsTable).values({
                     id: att.attachmentId,
                     messageId: message.id,
-                    type: attachmentType as any,
+                    type: attachmentType,
                     status: "READY",
                     storageProvider: "SUPABASE",
                     fileName: att.fileName || "file",

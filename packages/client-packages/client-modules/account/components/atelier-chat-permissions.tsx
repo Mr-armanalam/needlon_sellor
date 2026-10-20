@@ -9,8 +9,16 @@ import {
   toggleChatPrivacyAction,
 } from "../server/chat-privacy-controller";
 
+type CustomerChatPermission = Awaited<
+  ReturnType<typeof getCustomerChatPermissions>
+>["data"][number];
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "";
+}
+
 export default function AtelierChatPermissions() {
-  const [permissions, setPermissions] = useState<any[]>([]);
+  const [permissions, setPermissions] = useState<CustomerChatPermission[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
@@ -35,8 +43,8 @@ export default function AtelierChatPermissions() {
         toast.success(status === "ACCEPTED" ? "Chat request accepted!" : "Chat request declined.");
         await loadPermissions();
       }
-    } catch (err: any) {
-      toast.error(err.message || "Failed to update permission");
+    } catch (err) {
+      toast.error(getErrorMessage(err) || "Failed to update permission");
     } finally {
       setUpdatingId(null);
     }
@@ -50,8 +58,8 @@ export default function AtelierChatPermissions() {
         toast.success(!currentEnabled ? "Chat enabled for this atelier." : "Chat disabled for privacy.");
         await loadPermissions();
       }
-    } catch (err: any) {
-      toast.error(err.message || "Failed to toggle privacy switch");
+    } catch (err) {
+      toast.error(getErrorMessage(err) || "Failed to toggle privacy switch");
     } finally {
       setUpdatingId(null);
     }

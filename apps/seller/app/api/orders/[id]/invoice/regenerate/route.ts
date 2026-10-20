@@ -3,6 +3,16 @@ import { getCurrentSeller } from "@/modules/auth/lib/get-current-seller";
 import { regenerateInvoiceForOrder } from "@/modules/orders/documents/services/invoice-service";
 import { generateInvoiceHTML } from "@/modules/orders/documents/templates/invoice-generator";
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = (error as { message: unknown }).message;
+    return typeof message === "string" ? message : "";
+  }
+  return "";
+}
+
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -28,9 +38,9 @@ export async function POST(
         html,
       },
     });
-  } catch (err: any) {
+  } catch (err) {
     return NextResponse.json(
-      { success: false, error: { code: "INTERNAL_ERROR", message: err.message || "Failed to regenerate invoice" } },
+      { success: false, error: { code: "INTERNAL_ERROR", message: getErrorMessage(err) || "Failed to regenerate invoice" } },
       { status: 500 }
     );
   }

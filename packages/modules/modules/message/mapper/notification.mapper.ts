@@ -6,14 +6,34 @@
 // Maps database notification entities into NotificationDto.
 // ============================================================================
 
-import { notificationsTable } from "@/db/schema/messages";
+import {
+    NotificationMetadata,
+    notificationsTable,
+} from "@/db/schema/messages";
 import { NotificationDto } from "../dto";
 
 type NotificationDbRow = typeof notificationsTable.$inferSelect;
 
+/**
+ * Notification JSON metadata as read by this mapper: the stored
+ * NotificationMetadata plus the shared product / order references
+ * and the free-form payload this mapper forwards into the DTO.
+ */
+interface NotificationMetadataWithReferences
+    extends NotificationMetadata {
+    productId?: string | null;
+
+    orderId?: string | null;
+
+    data?: Record<string, unknown>;
+}
+
 export function toNotificationDto(
     notification: NotificationDbRow,
 ): NotificationDto {
+    const metadata =
+        notification.metadata as NotificationMetadataWithReferences;
+
     return {
         id:
         notification.id,
@@ -65,13 +85,13 @@ export function toNotificationDto(
             notification.messageId,
 
             productId:
-                (notification.metadata as any)?.productId ?? null,
+                metadata?.productId ?? null,
 
             orderId:
-                (notification.metadata as any)?.orderId ?? null,
+                metadata?.orderId ?? null,
 
             data:
-                (notification.metadata as any)?.data ?? {},
+                metadata?.data ?? {},
         },
 
         createdAt:

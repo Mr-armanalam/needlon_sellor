@@ -12,7 +12,7 @@ interface CreateCampaignModalProps {
 
 export default function CreateCampaignModal({ isOpen, onClose, onSubmit }: CreateCampaignModalProps) {
   const [name, setName] = useState('');
-  const [channel, setChannel] = useState<'WHATSAPP' | 'INSTAGRAM' | 'GOOGLE' | 'EMAIL' | 'CUSTOM'>('WHATSAPP');
+  const [channel, setChannel] = useState<CreateCampaignDto['channel']>('WHATSAPP');
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -66,7 +66,7 @@ export default function CreateCampaignModal({ isOpen, onClose, onSubmit }: Creat
             <label className="block text-xs font-semibold text-gray-700 mb-1">Target Channel</label>
             <select
               value={channel}
-              onChange={(e: any) => setChannel(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setChannel(e.target.value as CreateCampaignDto['channel'])}
               className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             >
               <option value="WHATSAPP">WhatsApp Blast</option>

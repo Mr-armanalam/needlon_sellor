@@ -1,7 +1,7 @@
-import { ProductRepository } from "../../product/repositories/product-repository";
+import { ProductRepository, type QueryProductsParams } from "../../product/repositories/product-repository";
 import { transformDbProductToDto } from "../../product/services/product-transformer";
 
-async function fetchDbProducts(params: any = {}) {
+async function fetchDbProducts(params: QueryProductsParams = {}) {
   if (!process.env.DATABASE_URL) return [];
   try {
     const rows = await ProductRepository.getProducts(params);

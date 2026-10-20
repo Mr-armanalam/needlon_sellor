@@ -11,6 +11,12 @@ function isValidUuid(id: string): boolean {
   return typeof id === "string" && UUID_REGEX.test(id);
 }
 
+/** A guest (localStorage) wishlist entry: only the product reference is used when syncing. */
+export interface GuestWishlistItemInput {
+  id?: string;
+  productId?: string;
+}
+
 export interface WishlistItemDto {
   id: string;
   productId: string;
@@ -159,7 +165,7 @@ export const WishlistService = {
   /**
    * Synchronize guest localStorage wishlist items into user's DB wishlist on login.
    */
-  async syncGuestWishlist(userId: string, guestItems: any[]) {
+  async syncGuestWishlist(userId: string, guestItems: GuestWishlistItemInput[]) {
     if (!process.env.DATABASE_URL || !isValidUuid(userId) || !Array.isArray(guestItems) || guestItems.length === 0) {
       return { success: true, count: 0 };
     }

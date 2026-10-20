@@ -55,9 +55,9 @@ export const authOptions: NextAuthConfig = {
             name: user.name,
             image: user.imageUrl ?? "",
           };
-        } catch (error: any) {
+        } catch (error) {
           console.error("Authorize error:", error);
-          throw new Error(error.message);
+          throw new Error(error instanceof Error ? error.message : "Unknown error");
         }
       },
     }),

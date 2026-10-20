@@ -19,9 +19,10 @@ import { Button } from "@/components/ui/button";
 import { Address } from "@/types/address";
 import { ChooseAddress } from "@/modules/cart/components/choose-address";
 import { StripeEmbeddedCheckoutWidget } from "../ui/stripe-embedded-checkout";
+import type { CheckoutCartItem } from "../services/map-cart-to-line-items";
 
 interface CheckoutViewProps {
-  cart: any[];
+  cart: CheckoutCartItem[];
   userId: string;
   userEmail?: string;
   userName?: string;
@@ -49,7 +50,7 @@ export default function CheckoutView({
       const found = addresses.find((a) => a.id === initialAddressId);
       if (found) return found;
     }
-    const defaultAddr = addresses.find((a) => (a as any).isDefault);
+    const defaultAddr = addresses.find((a) => (a as Address & { isDefault?: boolean }).isDefault);
     return defaultAddr || addresses[0];
   });
 
@@ -57,7 +58,7 @@ export default function CheckoutView({
     if (!currentAddress && addresses.length > 0) {
       const savedId = typeof window !== "undefined" ? localStorage.getItem("current-addr") : null;
       const found = savedId ? addresses.find((a) => a.id === savedId) : null;
-      setCurrentAddress(found || addresses.find((a) => (a as any).isDefault) || addresses[0]);
+      setCurrentAddress(found || addresses.find((a) => (a as Address & { isDefault?: boolean }).isDefault) || addresses[0]);
     }
   }, [addresses, currentAddress]);
 

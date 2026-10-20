@@ -12,12 +12,25 @@ export interface PayoutGatewayTransferRequest {
   };
 }
 
+/** Shape of the Stripe Transfer object (or sandbox simulator equivalent)
+ *  whose fields this module reads / persists as the gateway raw response. */
+export interface StripeTransferRawResponse {
+  id: string;
+  object: string;
+  amount: number;
+  currency: string;
+  destination?: string;
+  destination_last4?: string;
+  settled_at?: string;
+  network_status?: string;
+}
+
 export interface PayoutGatewayTransferResult {
   success: boolean;
   gateway: string;
   gatewayPayoutId: string;
   status: "COMPLETED" | "PROCESSING" | "PENDING" | "FAILED";
-  rawResponse: Record<string, any>;
+  rawResponse: StripeTransferRawResponse;
   failureReason?: string;
 }
 
@@ -47,7 +60,7 @@ export class PayoutGatewayService {
           }),
         });
 
-        const data = await response.json();
+        const data: StripeTransferRawResponse = await response.json();
 
         if (response.ok && data.id) {
           return {
@@ -58,10 +71,10 @@ export class PayoutGatewayService {
             rawResponse: data,
           };
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.warn(
           "Stripe Test API call failed, continuing with Sandbox Simulator:",
-          err?.message
+          err instanceof Error ? err.message : undefined
         );
       }
     }

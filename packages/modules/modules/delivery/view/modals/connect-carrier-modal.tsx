@@ -2,12 +2,15 @@
 
 import React, { useState } from 'react';
 import { X, Truck, Key, ShieldCheck } from 'lucide-react';
-import { ConnectCarrierDto } from '../../dto/delivery.dto';
+import {
+  ConnectCarrierDto,
+  ConnectCarrierPartnerDto,
+} from '../../dto/delivery.dto';
 
 interface ConnectCarrierModalProps {
   isOpen: boolean;
   onClose: () => void;
-  partner: any | null;
+  partner: ConnectCarrierPartnerDto | null;
   onSubmit: (dto: ConnectCarrierDto) => Promise<void>;
 }
 

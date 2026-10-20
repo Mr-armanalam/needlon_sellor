@@ -2,6 +2,21 @@ import React from 'react';
 import {DELIVERY_RADIUS_OPTIONS, DELIVERY_WINDOW_OPTIONS} from "@/modules/products/constants";
 import {useAddProductWizard} from "@/modules/products/hooks/use-add-product-wizard";
 
+interface PickupHub {
+    id?: string;
+    hubName: string;
+    address?: string;
+    city?: string;
+    pincode?: string;
+}
+
+interface ShippingPartner {
+    id: string;
+    name?: string;
+    carrierName?: string;
+    serviceType?: string;
+}
+
 const DeliveryLogisticsNode = () => {
     const {
         formData,
@@ -26,7 +41,7 @@ const DeliveryLogisticsNode = () => {
                             value={formData.pickupHubId || ''}
                             onChange={(e) => {
                                 const hubId = e.target.value;
-                                const selected = pickupHubs.find((h: any) => (h.id || h.hubName || 'hub-main-pimpri') === hubId);
+                                const selected = pickupHubs.find((h: PickupHub) => (h.id || h.hubName || 'hub-main-pimpri') === hubId);
                                 if (selected) {
                                     const addr = [selected.hubName, selected.address, selected.city, selected.pincode].filter(Boolean).join(', ');
                                     handleInputChange('pickupHubId', selected.id || selected.hubName || 'hub-main-pimpri');
@@ -38,7 +53,7 @@ const DeliveryLogisticsNode = () => {
                             className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all cursor-pointer"
                         >
                             <option value="">Select registered boutique hub...</option>
-                            {pickupHubs.map((hub: any) => {
+                            {pickupHubs.map((hub: PickupHub) => {
                                 const idVal = hub.id || hub.hubName || 'hub-main-pimpri';
                                 return (
                                     <option key={idVal} value={idVal}>
@@ -67,7 +82,7 @@ const DeliveryLogisticsNode = () => {
                     >
                         <option value="">Default Seller Courier (Auto-assigned)</option>
                         {shippingPartners && shippingPartners.length > 0 ? (
-                            shippingPartners.map((partner: any) => (
+                            shippingPartners.map((partner: ShippingPartner) => (
                                 <option key={partner.id} value={partner.id}>
                                     {partner.name || partner.carrierName} ({partner.serviceType || 'Standard Express'})
                                 </option>

@@ -7,13 +7,19 @@ import { productsTable } from "@/db/schema/catalog/products/table";
 import { usersTable } from "@/db/schema/users";
 import { sellerStore } from "@/db/schema/seller/seller-store";
 import { sellerAddresses } from "@/db/schema/seller/seller-address";
-import { customerMeasurementsTable } from "@/db/schema/customization/measurements";
+import {
+  customerMeasurementsTable,
+  type CustomerMeasurementRecord,
+} from "@/db/schema/customization/measurements";
+import { type TailoringStage } from "@/db/schema/orders/constants";
+import { type PaymentMethod } from "@/db/schema/orders/types";
 import { fittingAppointmentsTable } from "@/db/schema/customization/fitting-appointments";
 import { sellerCustomers } from "@/db/schema/seller/seller-customers";
 import { chatPermissions } from "@/db/schema/messaging/chat-permissions";
 import { notifications } from "@/db/schema/notifications/notification-events";
 import { and, desc, eq, isNull, or, sql } from "drizzle-orm";
 import type { CreateWalkInCustomerDto } from "../dto/walk-in-customer.dto";
+import type { CustomerItemResponseDto } from "../dto/customer.dto";
 import type { RecordInStoreMeasurementDto } from "../dto/in-store-measurement.dto";
 import type { CreateInStoreOrderDto, UpdateTailoringStageDto } from "../dto/create-in-store-order.dto";
 import type {
@@ -79,7 +85,10 @@ export async function getSellerCustomersData(sellerId: string, search?: string) 
     .where(and(...walkInConditions))
     .orderBy(sql`${sellerCustomers.createdAt} DESC`);
 
-  const customerMap = new Map<string, any>();
+  type SellerCustomerMapItem = CustomerItemResponseDto & {
+    customerNotes?: string | null;
+  };
+  const customerMap = new Map<string, SellerCustomerMapItem>();
 
   for (const r of orderRows) {
     if (!r.buyerId) continue;
@@ -102,8 +111,8 @@ export async function getSellerCustomersData(sellerId: string, search?: string) 
 
   for (const w of walkInRows) {
     if (!w.buyerId) continue;
-    if (customerMap.has(w.buyerId)) {
-      const existing = customerMap.get(w.buyerId);
+    const existing = customerMap.get(w.buyerId);
+    if (existing) {
       existing.isWalkIn = true;
       existing.customerNotes = w.customerNotes;
       if (!existing.buyerPhone && w.buyerPhone) {
@@ -159,7 +168,22 @@ export async function getCustomerDetailsRepo(sellerId: string, buyerId: string) 
     .orderBy(sql`${reviewsTable.createdAt} DESC`)
     .limit(10);
 
-  let measurements: any[] = [];
+  type CustomerMeasurementRow = Pick<
+    CustomerMeasurementRecord,
+    | "id"
+    | "orderId"
+    | "gender"
+    | "garmentType"
+    | "measurementUnit"
+    | "essentialMeasurements"
+    | "postureSpecifics"
+    | "fitPreference"
+    | "tailorNotes"
+    | "source"
+    | "status"
+    | "createdAt"
+  >;
+  let measurements: CustomerMeasurementRow[] = [];
   try {
     measurements = await db
       .select({
@@ -396,6 +420,17 @@ export async function createInStoreOrderRepo(sellerId: string, data: CreateInSto
       ? "PARTIALLY_PAID"
       : data.paymentStatus || "PAID";
 
+  // Map the DTO payment method onto the DB `order_payment_method` enum
+  // (in-store cash payments are recorded as COD).
+  const paymentMethodMap: Record<CreateInStoreOrderDto["paymentMethod"], PaymentMethod> = {
+    CASH: "COD",
+    CARD: "CARD",
+    UPI: "UPI",
+    COD: "COD",
+  };
+  const mappedPaymentMethod: PaymentMethod =
+    paymentMethodMap[data.paymentMethod] || "COD";
+
   // 5. Insert order
   const [createdOrder] = await db
     .insert(orders)
@@ -409,7 +444,7 @@ export async function createInStoreOrderRepo(sellerId: string, data: CreateInSto
       tailoringStage: data.tailoringStage || "ORDER_PLACED",
       tailoringNotes: data.tailoringNotes || null,
       paymentStatus: mappedPaymentStatus,
-      paymentMethod: (data.paymentMethod === "CASH" ? "COD" : (data.paymentMethod as any)) || "COD",
+      paymentMethod: mappedPaymentMethod,
       shippingMethod: "STANDARD",
       priority: "NORMAL",
       source: "IN_STORE",
@@ -821,13 +856,13 @@ export async function updateFittingAppointmentRepo(
 
   // If advanceTailoringStage is requested:
   if (data.advanceTailoringStage) {
-    const nextStage = data.alterationsRequired ? "IN_CUTTING" : "FINAL_STITCH";
+    const nextStage: TailoringStage = data.alterationsRequired ? "IN_CUTTING" : "FINAL_STITCH";
     const nextNotes = data.alterationsRequired
       ? `Alteration adjustments: ${data.alterationDetails || "Adjustment noted during fitting."}`
       : "Trial fitting approved by client. Proceeding to final stitch & hand-finishing.";
 
     await updateTailoringStageRepo(sellerId, existing.orderId, {
-      stage: nextStage as any,
+      stage: nextStage,
       notes: nextNotes,
     });
   }

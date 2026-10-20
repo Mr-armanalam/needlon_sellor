@@ -1,11 +1,18 @@
 import { apiFetch } from "@/modules/auth/lib/auth-client";
 import { useState, useEffect, useCallback } from "react";
-import { ShipmentResponseDto, ConnectCarrierDto } from "../dto/delivery.dto";
+import {
+  ShipmentResponseDto,
+  ConnectCarrierDto,
+  CreateShipmentOrderDto,
+  ShippingPartnerWithMethodsDto,
+  DeliverySettingsDto,
+  UpdateDeliverySettingsDataDto,
+} from "../dto/delivery.dto";
 
 export function useDelivery(options?: { statusFilter?: string }) {
-  const [partners, setPartners] = useState<any[]>([]);
+  const [partners, setPartners] = useState<ShippingPartnerWithMethodsDto[]>([]);
   const [shipments, setShipments] = useState<ShipmentResponseDto[]>([]);
-  const [settings, setSettings] = useState<any>(null);
+  const [settings, setSettings] = useState<DeliverySettingsDto | null>(null);
   const [counts, setCounts] = useState({ total: 0, inTransit: 0, delivered: 0, pending: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,8 +41,12 @@ export function useDelivery(options?: { statusFilter?: string }) {
       if (settingsJson.success && settingsJson.data) {
         setSettings(settingsJson.data);
       }
-    } catch (err: any) {
-      setError(err.message || "Failed to load delivery data");
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error && err.message
+          ? err.message
+          : "Failed to load delivery data"
+      );
     } finally {
       setLoading(false);
     }
@@ -57,7 +68,7 @@ export function useDelivery(options?: { statusFilter?: string }) {
     return json.data;
   };
 
-  const updateDeliverySettings = async (type: "LOCAL_RADIUS" | "PICKUP_HUB" | "SHIPPING_ZONE", data: any) => {
+  const updateDeliverySettings = async (type: "LOCAL_RADIUS" | "PICKUP_HUB" | "SHIPPING_ZONE", data: UpdateDeliverySettingsDataDto) => {
     const res = await apiFetch("/api/seller/delivery/settings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -69,7 +80,7 @@ export function useDelivery(options?: { statusFilter?: string }) {
     return json.data;
   };
 
-  const createShipment = async (dto: any) => {
+  const createShipment = async (dto: CreateShipmentOrderDto) => {
     const res = await apiFetch("/api/seller/delivery/shipments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

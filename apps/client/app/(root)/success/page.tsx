@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, Package, Truck, ArrowRight, ShoppingBag } from "lucide-react";
@@ -68,7 +67,7 @@ export default async function SuccessPage({
               Purchased Items
             </p>
             <ul className="space-y-1.5 text-xs text-stone-700 dark:text-stone-300">
-              {line_items.data.map((item: any, idx: number) => (
+              {line_items.data.map((item, idx: number) => (
                 <li key={idx} className="flex justify-between items-center py-1">
                   <span className="line-clamp-1">{item.description}</span>
                   <span className="font-mono text-stone-500 ml-2">×{item.quantity}</span>

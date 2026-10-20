@@ -316,7 +316,23 @@ async function seedDatabase() {
 
   // 10. Seed Sample Orders
   const [firstProduct] = await db.select().from(productsTable).limit(1);
-  const sampleOrders = [
+
+  // Seed rows are typed from the Drizzle schema's inferred insert types, so
+  // `status` is the `order_status` pgEnum union (shared by `orders.status`
+  // and `order_status_history.toStatus`), not a free-form string.
+  type OrderInsert = typeof orders.$inferInsert;
+  type OrderStatusHistoryInsert = typeof orderStatusHistory.$inferInsert;
+
+  type SampleOrder = {
+    orderNum: string;
+    status: NonNullable<OrderInsert["status"]> &
+      NonNullable<OrderStatusHistoryInsert["toStatus"]>;
+    total: string;
+    buyerName: string;
+    buyerEmail: string;
+  };
+
+  const sampleOrders: SampleOrder[] = [
     { orderNum: "NDL-1001", status: "PENDING", total: "2499.00", buyerName: "Sarah Jenkins", buyerEmail: "sarah@example.com" },
     { orderNum: "NDL-1002", status: "CONFIRMED", total: "3299.00", buyerName: "Alex Rivera", buyerEmail: "alex@example.com" },
     { orderNum: "NDL-1003", status: "PROCESSING", total: "1899.00", buyerName: "Priya Sharma", buyerEmail: "priya@example.com" },
@@ -340,7 +356,7 @@ async function seedDatabase() {
           storeId: storeRow.id,
           shippingAddressId: sellerAddrRow.id,
           orderNumber: o.orderNum,
-          status: o.status as any,
+          status: o.status,
           paymentStatus: o.status === "DELIVERED" ? "PAID" : "PENDING",
           paymentMethod: "COD",
           shippingMethod: "STANDARD",
@@ -383,7 +399,7 @@ async function seedDatabase() {
         orderId: orderRow.id,
         sellerId: sellerRow.id,
         fromStatus: "PENDING",
-        toStatus: o.status as any,
+        toStatus: o.status,
         action: "UPDATED",
         source: "SYSTEM",
         remarks: `Order created with initial status ${o.status}`,

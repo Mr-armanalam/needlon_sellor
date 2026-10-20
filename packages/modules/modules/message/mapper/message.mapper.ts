@@ -7,12 +7,73 @@
 // ============================================================================
 
 import {
+    sharedOrdersTable,
+    sharedProductsTable,
+} from "@/db/schema/messages";
+
+import {
     MessageAttachmentDto,
     MessageDto,
     MessageReactionDto,
     MessageSenderDto,
     ReplyMessageDto,
 } from "../dto";
+
+/**
+ * Product snapshot shared inside a message, as hydrated by
+ * MessageService from a sharedProductsTable row (prices parsed
+ * from their stored numeric strings into numbers).
+ */
+export type SharedProductSnapshot = Pick<
+    typeof sharedProductsTable.$inferSelect,
+    | "id"
+    | "productId"
+    | "productName"
+    | "slug"
+    | "sku"
+    | "brand"
+    | "thumbnailUrl"
+    | "currency"
+> & {
+    sellingPrice: number;
+
+    mrp: number | null;
+};
+
+/**
+ * Order snapshot shared inside a message, as hydrated by
+ * MessageService from a sharedOrdersTable row (total parsed
+ * from its stored numeric string into a number).
+ */
+export type SharedOrderSnapshot = Pick<
+    typeof sharedOrdersTable.$inferSelect,
+    | "id"
+    | "orderId"
+    | "orderNumber"
+    | "buyerName"
+    | "sellerName"
+    | "currency"
+    | "status"
+    | "deliveryStatus"
+    | "paymentStatus"
+    | "trackingNumber"
+    | "courierName"
+> & {
+    totalAmount: number;
+};
+
+/**
+ * MessageDto shape actually produced by this mapper: the shared
+ * product / order are the snapshots above, passed through as-is.
+ */
+export type MappedMessageDto = Omit<
+    MessageDto,
+    "sharedProduct" | "sharedOrder"
+> & {
+    sharedProduct: SharedProductSnapshot | null;
+
+    sharedOrder: SharedOrderSnapshot | null;
+};
 
 interface MessageSenderEntity {
     id: string;
@@ -69,9 +130,9 @@ interface MessageEntity {
 
     deletedAt: Date | null;
 
-    sharedProduct: any | null;
+    sharedProduct: SharedProductSnapshot | null;
 
-    sharedOrder: any | null;
+    sharedOrder: SharedOrderSnapshot | null;
 }
 
 function toMessageSenderDto(
@@ -108,7 +169,7 @@ function toReplyMessageDto(
 
 export function toMessageDto(
     message: MessageEntity,
-): MessageDto {
+): MappedMessageDto {
     return {
         id:
         message.id,

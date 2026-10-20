@@ -54,7 +54,7 @@ export function useProducts(
       if (id.includes("-")) {
         await deleteMutation.mutateAsync(id);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to delete product:", err);
     }
   };
@@ -64,7 +64,7 @@ export function useProducts(
       if (id.includes("-")) {
         await duplicateMutation.mutateAsync(id);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to duplicate product:", err);
     }
   };

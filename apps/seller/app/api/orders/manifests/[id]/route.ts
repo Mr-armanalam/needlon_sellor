@@ -3,6 +3,16 @@ import { getCurrentSeller } from "@/modules/auth/lib/get-current-seller";
 import { getManifestDataById } from "@/modules/orders/documents/services/manifest-service";
 import { generateManifestHTML } from "@/modules/orders/documents/templates/manifest-generator";
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = (error as { message: unknown }).message;
+    return typeof message === "string" ? message : "";
+  }
+  return "";
+}
+
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -28,9 +38,9 @@ export async function GET(
         html,
       },
     });
-  } catch (err: any) {
+  } catch (err) {
     return NextResponse.json(
-      { success: false, error: { code: "INTERNAL_ERROR", message: err.message || "Failed to fetch manifest" } },
+      { success: false, error: { code: "INTERNAL_ERROR", message: getErrorMessage(err) || "Failed to fetch manifest" } },
       { status: 500 }
     );
   }

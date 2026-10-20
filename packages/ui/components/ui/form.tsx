@@ -14,7 +14,19 @@ import {
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 
-const Form: any = FormProvider;
+/**
+ * `Form` is react-hook-form's `FormProvider` itself, re-exported without a
+ * type assertion so its generics are preserved:
+ *
+ *   <TFieldValues extends FieldValues, TContext, TTransformedValues>
+ *     (props: UseFormReturn<TFieldValues, TContext, TTransformedValues> & {
+ *       children: React.ReactNode;
+ *     }) => JSX.Element
+ *
+ * Consumers can therefore spread a typed form directly —
+ * `<Form {...form}>` where `form: UseFormReturn<SomeSchema>` — with no cast.
+ */
+const Form = FormProvider;
 
 type FormFieldContextValue<
   TFieldValues extends FieldValues = FieldValues,
@@ -27,25 +39,26 @@ const FormFieldContext = React.createContext<FormFieldContextValue>(
   {} as FormFieldContextValue
 );
 
+/**
+ * Fully generic over the form's field values: `control` is
+ * `Control<TFieldValues, TContext, TTransformedValues>`, and `render`
+ * receives `ControllerRenderProps<TFieldValues, TName>`,
+ * `ControllerFieldState` and `UseFormStateReturn<TFieldValues>` —
+ * exactly react-hook-form's own `ControllerProps`. `TFieldValues` /
+ * `TName` are inferred from `control` / `name`, so a consumer passing
+ * `control={form.control}` for `UseFormReturn<SomeSchema>` gets a
+ * correctly typed `field` with no cast.
+ */
 const FormField = <
   TFieldValues extends FieldValues = FieldValues,
-  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
->(props: {
-  control?: any;
-  name: TName;
-  render: (props: {
-    field: any;
-    fieldState?: any;
-    formState?: any;
-  }) => React.ReactElement;
-  defaultValue?: any;
-  shouldUnregister?: boolean;
-  rules?: any;
-  disabled?: boolean;
-}) => {
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+  TTransformedValues = TFieldValues
+>(
+  props: ControllerProps<TFieldValues, TName, TTransformedValues>
+) => {
   return (
     <FormFieldContext.Provider value={{ name: props.name }}>
-      <Controller {...(props as any)} />
+      <Controller {...props} />
     </FormFieldContext.Provider>
   );
 };

@@ -166,7 +166,7 @@ const FilterDrawer: React.FC<FilterDrawerProps> = ({
                       {group.name}
                     </AccordionTrigger>
                     <AccordionContent className="pt-2 pb-4 space-y-4">
-                      {group.options.map((option: any) => (
+                      {group.options.map((option) => (
                         <div
                           key={option.id}
                           className="flex items-center space-x-3 group"

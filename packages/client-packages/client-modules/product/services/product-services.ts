@@ -1,4 +1,4 @@
-import { ProductRepository } from "../repositories/product-repository";
+import { ProductRepository, type QueryProductsParams } from "../repositories/product-repository";
 import { transformDbProductToDto } from "./product-transformer";
 
 export const ProductService = {
@@ -13,7 +13,7 @@ export const ProductService = {
         const rows = await ProductRepository.getProducts({
           categoryType,
           subcatSlug,
-          sort: sort as any,
+          sort: sort as QueryProductsParams["sort"],
           attributeFilters,
           limit: 50,
         });

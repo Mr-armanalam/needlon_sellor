@@ -1,4 +1,7 @@
 import { z } from "zod";
+import type { sellerSubscriptions } from "@/db/schema/subscription/seller-subscription";
+import type { subscriptionPayments } from "@/db/schema/subscription/subscription-payment";
+import type { subscriptionInvoices } from "@/db/schema/subscription/subscription-invoice";
 
 export const updateSubscriptionSchema = z.object({
   planId: z.string().uuid("Invalid plan ID"),
@@ -19,6 +22,18 @@ export const billingLedgerQuerySchema = z.object({
 
 export type UpdateSubscriptionDto = z.infer<typeof updateSubscriptionSchema>;
 export type BillingLedgerQueryDto = z.infer<typeof billingLedgerQuerySchema>;
+
+export type SellerSubscriptionRecord = (typeof sellerSubscriptions)["$inferSelect"];
+export type SubscriptionPaymentRecord = (typeof subscriptionPayments)["$inferSelect"];
+export type SubscriptionInvoiceRecord = (typeof subscriptionInvoices)["$inferSelect"];
+
+/** Data payload returned by a successful subscription plan update. */
+export interface UpdateSubscriptionResultDto {
+  success: boolean;
+  subscription?: SellerSubscriptionRecord;
+  payment?: SubscriptionPaymentRecord | null;
+  invoice?: SubscriptionInvoiceRecord | null;
+}
 
 export interface SubscriptionPlanDto {
   id: string;

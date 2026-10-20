@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import * as dotenv from "dotenv";
 import path from "path";
+import type { AuthSeller } from "@/types/auth";
 
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 
@@ -24,11 +25,13 @@ async function runCustomVariantsBugFixTests() {
   console.log("🎨 Starting Custom Color & Fabric Material Bug Fix Validation Tests...\n");
 
   const TEST_SELLER_ID = "00000000-0000-0000-0000-000000000001";
-  const sellerContext = {
+  const sellerContext: AuthSeller = {
     id: TEST_SELLER_ID,
+    role: "seller",
     name: "Custom Variants Test Seller",
     email: "custom-variants@test.com",
-  } as any;
+    emailVerified: false,
+  };
 
   // 1. Ensure test seller & store exist
   const [existingSeller] = await db.select().from(sellerTable).where(eq(sellerTable.id, TEST_SELLER_ID)).limit(1);
@@ -53,7 +56,7 @@ async function runCustomVariantsBugFixTests() {
   }
 
   const draftService = new DraftProductService();
-  let draftProduct: any = null;
+  let draftProduct: Awaited<ReturnType<InstanceType<typeof DraftProductService>["createDraft"]>> | null = null;
 
   try {
     // -------------------------------------------------------------------------
@@ -90,7 +93,8 @@ async function runCustomVariantsBugFixTests() {
     console.log("\n--- TEST 2: Custom Hex Color Code (#FF5733) & Custom Fabric Persistence ---");
     draftProduct = await draftService.createDraft({
       sellerId: TEST_SELLER_ID,
-    } as any);
+      storeId: TEST_SELLER_ID,
+    });
     console.log(`✅ Draft product created: ${draftProduct.id}`);
 
     // Update variants with hex color code and custom fabric

@@ -9,13 +9,38 @@ export const createSupportTicketSchema = z.object({
 
 export type CreateSupportTicketDto = z.infer<typeof createSupportTicketSchema>;
 
+export type SupportTicketCategory = CreateSupportTicketDto["category"];
+export type SupportTicketPriority = CreateSupportTicketDto["priority"];
+export type SupportTicketStatus = "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED";
+
 export interface SupportTicketResponseDto {
   id: string;
   ticketNumber: string;
   subject: string;
   category: string;
   priority: string;
-  status: "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED";
+  status: SupportTicketStatus;
   message: string;
   createdAt: string;
+}
+
+/** One entry in a ticket conversation timeline (row of `supportTicketMessages`, JSON-serialised). */
+export interface SupportTicketTimelineItem {
+  id: string;
+  ticketId?: string;
+  senderType: string;
+  senderName: string;
+  message: string;
+  createdAt: string;
+  /** Legacy/alternate field names read by the timeline view. */
+  text?: string;
+  time?: string;
+}
+
+/** Ticket returned by the ticket-details endpoint: the ticket row plus its timeline. */
+export interface SupportTicketDetailsDto extends SupportTicketResponseDto {
+  sellerId?: string;
+  assignedAgent?: string;
+  updatedAt?: string;
+  timeline?: SupportTicketTimelineItem[];
 }

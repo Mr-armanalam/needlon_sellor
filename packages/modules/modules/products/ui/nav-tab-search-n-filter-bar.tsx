@@ -5,6 +5,11 @@ import {useQuery} from "@tanstack/react-query";
 import {productKeys} from "@/modules/products/keys";
 import {fetchCategoriesClient} from "@/modules/products/api/product-client";
 
+interface CategoryListItem {
+    id: string;
+    name: string;
+}
+
 const NavTabSearchNFilterBar = () => {
 
     const {
@@ -79,7 +84,7 @@ const NavTabSearchNFilterBar = () => {
                         className="px-3 py-2 bg-white border border-neutral-200/60 hover:border-neutral-400 text-neutral-600 hover:text-neutral-900 text-[12px] font-medium rounded-xl transition-all duration-200 outline-none cursor-pointer"
                     >
                         <option value="Category">Category</option>
-                        {categoriesList.map((cat: any) => (
+                        {categoriesList.map((cat: CategoryListItem) => (
                             <option key={cat.id} value={cat.name}>{cat.name}</option>
                         ))}
                     </select>

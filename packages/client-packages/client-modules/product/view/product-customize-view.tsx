@@ -135,7 +135,7 @@ export default function ProductCustomizeView({
       customerEmail: session?.user?.email || undefined,
       customerName: session?.user?.name || undefined,
       productId: productData.id,
-      sellerId: (productData as any).sellerId || (productData as any).storeId || undefined,
+      sellerId: (productData as DetailedProductResponse & { sellerId?: string; storeId?: string }).sellerId || (productData as DetailedProductResponse & { sellerId?: string; storeId?: string }).storeId || undefined,
       gender,
       garmentType: garmentKey,
       measurementUnit: unit,
@@ -462,7 +462,7 @@ export default function ProductCustomizeView({
                       <button
                         key={fit.key}
                         type="button"
-                        onClick={() => setFitPreference(fit.key as any)}
+                        onClick={() => setFitPreference(fit.key as "SLIM" | "REGULAR" | "COMFORT")}
                         className={`p-3 rounded-xl border text-left transition cursor-pointer ${
                           fitPreference === fit.key
                             ? "border-black bg-stone-50 dark:border-[#D4AF37] dark:bg-stone-900/90"

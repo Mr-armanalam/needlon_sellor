@@ -14,7 +14,10 @@ import {
   ShieldCheck,
   Zap,
 } from 'lucide-react';
-import { SubscriptionPlanDto } from '../dto/subscription.dto';
+import {
+  SubscriptionPlanDto,
+  UpdateSubscriptionResultDto,
+} from '../dto/subscription.dto';
 
 interface UpgradePlanModalProps {
   isOpen: boolean;
@@ -30,7 +33,7 @@ interface UpgradePlanModalProps {
       cardholderName?: string;
       gatewayToken?: string;
     }
-  ) => Promise<{ success: boolean; error?: string; data?: any }>;
+  ) => Promise<{ success: boolean; error?: string; data?: UpdateSubscriptionResultDto }>;
 }
 
 export default function UpgradePlanModal({

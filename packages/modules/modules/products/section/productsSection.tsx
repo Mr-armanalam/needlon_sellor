@@ -2,12 +2,25 @@
 
 
 import { apiFetch } from "@/modules/auth/lib/auth-client";
+import type { ProductCardViewModel, ProductVisibility } from '../types';
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Plus, SlidersHorizontal, Eye, Heart, ShoppingBag, Edit3, Share2, Copy, 
   Trash2, ChevronDown, ArrowLeft, Sparkles, Upload, Check, ArrowRight, 
   ChevronLeft, Star, Search, ArrowUpDown, Layers, Info, Image, HelpCircle 
 } from 'lucide-react';
+
+/** Shape of one item returned by GET /api/seller/products (`json.data.items`),
+ *  covering exactly the fields read by the mapper in fetchProducts below. */
+interface SellerProductApiItem {
+  id: string;
+  name: string;
+  shortDescription?: string | null;
+  status?: string;
+  category?: { name?: string } | null;
+  variants?: Array<{ price?: string | number }>;
+  inventory?: { quantity?: number } | null;
+}
 
 const INITIAL_PRODUCTS = [
   {
@@ -67,13 +80,13 @@ const DEFAULT_FORM_DATA = {
   deliveryRadiusRange: 'Nationwide Shipping',
   estimatedDeliveryWindow: '3 - 5 business days delivery timeline',
   searchKeywords: 'handloom, chikankari, festive kurti, cotton apparel',
-  customVisibility: 'PUBLIC' as const,
+  customVisibility: 'PUBLIC' as ProductVisibility,
   mediaUrls: [] as string[],
 };
 
 export default function ProductManagement() {
   const [viewMode, setViewMode] = useState<'shelf' | 'wizard'>('shelf');
-  const [products, setProducts] = useState<any[]>(INITIAL_PRODUCTS);
+  const [products, setProducts] = useState<ProductCardViewModel[]>(INITIAL_PRODUCTS);
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentStep, setCurrentStep] = useState(1);
@@ -105,7 +118,7 @@ export default function ProductManagement() {
       if (res.ok) {
         const json = await res.json();
         if (json.data?.items) {
-          const mapped = json.data.items.map((item: any) => {
+          const mapped = json.data.items.map((item: SellerProductApiItem) => {
             const primaryVariant = item.variants?.[0];
             const priceVal = primaryVariant?.price ? `₹${Number(primaryVariant.price).toLocaleString()}` : '₹0';
             const stockVal = primaryVariant ? (item.inventory?.quantity ?? 14) : 0;
@@ -149,7 +162,7 @@ export default function ProductManagement() {
   const handleNextStep = () => { if (currentStep < wizardSteps.length) setCurrentStep(prev => prev + 1); };
   const handleBackStep = () => { if (currentStep > 1) setCurrentStep(prev => prev - 1); };
 
-  const handleInputChange = (field: keyof typeof DEFAULT_FORM_DATA, value: any) => {
+  const handleInputChange = <K extends keyof typeof DEFAULT_FORM_DATA>(field: K, value: (typeof DEFAULT_FORM_DATA)[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -198,7 +211,7 @@ export default function ProductManagement() {
     }
   };
 
-  const handleDuplicate = (product: any) => {
+  const handleDuplicate = (product: ProductCardViewModel) => {
     setProducts(prev => [...prev, { ...product, id: `copy-${Date.now()}`, name: `${product.name} (Copy)` }]);
   };
 
@@ -751,7 +764,7 @@ export default function ProductManagement() {
                         type="text" 
                         placeholder="Public (Visible to everyone on index shelves)" 
                         value={formData.customVisibility}
-                        onChange={(e) => handleInputChange('customVisibility', e.target.value)}
+                        onChange={(e) => handleInputChange('customVisibility', e.target.value as ProductVisibility)}
                         className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all" 
                       />
                     </div>

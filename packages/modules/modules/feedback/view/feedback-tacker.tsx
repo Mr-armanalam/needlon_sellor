@@ -104,7 +104,7 @@ export default function FeedbackTracker() {
           <div className="p-8 text-center text-xs text-gray-400">No support or feedback tickets submitted yet.</div>
         ) : (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
-            {trackerItems.map((log: any) => (
+            {trackerItems.map((log) => (
               <div
                 key={log.id}
                 className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-medium"

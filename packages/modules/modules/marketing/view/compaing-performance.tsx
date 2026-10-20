@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Megaphone, Users, Eye, ArrowUpRight, Plus } from 'lucide-react';
 import { useCampaigns } from '../hooks/use-marketing';
+import { CreateCampaignDto } from '../dto/marketing.dto';
 import CreateCampaignModal from './modals/create-campaign-modal';
 
 interface CampaignPerformanceProps {
@@ -18,7 +19,7 @@ export default function CampaignPerformance({ onOpenCampaignModal }: CampaignPer
     { id: '2', name: 'WhatsApp Referral Push', reach: '3,200 clicks', conversions: '41 signups', trend: '+8.2%', status: 'Active' }
   ];
 
-  const handleCreate = async (dto: any) => {
+  const handleCreate = async (dto: CreateCampaignDto) => {
     await createCampaign(dto);
   };
 

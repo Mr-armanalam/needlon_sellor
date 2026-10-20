@@ -2,6 +2,10 @@ import { apiFetch } from "@/modules/auth/lib/auth-client";
 import { useState, useEffect, useCallback } from "react";
 import { DashboardOverviewResponseDto } from "../dto/dashboard.dto";
 
+function getErrorMessage(err: unknown, fallback: string): string {
+  return err instanceof Error && err.message ? err.message : fallback;
+}
+
 export function useDashboard() {
   const [data, setData] = useState<DashboardOverviewResponseDto | null>(null);
   const [loading, setLoading] = useState(true);
@@ -19,8 +23,8 @@ export function useDashboard() {
       } else {
         setError(json.error?.message || "Failed to load dashboard overview");
       }
-    } catch (err: any) {
-      setError(err.message || "Network error fetching dashboard");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Network error fetching dashboard"));
     } finally {
       setLoading(false);
     }
@@ -45,8 +49,8 @@ export function useDashboard() {
         return { success: true };
       }
       return { success: false, message: json.error?.message || "Failed to confirm order" };
-    } catch (err: any) {
-      return { success: false, message: err.message || "Network error" };
+    } catch (err: unknown) {
+      return { success: false, message: getErrorMessage(err, "Network error") };
     } finally {
       setActionLoadingMap((prev) => ({ ...prev, [orderId]: false }));
     }
@@ -66,8 +70,8 @@ export function useDashboard() {
         return { success: true };
       }
       return { success: false, message: json.error?.message || "Failed to decline order" };
-    } catch (err: any) {
-      return { success: false, message: err.message || "Network error" };
+    } catch (err: unknown) {
+      return { success: false, message: getErrorMessage(err, "Network error") };
     } finally {
       setActionLoadingMap((prev) => ({ ...prev, [orderId]: false }));
     }
@@ -85,8 +89,8 @@ export function useDashboard() {
         return { success: true, product: json.data };
       }
       return { success: false, message: json.error?.message || "Failed to duplicate product" };
-    } catch (err: any) {
-      return { success: false, message: err.message || "Network error" };
+    } catch (err: unknown) {
+      return { success: false, message: getErrorMessage(err, "Network error") };
     } finally {
       setActionLoadingMap((prev) => ({ ...prev, [`dup-${productId}`]: false }));
     }

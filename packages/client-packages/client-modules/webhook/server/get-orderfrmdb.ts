@@ -5,7 +5,21 @@ import { orders } from "@needlon/db/db/schema/orders/table";
 import { orderItems } from "@needlon/db/db/schema/orders/order-items/table";
 import { orderPayments } from "@needlon/db/db/schema/orders/order-payments/table";
 import { eq, or } from "drizzle-orm";
-import { OrderCreationService } from "@/modules/orders/services/order-creation-service";
+import { OrderCreationService, type CheckoutOrderItem } from "@/modules/orders/services/order-creation-service";
+
+/** Compact cart summary stored in Stripe session metadata (single-letter keys). */
+interface CartSummaryItem {
+  p: string;
+  q: number;
+  s?: string;
+  c?: string;
+  pr: number;
+  n: string;
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "";
+}
 import { CartService } from "@/modules/cart/services/cart-service";
 
 export const getOrderFromDB = async (sessionId: string) => {
@@ -64,7 +78,11 @@ export const getOrderFromDB = async (sessionId: string) => {
     if (sessionId.startsWith("cs_") && stripeKey && !stripeKey.includes("placeholder") && stripeKey.startsWith("sk_")) {
       try {
         const Stripe = (await import("stripe")).default;
-        const stripe = new Stripe(stripeKey, { apiVersion: "2024-12-18.acacia" as any });
+        const stripe = new Stripe(stripeKey, {
+          // Pinned legacy API version (preserved from the original code); asserted to the
+          // installed SDK's LatestApiVersion type.
+          apiVersion: "2024-12-18.acacia" as import("stripe").Stripe.LatestApiVersion,
+        });
         const session = await stripe.checkout.sessions.retrieve(sessionId, { expand: ["line_items"] });
 
         if (session && session.payment_status === "paid") {
@@ -74,12 +92,12 @@ export const getOrderFromDB = async (sessionId: string) => {
           const couponCode = metadata.couponCode;
           const couponDiscount = Number(metadata.couponDiscount) || 0;
 
-          let cartItems: any[] = [];
+          let cartItems: CheckoutOrderItem[] = [];
           if (metadata.cartSummary) {
             try {
-              const parsed = JSON.parse(metadata.cartSummary);
+              const parsed: unknown = JSON.parse(metadata.cartSummary);
               if (Array.isArray(parsed)) {
-                cartItems = parsed.map((it: any) => ({
+                cartItems = (parsed as CartSummaryItem[]).map((it) => ({
                   productId: it.p,
                   quantity: it.q,
                   size: it.s,
@@ -98,7 +116,7 @@ export const getOrderFromDB = async (sessionId: string) => {
           }
 
           if (cartItems.length === 0 && session.line_items?.data) {
-            cartItems = session.line_items.data.map((li: any) => ({
+            cartItems = session.line_items.data.map((li) => ({
               productId: li.id,
               quantity: li.quantity || 1,
               price: (li.amount_total || 249900) / 100 / (li.quantity || 1),
@@ -153,8 +171,8 @@ export const getOrderFromDB = async (sessionId: string) => {
             };
           }
         }
-      } catch (stripeErr: any) {
-        console.warn("Direct Stripe session reconciliation warning:", stripeErr.message);
+      } catch (stripeErr) {
+        console.warn("Direct Stripe session reconciliation warning:", getErrorMessage(stripeErr));
       }
     }
 

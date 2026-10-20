@@ -18,8 +18,8 @@ export function useNotifications() {
         setNotifications(json.data.notifications || []);
         setUnreadCount(json.data.unreadCount || 0);
       }
-    } catch (err: any) {
-      setError(err.message || "Failed to load notifications");
+    } catch (err: unknown) {
+      setError(err instanceof Error && err.message ? err.message : "Failed to load notifications");
     } finally {
       setLoading(false);
     }

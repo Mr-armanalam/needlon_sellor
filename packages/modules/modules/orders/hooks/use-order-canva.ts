@@ -1,5 +1,6 @@
 import {useEffect, useState} from "react";
 import {fetchOrdersClient} from "@/modules/orders/api/order-client";
+import type {OrderListItemDto} from "@/modules/orders/dto";
 
 const TAB_MAP: Record<string, string> = {
     'New': 'NEW',
@@ -17,7 +18,7 @@ export const useOrderCanva = ()=> {
 
     const [activeTab, setActiveTab] = useState('New');
     const [searchQuery, setSearchQuery] = useState('');
-    const [orders, setOrders] = useState<any[]>([]);
+    const [orders, setOrders] = useState<OrderListItemDto[]>([]);
     const [counts, setCounts] = useState<Record<string, number>>({
         NEW: 0,
         ACCEPTED: 0,
@@ -51,8 +52,8 @@ export const useOrderCanva = ()=> {
                     setOrders(response.data.items || []);
                     setCounts(response.data.counts || {});
                 }
-            } catch (err: any) {
-                setError(err.message || 'Failed to fetch orders');
+            } catch (err: unknown) {
+                setError(err instanceof Error && err.message ? err.message : 'Failed to fetch orders');
             } finally {
                 setLoading(false);
             }

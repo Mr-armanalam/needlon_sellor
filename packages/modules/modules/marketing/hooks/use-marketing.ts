@@ -18,8 +18,8 @@ export function useCoupons() {
       } else {
         setError(json.error?.message || "Failed to load coupons");
       }
-    } catch (err: any) {
-      setError(err.message || "Network error loading coupons");
+    } catch (err: unknown) {
+      setError(err instanceof Error && err.message ? err.message : "Network error loading coupons");
     } finally {
       setLoading(false);
     }
@@ -69,8 +69,8 @@ export function useCampaigns() {
       } else {
         setError(json.error?.message || "Failed to load campaigns");
       }
-    } catch (err: any) {
-      setError(err.message || "Network error loading campaigns");
+    } catch (err: unknown) {
+      setError(err instanceof Error && err.message ? err.message : "Network error loading campaigns");
     } finally {
       setLoading(false);
     }
@@ -111,8 +111,8 @@ export function useReferrals() {
       } else {
         setError(json.error?.message || "Failed to load referral program");
       }
-    } catch (err: any) {
-      setError(err.message || "Network error loading referral program");
+    } catch (err: unknown) {
+      setError(err instanceof Error && err.message ? err.message : "Network error loading referral program");
     } finally {
       setLoading(false);
     }

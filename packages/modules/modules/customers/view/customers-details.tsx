@@ -22,15 +22,34 @@ export interface CustomerDetailProps {
   onOpenChat: () => void;
 }
 
+interface SelectedOrderForStage {
+  id: string;
+  orderNumber: string;
+  stage: string;
+  notes?: string | null;
+}
+
+interface SelectedOrderForFitting {
+  id: string;
+  orderNumber: string;
+}
+
+interface SelectedOrderForHandover {
+  id: string;
+  orderNumber: string;
+  total: string;
+  paymentStatus: string;
+}
+
 export default function CustomerDetail({ customer, onOpenChat }: CustomerDetailProps) {
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
   const [isInStoreOrderOpen, setIsInStoreOrderOpen] = useState(false);
   const [isUpdateStageOpen, setIsUpdateStageOpen] = useState(false);
-  const [selectedOrderForStage, setSelectedOrderForStage] = useState<any>(null);
+  const [selectedOrderForStage, setSelectedOrderForStage] = useState<SelectedOrderForStage | null>(null);
   const [isFittingModalOpen, setIsFittingModalOpen] = useState(false);
-  const [selectedOrderForFitting, setSelectedOrderForFitting] = useState<any>(null);
+  const [selectedOrderForFitting, setSelectedOrderForFitting] = useState<SelectedOrderForFitting | null>(null);
   const [isHandoverModalOpen, setIsHandoverModalOpen] = useState(false);
-  const [selectedOrderForHandover, setSelectedOrderForHandover] = useState<any>(null);
+  const [selectedOrderForHandover, setSelectedOrderForHandover] = useState<SelectedOrderForHandover | null>(null);
   const [isChatPermissionModalOpen, setIsChatPermissionModalOpen] = useState(false);
   const { data, loading, refetch } = useCustomerDetails(customer?.id);
 
@@ -272,7 +291,7 @@ export default function CustomerDetail({ customer, onOpenChat }: CustomerDetailP
                 No recent order history found for this customer.
               </div>
             ) : (
-              history.map((order: any) => (
+              history.map((order) => (
                 <div key={order.id} className="p-4 flex items-center justify-between text-xs">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
@@ -294,10 +313,12 @@ export default function CustomerDetail({ customer, onOpenChat }: CustomerDetailP
                         </span>
                         <button
                           onClick={() => {
+                            const { tailoringStage } = order;
+                            if (!tailoringStage) return;
                             setSelectedOrderForStage({
                               id: order.orderId,
                               orderNumber: order.id,
-                              stage: order.tailoringStage,
+                              stage: tailoringStage,
                               notes: order.tailoringNotes,
                             });
                             setIsUpdateStageOpen(true);

@@ -5,8 +5,55 @@ import { inventoryTable } from "@/db/schema/catalog/products/inventory/table";
 import { pricingTable } from "@/db/schema/catalog/products/pricing/table";
 import { categoriesTable } from "@/db/schema/catalog/categories/table";
 import { productImagesTable } from "@/db/schema/catalog/products/product-images/table";
-import { and, eq, ilike, isNull, isNotNull, or, gte, lte, sql, inArray } from "drizzle-orm";
+import { and, eq, ilike, isNull, isNotNull, or, gte, lte, sql, inArray, type SQL } from "drizzle-orm";
 import {reviewsTable} from "@/db/schema/reviews";
+import type { Product } from "@/db/schema/catalog/products";
+import type { ProductVariant } from "@/db/schema/catalog/products/product-variants/types";
+import type { Inventory } from "@/db/schema/catalog/products/inventory/types";
+import type { Pricing } from "@/db/schema/catalog/products/pricing/types";
+
+interface FilteredProductRow {
+    product: Pick<Product, "id" | "name" | "slug" | "status" | "visibility" | "isFeatured" | "createdAt" | "updatedAt" | "shortDescription">;
+    category: { name: string } | null;
+    variant?: { id: string | null; sku: string | null; weightGrams: number | null } | null;
+    inventory?: { quantity: number | null; lowStockThreshold: number | null } | null;
+    pricing?: { price: string | null; compareAtPrice: string | null } | null;
+}
+
+export interface FilteredProductSummary {
+    id: string;
+    name: string;
+    slug: string;
+    status: Product["status"];
+    visibility: Product["visibility"];
+    isFeatured: boolean | null;
+    createdAt: Date;
+    updatedAt: Date;
+    category: string;
+    shortDescription: string;
+    primaryImage: string | undefined;
+    views: number;
+    likes: number;
+    orders: number;
+    variants: Array<{ id: string; sku: string | null; price: string; compareAtPrice: string | null; weightGrams: number | null }>;
+    inventory: { quantity: number | null; lowStockThreshold?: number | null } | { quantity: number };
+    reviews: number;
+}
+
+type VariantWithLegacyPricing = ProductVariant & { price?: string | null; compareAtPrice?: string | null };
+
+function extractRows<T>(result: unknown): T[] {
+    if (result && typeof result === "object" && "rows" in result) {
+        const rows: unknown = (result as { rows: unknown }).rows;
+        if (Array.isArray(rows)) {
+            return rows as T[];
+        }
+    }
+    if (Array.isArray(result)) {
+        return result as T[];
+    }
+    return [];
+}
 
 export const getFilteredProducts = async (searchParams: URLSearchParams, sellerId: string) => {
 
@@ -19,7 +66,7 @@ export const getFilteredProducts = async (searchParams: URLSearchParams, sellerI
     const stockStatus = searchParams.get("stockStatus"); // e.g. "in_stock", "low_stock", "out_of_stock"
     const sort = searchParams.get("sort"); // e.g. "price_asc", "price_desc", "newest"
 
-    const conditions: any[] = [];
+    const conditions: Array<SQL | undefined> = [];
 
     // Filter by seller store ID
     conditions.push(eq(productsTable.storeId, sellerId));
@@ -100,7 +147,7 @@ export const getFilteredProducts = async (searchParams: URLSearchParams, sellerI
     }
 
     // Dynamic sorting
-    let orderByClause: any = sql`${productsTable.createdAt} DESC`;
+    let orderByClause: SQL = sql`${productsTable.createdAt} DESC`;
     if (sort === "price_asc") {
         orderByClause = sql`${numPrice} ASC`;
     } else if (sort === "price_desc") {
@@ -108,7 +155,7 @@ export const getFilteredProducts = async (searchParams: URLSearchParams, sellerI
     }
 
     // Fetch products joining categories, and variant/pricing/inventory conditionally to optimize performance
-    let rows: any[] = [];
+    let rows: FilteredProductRow[] = [];
     //console.time("  -> [getFilteredProducts] DB SELECT products");
 
     const needsVariants = (search && search.trim() !== "") || (size && size !== "Size") || (priceRange && priceRange !== "Price Range") || (sort === "price_asc" || sort === "price_desc");
@@ -179,7 +226,7 @@ export const getFilteredProducts = async (searchParams: URLSearchParams, sellerI
     //console.timeEnd("  -> [getFilteredProducts] DB SELECT products");
 
     if (rows.length === 0) {
-        return new Map<string, any>();
+        return new Map<string, FilteredProductSummary>();
     }
 
     const productIds = Array.from(new Set(rows.map(row => row.product.id)));
@@ -191,7 +238,7 @@ export const getFilteredProducts = async (searchParams: URLSearchParams, sellerI
         WHERE table_schema = 'public' 
           AND table_name IN ('user_view_history', 'wishlist_items', 'order_items', 'product_media')
     `).catch(() => []);
-    const checkRows = ((checkTables as any)?.rows || checkTables || []) as Array<{ table_name: string }>;
+    const checkRows = extractRows<{ table_name: string }>(checkTables);
     const existingTables = new Set(checkRows.map(r => r.table_name));
 
     // Fetch all bulk data concurrently to save time on network latency
@@ -279,8 +326,8 @@ export const getFilteredProducts = async (searchParams: URLSearchParams, sellerI
     // Fetch inventory and pricing in bulk for the variants found
     console.time("  -> [getFilteredProducts] Variant Metrics Bulk Fetch");
     const variantIds = (variantsList || []).map(v => v.id);
-    let inventoryList: any[] = [];
-    let pricingList: any[] = [];
+    let inventoryList: Inventory[] = [];
+    let pricingList: Pricing[] = [];
 
     if (variantIds.length > 0) {
         const [invRes, prRes] = await Promise.all([
@@ -316,34 +363,34 @@ export const getFilteredProducts = async (searchParams: URLSearchParams, sellerI
 
     // Map views
     const viewsMap = new Map<string, number>();
-    const viewsRows = ((viewsResult as any)?.rows || viewsResult || []) as unknown as Array<{ product_id: string; count: number }>;
+    const viewsRows = extractRows<{ product_id: string; count: number }>(viewsResult);
     for (const r of viewsRows) {
         if (r && r.product_id) viewsMap.set(r.product_id, r.count);
     }
 
     // Map reviews
     const reviewsMap = new Map<string, number>();
-    const reviewsRows = ((reviewList as any)?.rows || reviewList || []) as unknown as Array<{ productId: string; rating: number }>;
+    const reviewsRows = extractRows<{ productId: string; rating: number }>(reviewList);
     for (const r of reviewsRows) {
         if (r && r.productId) reviewsMap.set(r.productId, r.rating);
     }
 
     // Map likes
     const likesMap = new Map<string, number>();
-    const likesRows = ((likesResult as any)?.rows || likesResult || []) as unknown as Array<{ product_id: string; count: number }>;
+    const likesRows = extractRows<{ product_id: string; count: number }>(likesResult);
     for (const r of likesRows) {
         if (r && r.product_id) likesMap.set(r.product_id, r.count);
     }
 
     // Map orders
     const ordersMap = new Map<string, number>();
-    const ordersRows = ((ordersResult as any)?.rows || ordersResult || []) as unknown as Array<{ product_id: string; count: number }>;
+    const ordersRows = extractRows<{ product_id: string; count: number }>(ordersResult);
     for (const r of ordersRows) {
         if (r && r.product_id) ordersMap.set(r.product_id, r.count);
     }
 
     // Map variants, inventory, and pricing in memory
-    const variantsByProductId = new Map<string, any[]>();
+    const variantsByProductId = new Map<string, VariantWithLegacyPricing[]>();
     for (const v of (variantsList || [])) {
         if (v && v.productId) {
             if (!variantsByProductId.has(v.productId)) {
@@ -353,14 +400,14 @@ export const getFilteredProducts = async (searchParams: URLSearchParams, sellerI
         }
     }
 
-    const inventoryByVariantId = new Map<string, any>();
+    const inventoryByVariantId = new Map<string, Inventory>();
     for (const inv of (inventoryList || [])) {
         if (inv && inv.variantId) {
             inventoryByVariantId.set(inv.variantId, inv);
         }
     }
 
-    const pricingByVariantId = new Map<string, any>();
+    const pricingByVariantId = new Map<string, Pricing>();
     for (const pr of (pricingList || [])) {
         if (pr && pr.variantId) {
             pricingByVariantId.set(pr.variantId, pr);
@@ -368,7 +415,7 @@ export const getFilteredProducts = async (searchParams: URLSearchParams, sellerI
     }
 
     // Group and deduplicate products by ID
-    const productMap = new Map<string, any>();
+    const productMap = new Map<string, FilteredProductSummary>();
 
     for (const row of rows) {
         if (!productMap.has(row.product.id)) {

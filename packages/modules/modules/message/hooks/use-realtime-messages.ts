@@ -1,7 +1,18 @@
 import { useEffect } from "react";
 import { supabaseClient } from "@/lib/supabase/client";
+import { messagesTable } from "@/db/schema/messages";
 
-export function useRealtimeMessages(conversationId?: string, onNewMessage?: (payload: any) => void) {
+/**
+ * Row inserted into the messages table, as delivered in the
+ * `new` record of a Supabase postgres_changes INSERT payload.
+ */
+export type RealtimeMessageRow = typeof messagesTable.$inferSelect;
+
+interface RealtimeMessageInsertPayload {
+  new: RealtimeMessageRow;
+}
+
+export function useRealtimeMessages(conversationId?: string, onNewMessage?: (payload: RealtimeMessageRow) => void) {
   useEffect(() => {
     if (!conversationId) return;
 
@@ -15,7 +26,7 @@ export function useRealtimeMessages(conversationId?: string, onNewMessage?: (pay
           table: "messages",
           filter: `conversation_id=eq.${conversationId}`,
         },
-        (payload) => {
+        (payload: RealtimeMessageInsertPayload) => {
           if (onNewMessage) {
             onNewMessage(payload.new);
           }

@@ -5,6 +5,7 @@ import OrderStagesHorizontalTab from "@/modules/orders/section/order-stages-hori
 import OrderQueueList from "@/modules/orders/section/order-queue-list";
 import {DocumentPreviewModal} from "@/modules/orders/section/document-preview-modal";
 import {BulkManifestModal} from "@/modules/orders/section/bulk-manifest-modal";
+import type {OrderListItemDto, OrderListItemLineDto} from "@/modules/orders/dto";
 
 
 const OrderQueue = (
@@ -14,9 +15,9 @@ const OrderQueue = (
         setIsPreviewModalOpen,
         order,
     } : {
-        order: any;
+        order: OrderListItemDto;
         onInspectOrder: (order: string) => void;
-        setSelectedPreviewOrder:  React.Dispatch<React.SetStateAction<any | null>>;
+        setSelectedPreviewOrder:  React.Dispatch<React.SetStateAction<OrderListItemDto | null>>;
         setIsPreviewModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
     }
 ) => {
@@ -40,7 +41,7 @@ const OrderQueue = (
         return date.toLocaleDateString();
     }
 
-    function formatItems(itemsList: any[]) {
+    function formatItems(itemsList: OrderListItemLineDto[]) {
         if (!itemsList || itemsList.length === 0) return "No items";
         const firstItem = itemsList[0];
         const count = itemsList.reduce((acc, it) => acc + (it.quantity || 1), 0);

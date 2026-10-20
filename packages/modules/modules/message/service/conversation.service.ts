@@ -11,6 +11,7 @@ import { seller } from "@/db/schema/seller";
 import { sellerProfiles } from "@/db/schema/seller/seller-profile";
 import {
     conversationMembersTable,
+    conversationsTable,
     messagesTable,
 } from "@/db/schema/messages";
 import { and, eq, inArray, isNull } from "drizzle-orm";
@@ -32,6 +33,45 @@ import {
     ConversationNotFoundError,
 } from "../errors";
 
+/** Conversation row as returned by the repository / DB schema. */
+type ConversationRow = typeof conversationsTable.$inferSelect & {
+    avatarUrl?: string | null;
+
+    description?: string | null;
+};
+
+/** Member entry as hydrated for the conversation mapper. */
+interface HydratedConversationMember {
+    sellerId: string;
+
+    displayName: string;
+
+    avatarUrl: string | null;
+
+    role: typeof conversationMembersTable.$inferSelect["role"];
+
+    isOnline: boolean;
+
+    lastSeenAt: Date | null;
+}
+
+/** Last-message entry as hydrated for the conversation mapper. */
+interface HydratedConversationLastMessage {
+    id: string;
+
+    senderId: string;
+
+    senderName: string;
+
+    body: string | null;
+
+    messageType: string;
+
+    createdAt: Date;
+
+    isDeleted: boolean;
+}
+
 export class ConversationService {
     /**
      * =========================================================================
@@ -40,7 +80,7 @@ export class ConversationService {
      */
 
     private async hydrateConversations(
-        rawConversations: any[],
+        rawConversations: ConversationRow[],
         currentSellerId: string,
     ) {
         if (rawConversations.length === 0) {
@@ -75,9 +115,9 @@ export class ConversationService {
             );
 
         // Group members by conversation ID
-        const membersMap = new Map<string, any[]>();
+        const membersMap = new Map<string, HydratedConversationMember[]>();
         const memberCounts = new Map<string, number>();
-        const sellerMembershipMap = new Map<string, any>();
+        const sellerMembershipMap = new Map<string, (typeof allMembers)[number]>();
 
         for (const m of allMembers) {
             const list = membersMap.get(m.conversationId) || [];
@@ -106,7 +146,7 @@ export class ConversationService {
             .map((c) => c.lastMessageId)
             .filter(Boolean) as string[];
 
-        let lastMessagesMap = new Map<string, any>();
+        let lastMessagesMap = new Map<string, HydratedConversationLastMessage>();
         if (lastMessageIds.length > 0) {
             const lastMessages = await db
                 .select({
@@ -125,28 +165,30 @@ export class ConversationService {
                 .leftJoin(sellerProfiles, eq(seller.id, sellerProfiles.sellerId))
                 .where(inArray(messagesTable.id, lastMessageIds));
 
-            lastMessagesMap = new Map(
-                lastMessages.map((m) => [
-                    m.id,
-                    {
-                        id: m.id,
-                        senderId: m.senderId,
-                        senderName: m.senderDisplayName || m.senderName || "User",
-                        body: m.body,
-                        messageType: m.messageType,
-                        createdAt: m.createdAt,
-                        isDeleted: m.deletedAt !== null,
-                    },
-                ]),
+            lastMessagesMap = new Map<string, HydratedConversationLastMessage>(
+                lastMessages.map(
+                    (m): [string, HydratedConversationLastMessage] => [
+                        m.id,
+                        {
+                            id: m.id,
+                            senderId: m.senderId,
+                            senderName: m.senderDisplayName || m.senderName || "User",
+                            body: m.body,
+                            messageType: m.messageType,
+                            createdAt: m.createdAt,
+                            isDeleted: m.deletedAt !== null,
+                        },
+                    ],
+                ),
             );
         }
 
         return rawConversations.map((conv) => {
             const members = membersMap.get(conv.id) || [];
             const memberCount = memberCounts.get(conv.id) || 0;
-            const membership = sellerMembershipMap.get(conv.id) || {};
+            const membership = sellerMembershipMap.get(conv.id);
             const lastMessage = conv.lastMessageId
-                ? lastMessagesMap.get(conv.lastMessageId)
+                ? lastMessagesMap.get(conv.lastMessageId) ?? null
                 : null;
 
             return toConversationDto({
@@ -162,10 +204,10 @@ export class ConversationService {
                 },
                 currentSellerId,
                 memberCount,
-                unreadCount: membership.unreadCount || 0,
-                isPinned: membership.isPinned || false,
-                isMuted: membership.isMuted || false,
-                isArchived: membership.isArchived || false,
+                unreadCount: membership?.unreadCount || 0,
+                isPinned: membership?.isPinned || false,
+                isMuted: membership?.isMuted || false,
+                isArchived: membership?.isArchived || false,
                 isActive: conv.status === "ACTIVE",
                 members,
                 lastMessage,

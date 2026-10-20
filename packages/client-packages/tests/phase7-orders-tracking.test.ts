@@ -286,11 +286,11 @@ async function runPhase7Tests() {
 
     // Shipment and Timeline verification
     assert.ok(itemDetail.timeline && itemDetail.timeline.length > 0, "Tracking timeline must exist");
-    const confirmedStep = itemDetail.timeline.find((t: any) => t.title === "Order Confirmed");
+    const confirmedStep = itemDetail.timeline.find((t) => t.title === "Order Confirmed");
     assert.ok(confirmedStep, "Order Confirmed step must be present");
     assert.strictEqual(confirmedStep.isActive, true, "Order Confirmed step must be active");
 
-    const shippedStep = itemDetail.timeline.find((t: any) => t.title === "Shipped");
+    const shippedStep = itemDetail.timeline.find((t) => t.title === "Shipped");
     assert.ok(shippedStep, "Shipped step must be present");
     assert.ok(
       shippedStep.details.some((d: string) => d.includes("Delhivery Express") || d.includes("DLV99283741029")),
@@ -303,8 +303,9 @@ async function runPhase7Tests() {
     let unauthorizedCaught = false;
     try {
       await OrderService.getOrderDetail(testOrderId, unauthorizedUserId);
-    } catch (err: any) {
-      if (err.message?.includes("UNAUTHORIZED") || err.statusCode === 403) {
+    } catch (err) {
+      const e = err as Error & { statusCode?: number };
+      if (e.message?.includes("UNAUTHORIZED") || e.statusCode === 403) {
         unauthorizedCaught = true;
       }
     }
@@ -317,8 +318,9 @@ async function runPhase7Tests() {
     let unauthorizedCancelCaught = false;
     try {
       await OrderService.cancelOrder(testOrderId, unauthorizedUserId, "Hacking attempt");
-    } catch (err: any) {
-      if (err.message?.includes("UNAUTHORIZED") || err.statusCode === 403) {
+    } catch (err) {
+      const e = err as Error & { statusCode?: number };
+      if (e.message?.includes("UNAUTHORIZED") || e.statusCode === 403) {
         unauthorizedCancelCaught = true;
       }
     }
@@ -368,7 +370,7 @@ async function runPhase7Tests() {
     let repeatCancelCaught = false;
     try {
       await OrderService.cancelOrder(testOrderId, testUserId, "Repeat cancel");
-    } catch (err: any) {
+    } catch {
       repeatCancelCaught = true;
     }
     assert.strictEqual(
@@ -381,7 +383,7 @@ async function runPhase7Tests() {
     const cancelledDetail = await OrderService.getOrderDetail(testOrderId, testUserId);
     assert.ok(cancelledDetail && cancelledDetail.length > 0);
     assert.strictEqual(cancelledDetail[0].canCancel, false, "canCancel must be false when CANCELLED");
-    const cancelledTimelineStep = cancelledDetail[0].timeline.find((t: any) => t.title === "Cancelled");
+    const cancelledTimelineStep = cancelledDetail[0].timeline.find((t) => t.title === "Cancelled");
     assert.ok(cancelledTimelineStep, "Timeline must display Cancelled step for cancelled order");
 
     console.log("✓ Buyer order cancellation and inventory audit trail verified.");

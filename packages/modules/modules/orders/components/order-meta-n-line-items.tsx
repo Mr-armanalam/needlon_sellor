@@ -1,6 +1,7 @@
 import React from 'react';
 import {STATUS_LABELS} from "@/modules/orders/constants";
 import {FileText, User} from "lucide-react";
+import type {OrderDetailAddressDto, OrderDetailResponseDto, OrderListItemLineDto} from "@/modules/orders/dto";
 
 const OrderMetaNLineItems = (
     {
@@ -10,11 +11,11 @@ const OrderMetaNLineItems = (
         formatCurrency,
         deliveryAddress,
     }:{
-        data: any;
+        data: OrderDetailResponseDto;
         currentStatus: string;
-        items: any;
-        formatCurrency: (val: string) => string ;
-        deliveryAddress: any;
+        items: OrderListItemLineDto[];
+        formatCurrency: (val: number | string) => string ;
+        deliveryAddress: OrderDetailAddressDto | undefined;
     }
 ) => {
 
@@ -40,7 +41,7 @@ const OrderMetaNLineItems = (
                 </div>
 
                 {/* List Array Line Item Item row */}
-                {items.map((item: any) => (
+                {items.map((item) => (
                     <div key={item.id} className="flex items-center justify-between py-2 border-b border-neutral-50/50 last:border-none">
                         <div className="flex items-center gap-3">
                             {item.thumbnailUrl ? (

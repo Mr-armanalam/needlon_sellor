@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
+import type { Session } from "next-auth";
 import { auth } from "@/auth";
 import * as recoService from "@/modules/home/services/recommendationServices";
 import { buildUserPreferenceVector } from "@/lib/recommendation-item";
 
 export async function GET() {
   try {
-    let session: any = null;
+    let session: Session | null = null;
     try { session = await auth(); } catch { /* auth may fail without DB */ }
     const userId = session?.user?.id;
 

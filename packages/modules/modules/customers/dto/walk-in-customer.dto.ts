@@ -9,3 +9,13 @@ export const createWalkInCustomerSchema = z.object({
 });
 
 export type CreateWalkInCustomerDto = z.infer<typeof createWalkInCustomerSchema>;
+
+/** Shape returned by `createOrLinkWalkInCustomerRepo` / the walk-in route. */
+export interface WalkInCustomerResponseDto {
+  userId: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  isNewUser: boolean;
+  createdInStore: boolean;
+}

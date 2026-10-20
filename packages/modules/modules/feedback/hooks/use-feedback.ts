@@ -1,10 +1,14 @@
 import { apiFetch } from "@/modules/auth/lib/auth-client";
 import { useState, useEffect, useCallback } from "react";
-import { CreateFeedbackDto, SubmitSurveyDto } from "../dto/feedback.dto";
+import { CreateFeedbackDto, SubmitSurveyDto, FeedbackRoadmapItem, FeedbackTrackerItem } from "../dto/feedback.dto";
+
+function getErrorMessage(err: unknown, fallback: string): string {
+  return err instanceof Error && err.message ? err.message : fallback;
+}
 
 export function useFeedback() {
-  const [roadmapItems, setRoadmapItems] = useState<any[]>([]);
-  const [trackerItems, setTrackerItems] = useState<any[]>([]);
+  const [roadmapItems, setRoadmapItems] = useState<FeedbackRoadmapItem[]>([]);
+  const [trackerItems, setTrackerItems] = useState<FeedbackTrackerItem[]>([]);
   const [loadingRoadmap, setLoadingRoadmap] = useState(true);
   const [loadingTracker, setLoadingTracker] = useState(true);
 
@@ -82,8 +86,8 @@ export function useFeedback() {
         return { success: true, comments: json.data.comments };
       }
       return { success: false, error: json.error?.message };
-    } catch (err: any) {
-      return { success: false, error: err.message };
+    } catch (err: unknown) {
+      return { success: false, error: err instanceof Error ? err.message : undefined };
     }
   };
 
@@ -100,8 +104,8 @@ export function useFeedback() {
         return { success: true, data: json.data };
       }
       return { success: false, error: json.error?.message };
-    } catch (err: any) {
-      return { success: false, error: err.message };
+    } catch (err: unknown) {
+      return { success: false, error: err instanceof Error ? err.message : undefined };
     }
   };
 
@@ -118,8 +122,8 @@ export function useFeedback() {
         return { success: true, data: json.data };
       }
       return { success: false, error: json.error?.message || "Failed to submit feedback" };
-    } catch (err: any) {
-      return { success: false, error: err.message };
+    } catch (err: unknown) {
+      return { success: false, error: getErrorMessage(err, "Failed to submit feedback") };
     }
   };
 
@@ -135,8 +139,8 @@ export function useFeedback() {
         return { success: true, data: json.data };
       }
       return { success: false, error: json.error?.message || "Failed to submit survey" };
-    } catch (err: any) {
-      return { success: false, error: err.message };
+    } catch (err: unknown) {
+      return { success: false, error: getErrorMessage(err, "Failed to submit survey") };
     }
   };
 

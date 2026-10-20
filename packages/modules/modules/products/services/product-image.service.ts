@@ -8,9 +8,8 @@ import {
 } from "../repository";
 import { CreateProductImageDto } from "../dto";
 import { NotFoundError } from "@/modules/shared/errors";
-import { supabaseServer } from "@/lib/supabase/server";
 import { PRODUCT_MEDIA_BUCKET } from "../constants/media";
-import { uploadProductMediaDataUrlToSupabase } from "./upload-product-media.service";
+import { uploadProductMediaDataUrlToSupabase, getSupabaseServerClient } from "./upload-product-media.service";
 
 export async function getProductImagesService(productId: string) {
   return findProductImagesByProductId(productId);
@@ -53,7 +52,7 @@ export async function deleteProductImageService(imageId: string) {
   // Remove underlying asset from Supabase Storage bucket if storageKey is known
   if (image.storageKey) {
     try {
-      const client = typeof supabaseServer === "function" ? (supabaseServer as any)() : supabaseServer;
+      const client = getSupabaseServerClient();
       if (client?.storage) {
         await client.storage.from(PRODUCT_MEDIA_BUCKET).remove([image.storageKey]);
       }

@@ -24,6 +24,7 @@ import {
 
 import {
   MessageDto,
+  SendMessageAttachmentDto,
   SendMessageDto,
 } from "@/modules/message/dto";
 
@@ -191,7 +192,7 @@ export default function MessagePage() {
   const handleSendMessage =
       async (
           text: string,
-          attachments: { attachmentId: string; sortOrder: number; }[] = [],
+          attachments: SendMessageAttachmentDto[] = [],
       ) => {
         if (
             !activeConversationId ||
@@ -200,7 +201,7 @@ export default function MessagePage() {
           return;
         }
 
-        const isImage = attachments.some(a => a.attachmentId && (a as any).type === "IMAGE");
+        const isImage = attachments.some(a => a.attachmentId && a.type === "IMAGE");
 
         const payload: SendMessageDto = {
           conversationId:

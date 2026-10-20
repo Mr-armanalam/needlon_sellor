@@ -10,7 +10,7 @@
 //   "order/fetchAllorders",
 //   async (userId: string) => {
 //     const res = await fetch(`/api/orders`);
-//     return (await res.json()) as any;
+//     return (await res.json()) as unknown;
 //   }
 // );
 

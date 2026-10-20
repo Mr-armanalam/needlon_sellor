@@ -4,9 +4,20 @@ import { useRouter } from 'next/navigation';
 import CustomerList from '../view/customers-list';
 import CustomerDetail from '../view/customers-details';
 
+type SelectedCustomer = {
+  id: string;
+  name: string;
+  avatar: string;
+  location: string;
+  clv: string;
+  totalOrders: number;
+  isRepeat: boolean;
+  isWalkIn?: boolean;
+};
+
 export default function CustomersPage() {
   const router = useRouter();
-  const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<SelectedCustomer | null>(null);
 
   const handleMessageTransition = () => {
     if (!selectedCustomer) return;
