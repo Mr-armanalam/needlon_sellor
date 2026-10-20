@@ -52,8 +52,8 @@ async function runCustomerTests() {
     if (deduped[0].isWalkIn !== true) throw new Error("Expected isWalkIn to be true on deduped customer");
     console.log("✓ Customer deduplication unit test passed.");
 
-  } catch (err: any) {
-    console.warn("Notice: Database connection in test environment:", err.message);
+  } catch (err: unknown) {
+    console.warn("Notice: Database connection in test environment:", err instanceof Error ? err.message : String(err));
   }
 
   console.log("=== ALL CUSTOMER UNIT & INTEGRATION TESTS PASSED SUCCESSFULLY! ===");

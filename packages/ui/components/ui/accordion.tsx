@@ -4,6 +4,30 @@ import { Accordion as AccordionPrimitive } from "@base-ui/react/accordion"
 import { cn } from "@/lib/utils"
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react"
 
+type AccordionChangeEventDetails = Parameters<
+  NonNullable<AccordionPrimitive.Root.Props["onValueChange"]>
+>[1];
+
+type AccordionProps = Omit<
+  AccordionPrimitive.Root.Props,
+  "value" | "defaultValue" | "onValueChange"
+> & {
+  /**
+   * Compatibility shim over Base UI (which has no `type` / `collapsible`):
+   * a string `value` is treated as a single-item accordion, an array as
+   * multiple. Both props are accepted for Radix-style consumers; the
+   * value handling below implements the single/multiple behaviour.
+   */
+  type?: "single" | "multiple";
+  collapsible?: boolean;
+  value?: string | string[];
+  defaultValue?: string | string[];
+  onValueChange?: (
+    value: string | string[],
+    details: AccordionChangeEventDetails
+  ) => void;
+};
+
 function Accordion({
   className,
   collapsible,
@@ -11,7 +35,7 @@ function Accordion({
   defaultValue,
   onValueChange,
   ...props
-}: any) {
+}: AccordionProps) {
   const normalizedValue = React.useMemo(() => {
     if (value === undefined) return undefined;
     if (Array.isArray(value)) return value;
@@ -27,7 +51,7 @@ function Accordion({
   }, [defaultValue]);
 
   const handleValueChange = React.useCallback(
-    (nextVal: string[], details: any) => {
+    (nextVal: string[], details: AccordionChangeEventDetails) => {
       if (!onValueChange) return;
       if (typeof value === "string") {
         onValueChange(nextVal[0] ?? "", details);
@@ -38,8 +62,7 @@ function Accordion({
     [onValueChange, value]
   );
 
-  const rootProps: any = {
-    "data-slot": "accordion",
+  const rootProps: AccordionPrimitive.Root.Props = {
     className: cn("flex w-full flex-col", className),
     ...props,
   };
@@ -54,7 +77,7 @@ function Accordion({
     rootProps.onValueChange = handleValueChange;
   }
 
-  return <AccordionPrimitive.Root {...rootProps} />;
+  return <AccordionPrimitive.Root data-slot="accordion" {...rootProps} />;
 }
 
 function AccordionItem({ className, ...props }: AccordionPrimitive.Item.Props) {

@@ -4,6 +4,7 @@ import {
   EarningsSummaryResponseDto,
   EarningsAnalyticsResponseDto,
   LedgerResponseDto,
+  SellerBankAccountRecord,
 } from "../dto/finance.dto";
 
 export function useEarnings() {
@@ -12,7 +13,7 @@ export function useEarnings() {
   const [ledger, setLedger] = useState<LedgerResponseDto | null>(null);
   const [timeframe, setTimeframe] = useState<"weekly" | "monthly">("weekly");
   const [viewType, setViewType] = useState<"transactions" | "settlements">("transactions");
-  const [bankAccounts, setBankAccounts] = useState<any[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<SellerBankAccountRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [ledgerLoading, setLedgerLoading] = useState(false);
@@ -35,8 +36,12 @@ export function useEarnings() {
       if (bankJson.success && bankJson.data) {
         setBankAccounts(bankJson.data.bankAccounts || []);
       }
-    } catch (err: any) {
-      setError(err.message || "Failed to load financial data");
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error && err.message
+          ? err.message
+          : "Failed to load financial data"
+      );
     }
   }, []);
 
@@ -49,7 +54,7 @@ export function useEarnings() {
       if (json.success && json.data) {
         setAnalytics(json.data);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to load analytics:", err);
     } finally {
       setAnalyticsLoading(false);
@@ -65,7 +70,7 @@ export function useEarnings() {
       if (json.success && json.data) {
         setLedger(json.data);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to load ledger:", err);
     } finally {
       setLedgerLoading(false);
@@ -116,8 +121,11 @@ export function useEarnings() {
         return { success: true, data: json.data };
       }
       return { success: false, error: json.error?.message || "Payout request failed" };
-    } catch (err: any) {
-      return { success: false, error: err.message };
+    } catch (err: unknown) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : undefined,
+      };
     }
   };
 

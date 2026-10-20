@@ -1,5 +1,5 @@
 import { toggleGuestWishlist, toggleWishlist } from "@/features/wishlist-slice";
-import { useAppSelector } from "@/store/store";
+import { useAppSelector, type AppDispatch } from "@/store/store";
 import { DetailedProductResponse, productDataType } from "@/types/product";
 import { Heart, Share2Icon } from "lucide-react";
 import { usePathname } from "next/navigation";
@@ -16,7 +16,7 @@ const ProductDescriptionHeading = ({
   CatType: string;
   SubCatType: string;
   userId?: string;
-  dispatch: any;
+  dispatch: AppDispatch;
   contentTag?: string;
 }) => {
   const { wishlist, guestWishlist, loading } = useAppSelector(

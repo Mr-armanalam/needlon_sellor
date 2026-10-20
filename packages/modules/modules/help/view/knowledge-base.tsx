@@ -2,8 +2,9 @@ import { apiFetch } from "@/modules/auth/lib/auth-client";
 import React, { useState } from 'react';
 import { BookOpen, Camera, FileText, DollarSign, Truck, ShoppingBag, Globe, ArrowLeft, ArrowRight, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { useHelpCenter } from '../hooks/use-help-center';
+import type { KnowledgeBaseArticle, GroupedKnowledgeBaseArticles } from '../hooks/use-help-center';
 
-const iconMap: Record<string, any> = {
+const iconMap: Record<string, React.ReactNode> = {
   Camera: <Camera className="w-4 h-4" />,
   FileText: <FileText className="w-4 h-4" />,
   DollarSign: <DollarSign className="w-4 h-4" />,
@@ -21,7 +22,7 @@ const categoryColors: Record<string, string> = {
 
 export default function KnowledgeBase({ onBack }: { onBack?: () => void }) {
   const { kbArticles, loading } = useHelpCenter();
-  const [selectedArticle, setSelectedArticle] = useState<any | null>(null);
+  const [selectedArticle, setSelectedArticle] = useState<KnowledgeBaseArticle | null>(null);
   const [votedArticleId, setVotedArticleId] = useState<string | null>(null);
 
   const handleVote = async (articleId: string, isHelpful: boolean) => {
@@ -38,7 +39,7 @@ export default function KnowledgeBase({ onBack }: { onBack?: () => void }) {
   };
 
   // Group articles by category
-  const groupedArticles = kbArticles.reduce((acc: any, art: any) => {
+  const groupedArticles = kbArticles.reduce<GroupedKnowledgeBaseArticles>((acc, art) => {
     const cat = art.category || 'selling';
     if (!acc[cat]) {
       acc[cat] = {
@@ -126,14 +127,14 @@ export default function KnowledgeBase({ onBack }: { onBack?: () => void }) {
         <div className="p-8 text-center text-xs text-gray-400">No knowledge base articles found.</div>
       ) : (
         <div className="space-y-6">
-          {Object.entries(groupedArticles).map(([key, value]: [string, any]) => (
+          {Object.entries(groupedArticles).map(([key, value]) => (
             <div key={key} className="space-y-3">
               <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
                 <BookOpen className="w-3.5 h-3.5" /> {value.title}
               </h4>
               
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {value.articles.map((art: any, index: number) => (
+                {value.articles.map((art, index: number) => (
                   <div 
                     key={art.id || index}
                     onClick={() => setSelectedArticle(art)}

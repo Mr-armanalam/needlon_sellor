@@ -11,7 +11,10 @@ import {
   SellerSubscriptionResponseDto,
   BillingLedgerResponseDto,
 } from "../dto/subscription.dto";
-import { SubscriptionPaymentGatewayService } from "../services/subscription-payment-gateway.service";
+import {
+  SubscriptionPaymentGatewayService,
+  StripePaymentIntentRawResponse,
+} from "../services/subscription-payment-gateway.service";
 
 const DEFAULT_PLAN_BENEFITS: Record<string, string[]> = {
   FREE_TIER: [
@@ -200,8 +203,8 @@ export async function updateSellerSubscriptionPlan(
       : parseFloat(targetPlan.priceMonthly);
 
   // 1. If paid upgrade, process payment through Free Test Payment Gateway
-  let paymentRecord: any = null;
-  let invoiceRecord: any = null;
+  let paymentRecord: (typeof subscriptionPayments)["$inferSelect"] | null = null;
+  let invoiceRecord: (typeof subscriptionInvoices)["$inferSelect"] | null = null;
 
   if (planPriceNum > 0) {
     const paymentResult = await SubscriptionPaymentGatewayService.processPayment({
@@ -327,7 +330,8 @@ export async function getSellerBillingLedger(
           }).format(new Date(dateStr))
         : "Recent";
 
-      const cardDetails = (p.gatewayResponse as any)?.payment_method_details?.card;
+      const gatewayResponse = p.gatewayResponse as StripePaymentIntentRawResponse | null;
+      const cardDetails = gatewayResponse?.payment_method_details?.card;
       const brand = cardDetails?.brand ? cardDetails.brand.charAt(0).toUpperCase() + cardDetails.brand.slice(1) : "Visa";
       const lastDigits = cardDetails?.last4 || (p.paymentId ? p.paymentId.slice(-4) : "4242");
 

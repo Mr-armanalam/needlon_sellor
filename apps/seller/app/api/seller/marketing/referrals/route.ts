@@ -19,6 +19,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const validated = createReferralSchema.parse(body);
     const updated = await createOrUpdateReferralService(validated);
-    return successResponse(updated, "Referral program updated successfully");
+    return successResponse(updated);
   });
 }

@@ -2,8 +2,13 @@ import React from 'react';
 import OrderStages from "@/modules/orders/components/order-stages";
 import SearchNFilters from "@/modules/orders/components/search-n-filters";
 
+interface OrderTab {
+    label: string;
+    count: number | null;
+}
+
 interface OrderStagesHorizontalTabProps {
-    orderTabs: any[];
+    orderTabs: OrderTab[];
     setActiveTab: (tab: string) => void;
     activeTab: string;
     searchQuery: string;

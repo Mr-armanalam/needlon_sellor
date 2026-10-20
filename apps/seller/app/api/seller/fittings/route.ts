@@ -6,6 +6,16 @@ import {
 } from "@/modules/customers/repository/customer.repository";
 import { scheduleFittingAppointmentSchema } from "@/modules/customers/dto/fitting-appointment.dto";
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = (error as { message: unknown }).message;
+    return typeof message === "string" ? message : "";
+  }
+  return "";
+}
+
+
 export async function GET(request: NextRequest) {
   try {
     const profile = await getSellerProfile();
@@ -15,10 +25,10 @@ export async function GET(request: NextRequest) {
 
     const list = await getFittingAppointmentsRepo(profile.sellerId, orderId, customerId);
     return NextResponse.json({ success: true, data: list });
-  } catch (error: any) {
+  } catch (error) {
     console.error("GET_FITTINGS_ERROR:", error);
     return NextResponse.json(
-      { success: false, message: error.message || "Failed to load fitting appointments" },
+      { success: false, message: getErrorMessage(error) || "Failed to load fitting appointments" },
       { status: 400 }
     );
   }
@@ -39,10 +49,10 @@ export async function POST(request: NextRequest) {
 
     const appointment = await scheduleFittingAppointmentRepo(profile.sellerId, parsed.data);
     return NextResponse.json({ success: true, data: appointment }, { status: 201 });
-  } catch (error: any) {
+  } catch (error) {
     console.error("POST_FITTINGS_ERROR:", error);
     return NextResponse.json(
-      { success: false, message: error.message || "Failed to schedule fitting session" },
+      { success: false, message: getErrorMessage(error) || "Failed to schedule fitting session" },
       { status: 500 }
     );
   }

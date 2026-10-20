@@ -49,6 +49,9 @@ export const getCustomerMeasurements = async (userId?: string, userEmail?: strin
   }
 };
 
+/** Measurement values keyed by field name (e.g. chest_circumference); numeric or entered as text. */
+export type MeasurementValues = Record<string, string | number>;
+
 export interface SubmitOnlineMeasurementInput {
   userId?: string;
   sellerId?: string;
@@ -61,8 +64,8 @@ export interface SubmitOnlineMeasurementInput {
   gender: string;
   garmentType: string;
   measurementUnit?: string;
-  essentialMeasurements: Record<string, any>;
-  postureSpecifics?: Record<string, any>;
+  essentialMeasurements: MeasurementValues;
+  postureSpecifics?: MeasurementValues;
   fitPreference?: string;
   tailorNotes?: string;
 }
@@ -97,8 +100,11 @@ export const submitOnlineCustomerMeasurementAction = async (input: SubmitOnlineM
       .returning();
 
     return { success: true, data: created };
-  } catch (error: any) {
+  } catch (error) {
     console.error("Failed to save online customer measurement:", error);
-    return { success: false, error: error.message || "Failed to submit measurements" };
+    return {
+      success: false,
+      error: (error instanceof Error ? error.message : "") || "Failed to submit measurements",
+    };
   }
 };

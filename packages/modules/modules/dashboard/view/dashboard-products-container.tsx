@@ -29,11 +29,11 @@ const DashboardProductCont = ({
           onClick={() => router.push("/products")}
           className="snap-start min-w-72.5 w-72.5 bg-white border border-neutral-100/80 rounded-2xl p-4 flex flex-col justify-between gap-4 transition-all duration-300 hover:shadow-[0_12px_24px_rgba(0,0,0,0.02)] cursor-pointer"
         >
-          <PrdThumbnailNdetails product={product as any} />
-          <ProdLightWtMetricBar product={product as any} />
+          <PrdThumbnailNdetails product={product} />
+          <ProdLightWtMetricBar product={product} />
           <SubtleUtilities
             productId={product.id.toString()}
-            productSlug={(product as any).slug}
+            productSlug={"slug" in product ? product.slug : undefined}
             onDuplicate={onDuplicate}
             isLoadingDuplicate={!!actionLoadingMap[`dup-${product.id}`]}
           />

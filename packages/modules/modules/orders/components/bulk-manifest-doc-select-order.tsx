@@ -1,5 +1,6 @@
 import React from 'react';
 import {CheckSquare, Square} from "lucide-react";
+import type {OrderListItemDto} from "@/modules/orders/dto";
 
 const BulkManifestDocSelectOrder = (
     {
@@ -10,7 +11,7 @@ const BulkManifestDocSelectOrder = (
         toggleSelectOrder,
     }:{
         selectedOrderIds: string[];
-        ordersList: any[];
+        ordersList: OrderListItemDto[];
         toggleSelectAll: () => void;
         error: string | null;
         toggleSelectOrder: (id: string) => void;

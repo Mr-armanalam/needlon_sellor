@@ -1,12 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { addToCart, fetchCart } from "@/features/cart-slice";
-import { useAppSelector } from "@/store/store";
+import { useAppSelector, type AppDispatch } from "@/store/store";
 import { DetailedProductResponse } from "@/types/product";
 
 
 import { useRouter } from "next/navigation";
 
-const ProductDescriptionEvent = ({dispatch, userId, productItem}:{dispatch: any, userId?: string, productItem: DetailedProductResponse}) => {
+const ProductDescriptionEvent = ({dispatch, userId, productItem}:{dispatch: AppDispatch, userId?: string, productItem: DetailedProductResponse}) => {
     const router = useRouter();
     const { cart } = useAppSelector((state) => state.cart);
 

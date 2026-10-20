@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSellerProfile } from "@/modules/seller-profile/services";
 import { supabaseServer } from "@/lib/supabase/server";
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = (error as { message: unknown }).message;
+    return typeof message === "string" ? message : "";
+  }
+  return "";
+}
+
+
 export async function POST(request: NextRequest) {
     try {
         const formData = await request.formData();
@@ -61,8 +71,8 @@ export async function POST(request: NextRequest) {
             fileSize,
             url: publicUrl,
         });
-    } catch (err: any) {
+    } catch (err) {
         console.error("Upload error:", err);
-        return NextResponse.json({ error: err.message }, { status: 500 });
+        return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
     }
 }

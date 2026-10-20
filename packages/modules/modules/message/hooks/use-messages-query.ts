@@ -18,6 +18,10 @@ import {
     messagesKeys,
 } from "../keys";
 
+import {
+    MessageDto,
+} from "../dto";
+
 export function useMessagesQuery(
     conversationId: string | null,
 ) {
@@ -34,7 +38,7 @@ export function useMessagesQuery(
                         ? getConversationMessages(
                             conversationId,
                         )
-                        : Promise.resolve([] as any),
+                        : Promise.resolve<MessageDto[]>([]),
 
             enabled:
                 Boolean(

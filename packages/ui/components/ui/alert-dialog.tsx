@@ -10,11 +10,19 @@ function AlertDialog({ ...props }: AlertDialogPrimitive.Root.Props) {
   return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />
 }
 
-function AlertDialogTrigger({ asChild, render, children, ...props }: any) {
+function AlertDialogTrigger({
+  asChild,
+  render,
+  children,
+  ...props
+}: AlertDialogPrimitive.Trigger.Props & { asChild?: boolean }) {
   return (
     <AlertDialogPrimitive.Trigger
       data-slot="alert-dialog-trigger"
-      render={render ?? (asChild ? children : undefined)}
+      render={
+        render ??
+        (asChild && React.isValidElement(children) ? children : undefined)
+      }
       {...(asChild && !render ? {} : { children })}
       {...props}
     />

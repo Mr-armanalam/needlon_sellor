@@ -1,3 +1,12 @@
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = (error as { message: unknown }).message;
+    return typeof message === "string" ? message : "";
+  }
+  return "";
+}
+
 export interface ValidateCouponParams {
   code: string;
   userId?: string;
@@ -45,8 +54,8 @@ export async function validateCoupon({
 
     const err = await res.json().catch(() => ({}));
     return { valid: false, message: err.message || "Invalid coupon code" };
-  } catch (error: any) {
-    console.warn("Client coupon validation fallback:", error.message);
+  } catch (error) {
+    console.warn("Client coupon validation fallback:", getErrorMessage(error));
 
     const normalized = code.trim().toUpperCase();
     if (normalized === "SAVE10" || normalized === "WELCOME20") {

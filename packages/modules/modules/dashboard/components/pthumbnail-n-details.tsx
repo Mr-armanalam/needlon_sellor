@@ -1,6 +1,13 @@
-import { productType } from "../data/dashboard-productsData";
+import { DashboardProductDto } from "../dto/dashboard.dto";
 
-const PrdThumbnailNdetails = ({product}:{product:productType}) => {
+const PrdThumbnailNdetails = ({
+  product,
+}: {
+  product: Pick<
+    DashboardProductDto,
+    "name" | "price" | "stock" | "initials" | "imageColor"
+  >;
+}) => {
   return (
     <div className="flex items-start gap-3.5">
       <div

@@ -1,5 +1,6 @@
 import React from 'react';
 import OrderQueue from "@/modules/orders/components/order-queue";
+import type {OrderListItemDto} from "@/modules/orders/dto";
 
 const OrderQueueList = (
     {
@@ -11,11 +12,11 @@ const OrderQueueList = (
         orders,
     } : {
         onInspectOrder: (order: string) => void;
-        setSelectedPreviewOrder:  React.Dispatch<React.SetStateAction<any | null>>;
+        setSelectedPreviewOrder:  React.Dispatch<React.SetStateAction<OrderListItemDto | null>>;
         setIsPreviewModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
         loading: boolean;
         error: string | null;
-        orders: any[];
+        orders: OrderListItemDto[];
     }
 ) => {
     return (

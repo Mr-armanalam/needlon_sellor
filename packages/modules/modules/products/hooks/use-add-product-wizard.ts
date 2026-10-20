@@ -1,6 +1,6 @@
 import { apiFetch } from "@/modules/auth/lib/auth-client";
 import React, {useEffect, useRef, useState, createContext, useContext} from "react";
-import {CATEGORY_SUBCATEGORY_MAP, DEFAULT_FORM_DATA, wizardSteps} from "@/modules/products/constants";
+import {CATEGORY_SUBCATEGORY_MAP, DEFAULT_FORM_DATA, VISIBILITY_OPTIONS, wizardSteps} from "@/modules/products/constants";
 import {
     deleteProductImageClient,
     fetchBrandsClient,
@@ -13,11 +13,28 @@ import {
     updateProductDeliveryClient,
     updateProductInventoryClient,
     updateProductPricingClient, updateProductSeoClient, updateProductVariantsClient,
-    uploadProductImageClient
+    uploadProductImageClient,
+    type PickupHubItem,
+    type ProductCategoryItem,
+    type ShippingPartnerItem,
+    type VerifiedBrandItem
 } from "@/modules/products";
 import { generateProductSeoData } from "@/modules/products/lib/seo-generator";
 import {useProductUiSet} from "@/modules/products/hooks/use-product-ui-set";
 
+
+/**
+ * Form state for the wizard. Identical to DEFAULT_FORM_DATA except
+ * `customVisibility`, which DEFAULT_FORM_DATA pins to the "PUBLIC" literal
+ * while the form (and the product detail response) can hold each visibility value.
+ */
+type WizardFormData = Omit<typeof DEFAULT_FORM_DATA, "customVisibility"> & {
+    customVisibility: (typeof VISIBILITY_OPTIONS)[number];
+};
+
+function errorMessage(err: unknown, fallback: string): string {
+    return err instanceof Error && err.message ? err.message : fallback;
+}
 
 interface MediaItem {
     id: string;
@@ -35,13 +52,13 @@ function useAddProductWizardInternal() {
     const [activeProductId, setActiveProductId] = useState<string | null>(productId || null);
     const [currentStep, setCurrentStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [formData, setFormData] = useState(DEFAULT_FORM_DATA);
+    const [formData, setFormData] = useState<WizardFormData>(DEFAULT_FORM_DATA);
     const [availableCategories, setAvailableCategories] = useState<string[]>(Object.keys(CATEGORY_SUBCATEGORY_MAP));
-    const [categoriesData, setCategoriesData] = useState<any[]>([]);
-    const [subcategoriesData, setSubcategoriesData] = useState<any[]>([]);
-    const [verifiedBrands, setVerifiedBrands] = useState<any[]>([]);
-    const [shippingPartners, setShippingPartners] = useState<any[]>([]);
-    const [pickupHubs, setPickupHubs] = useState<any[]>([]);
+    const [categoriesData, setCategoriesData] = useState<ProductCategoryItem[]>([]);
+    const [subcategoriesData, setSubcategoriesData] = useState<ProductCategoryItem[]>([]);
+    const [verifiedBrands, setVerifiedBrands] = useState<VerifiedBrandItem[]>([]);
+    const [shippingPartners, setShippingPartners] = useState<ShippingPartnerItem[]>([]);
+    const [pickupHubs, setPickupHubs] = useState<PickupHubItem[]>([]);
 
     // Step 1: Photos & Media State
     const [mediaAssets, setMediaAssets] = useState<MediaItem[]>([]);
@@ -50,26 +67,26 @@ function useAddProductWizardInternal() {
 
     useEffect(() => {
         fetchCategoriesClient()
-            .then((res: any) => {
-                const cats = res?.categories || res?.data?.categories;
-                const subCats = res?.subcategories || res?.data?.subcategories || [];
-                const allCats = res?.allCategories || res?.data?.allCategories || [];
+            .then((res) => {
+                const cats = res?.categories;
+                const subCats = res?.subcategories || [];
+                const allCats = res?.allCategories || [];
                 if (Array.isArray(cats) && cats.length > 0) {
                     setCategoriesData(cats);
-                    const names = cats.map((c: any) => c.name).filter(Boolean);
+                    const names = cats.map((c) => c.name).filter(Boolean);
                     setAvailableCategories(names);
                 }
                 if (Array.isArray(subCats)) {
                     setSubcategoriesData(subCats);
                 } else if (Array.isArray(allCats)) {
-                    setSubcategoriesData(allCats.filter((c: any) => Boolean(c.parentId)));
+                    setSubcategoriesData(allCats.filter((c) => Boolean(c.parentId)));
                 }
             })
             .catch(() => {});
 
         fetchBrandsClient()
-            .then((res: any) => {
-                const bList = res?.brands || res?.data?.brands;
+            .then((res) => {
+                const bList = res?.brands;
                 if (Array.isArray(bList)) {
                     setVerifiedBrands(bList);
                 }
@@ -77,8 +94,8 @@ function useAddProductWizardInternal() {
             .catch(() => {});
 
         fetchShippingPartnersClient()
-            .then((res: any) => {
-                const pList = res?.partners || res?.data?.partners;
+            .then((res) => {
+                const pList = res?.partners;
                 if (Array.isArray(pList)) {
                     setShippingPartners(pList);
                 }
@@ -86,8 +103,8 @@ function useAddProductWizardInternal() {
             .catch(() => {});
 
         fetchDeliverySettingsClient()
-            .then((res: any) => {
-                const hub = res?.pickupHub || res?.data?.pickupHub;
+            .then((res) => {
+                const hub = res?.pickupHub;
                 if (hub) {
                     setPickupHubs([hub]);
                 }
@@ -99,7 +116,7 @@ function useAddProductWizardInternal() {
         if (activeProductId) {
             fetchProductImagesClient(activeProductId)
                 .then(res => {
-                    const items = res?.data || res || [];
+                    const items = res || [];
                     if (Array.isArray(items)) {
                         setMediaAssets(items);
                     }
@@ -112,7 +129,7 @@ function useAddProductWizardInternal() {
         if (productId) {
             setActiveProductId(productId);
             getProductClient(productId)
-                .then((data: any) => {
+                .then((data) => {
                     if (data) {
                         setFormData({
                             name: data.name || '',
@@ -176,7 +193,7 @@ function useAddProductWizardInternal() {
                         });
                     }
                 })
-                .catch((err: any) => console.error("Failed to load edit product details:", err));
+                .catch((err: unknown) => console.error("Failed to load edit product details:", err));
         }
     }, [productId]);
 
@@ -212,7 +229,7 @@ function useAddProductWizardInternal() {
             if (!currentProductId) {
                 const { createDraftProductClient } = await import('../api/product-client');
                 const res = await createDraftProductClient();
-                currentProductId = res?.data?.id || res?.id;
+                currentProductId = res?.id || null;
                 if (currentProductId) {
                     setActiveProductId(currentProductId);
                 }
@@ -231,14 +248,14 @@ function useAddProductWizardInternal() {
                     formData.append("displayOrder", String(mediaAssets.length + i));
 
                     const uploaded = await uploadProductImageClient(currentProductId, formData);
-                    const newItem = uploaded?.data || uploaded;
+                    const newItem = uploaded;
                     if (newItem) {
                         setMediaAssets(prev => [...prev, newItem]);
                     }
                 }
             }
-        } catch (err: any) {
-            alert(err.message || "Failed to upload media asset");
+        } catch (err: unknown) {
+            alert(errorMessage(err, "Failed to upload media asset"));
         } finally {
             setIsUploadingMedia(false);
             if (fileInputRef.current) fileInputRef.current.value = "";
@@ -275,8 +292,8 @@ function useAddProductWizardInternal() {
                 await deleteProductImageClient(activeProductId, imageId);
             }
             setMediaAssets(prev => prev.filter(item => item.id !== imageId));
-        } catch (err: any) {
-            alert(err.message || "Failed to delete image");
+        } catch (err: unknown) {
+            alert(errorMessage(err, "Failed to delete image"));
         }
     };
 
@@ -289,8 +306,8 @@ function useAddProductWizardInternal() {
                 ...item,
                 isPrimary: item.id === imageId
             })));
-        } catch (err: any) {
-            alert(err.message || "Failed to set thumbnail");
+        } catch (err: unknown) {
+            alert(errorMessage(err, "Failed to set thumbnail"));
         }
     };
 
@@ -369,7 +386,7 @@ function useAddProductWizardInternal() {
                     occasionFocus: formData.occasionFocus,
                     genderProfile: formData.genderProfile,
                     targetAgeGroup: formData.targetAgeGroup,
-                    customAttributes: (formData.customAttributes || []).filter((a: any) => a && a.name?.trim() && a.value?.trim()),
+                    customAttributes: (formData.customAttributes || []).filter((a) => a && a.name?.trim() && a.value?.trim()),
                 });
             } catch (err) {
                 console.error("Failed to sync variants step:", err);
@@ -428,7 +445,7 @@ function useAddProductWizardInternal() {
 
     const handleBackStep = () => { setCurrentStep(prev => prev > 1 ? prev - 1 : prev); };
 
-    const handleInputChange = (field: keyof typeof DEFAULT_FORM_DATA, value: any) => {
+    const handleInputChange = <K extends keyof WizardFormData>(field: K, value: WizardFormData[K]) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 
@@ -558,7 +575,7 @@ function useAddProductWizardInternal() {
             if (!targetId) {
                 const { createDraftProductClient } = await import('../api/product-client');
                 const res = await createDraftProductClient();
-                targetId = res?.data?.id || res?.id;
+                targetId = res?.id || null;
             }
 
             if (targetId) {
@@ -637,8 +654,8 @@ function useAddProductWizardInternal() {
                 await publishProductClient(targetId, status);
             }
             onSuccess();
-        } catch (err: any) {
-            alert(err.message || 'Failed to save product');
+        } catch (err: unknown) {
+            alert(errorMessage(err, 'Failed to save product'));
         } finally {
             setIsSubmitting(false);
         }
@@ -647,7 +664,7 @@ function useAddProductWizardInternal() {
     // Subcategory options derived from database or fallback map
     const subcategoryOptions = CATEGORY_SUBCATEGORY_MAP[formData.category] || ['Kurtis', 'General'];
 
-    const filteredSubcategories = subcategoriesData.filter((sub: any) => {
+    const filteredSubcategories = subcategoriesData.filter((sub) => {
         if (formData.categoryId) {
             return sub.parentId === formData.categoryId;
         }

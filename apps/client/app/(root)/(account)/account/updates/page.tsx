@@ -1,11 +1,12 @@
 import NotificationView from "@/modules/notification/view/notification-view";
+import type { NotificationType } from "@/features/notification-slice";
 import { cookies } from "next/headers";
 import { getApiBaseUrl } from "@/lib/get-api-url";
 
 export default async function Page() {
   const cookie = await cookies();
   const cookieStore = cookie.toString();
-  let notifications: any[] = [];
+  let notifications: NotificationType[] = [];
 
   try {
     const baseUrl = await getApiBaseUrl();

@@ -46,6 +46,8 @@ async function runPhase2Tests() {
     });
 
     assert.ok(newAddr, "Address should be returned");
+    const newAddrId = newAddr.id;
+    assert.ok(newAddrId, "Returned address should have an ID");
     assert.strictEqual(newAddr.fullName, "Priya Sharma");
     assert.strictEqual(newAddr.name, "Priya Sharma", "UI alias name should match");
     assert.strictEqual(newAddr.pincode, "560001", "UI alias pincode should match");
@@ -58,12 +60,14 @@ async function runPhase2Tests() {
     const addresses = await AddressService.getUserAddresses(testUserId);
     assert.ok(Array.isArray(addresses), "Should return array of addresses");
     assert.strictEqual(addresses.length, 1, "Should have 1 address in database");
-    assert.strictEqual(addresses[0].id, newAddr.id);
+    const listedAddress = addresses[0];
+    assert.ok(listedAddress, "Address should be listed");
+    assert.strictEqual(listedAddress.id, newAddrId);
     console.log("✓ Live address query verified.");
 
     // 4. Test AddressService.updateAddress
     console.log("4. Testing AddressService.updateAddress...");
-    const updatedAddr = await AddressService.updateAddress(testUserId, newAddr.id, {
+    const updatedAddr = await AddressService.updateAddress(testUserId, newAddrId, {
       fullName: "Priya Sharma Updated",
       city: "Bengaluru East",
     });
@@ -74,7 +78,7 @@ async function runPhase2Tests() {
 
     // 5. Test AddressService.setDefaultAddress
     console.log("5. Testing AddressService.setDefaultAddress...");
-    const defaultRes = await AddressService.setDefaultAddress(testUserId, newAddr.id);
+    const defaultRes = await AddressService.setDefaultAddress(testUserId, newAddrId);
     assert.strictEqual(defaultRes, true, "Set default should return true");
     console.log("✓ Live setDefaultAddress verified.");
 
@@ -107,7 +111,7 @@ async function runPhase2Tests() {
 
     // 9. Test AddressService.deleteAddress
     console.log("9. Testing AddressService.deleteAddress...");
-    const deleteRes = await AddressService.deleteAddress(testUserId, newAddr.id);
+    const deleteRes = await AddressService.deleteAddress(testUserId, newAddrId);
     assert.strictEqual(deleteRes, true, "Delete should succeed");
     const remainingAddresses = await AddressService.getUserAddresses(testUserId);
     assert.strictEqual(remainingAddresses.length, 0, "Address should be removed from DB");

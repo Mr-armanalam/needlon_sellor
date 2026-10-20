@@ -28,15 +28,15 @@ export async function POST(req: NextRequest) {
     if (type === "LOCAL_RADIUS") {
       const validated = localDeliverySettingsSchema.parse(data);
       const res = await updateLocalDeliverySettingsService(validated);
-      return successResponse(res, "Local delivery radius saved successfully");
+      return successResponse(res);
     } else if (type === "PICKUP_HUB") {
       const validated = pickupHubSchema.parse(data);
       const res = await updatePickupHubService(validated);
-      return successResponse(res, "Pickup hub location updated successfully");
+      return successResponse(res);
     } else if (type === "SHIPPING_ZONE") {
       const validated = shippingZoneSchema.parse(data);
       const res = await addShippingZoneService(validated);
-      return successResponse(res, "Shipping zone added successfully");
+      return successResponse(res);
     }
 
     throw new Error("Invalid delivery settings update type");

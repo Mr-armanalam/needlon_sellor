@@ -1,3 +1,28 @@
+import type { productsTable } from "@needlon/db/db/schema/catalog/products/table";
+import type { categoriesTable } from "@needlon/db/db/schema/catalog/categories/table";
+import type { productVariantsTable } from "@needlon/db/db/schema/catalog/products/product-variants/table";
+import type { pricingTable } from "@needlon/db/db/schema/catalog/products/pricing/table";
+import type { productImagesTable } from "@needlon/db/db/schema/catalog/products/product-images/table";
+
+/** DB row types inferred from the Drizzle schema. */
+export type DbProductRecord = typeof productsTable.$inferSelect;
+export type DbCategoryRecord = typeof categoriesTable.$inferSelect;
+export type DbPricingRecord = typeof pricingTable.$inferSelect;
+/** Variant rows as joined by ProductRepository: the variant row, its pricing, and a legacy price field some rows carry. */
+export type DbProductVariantRecord = typeof productVariantsTable.$inferSelect & {
+  price?: string | number | null;
+};
+export interface DbProductVariantJoin {
+  variant?: DbProductVariantRecord | null;
+  pricing?: DbPricingRecord | null;
+  name?: string | null;
+}
+/** Product image rows: the schema column is imageUrl; mediaUrl/url are accepted legacy aliases. */
+export type DbProductImageRecord = typeof productImagesTable.$inferSelect & {
+  mediaUrl?: string | null;
+  url?: string | null;
+};
+
 export interface ProductWithCategoryDTO {
   product: {
     id: string;
@@ -53,14 +78,14 @@ const DEFAULT_IMAGE =
 
 export function transformDbProductToDto(
   row: {
-    product: any;
-    category?: any;
-    subCategory?: any;
-    defaultVariant?: any;
-    pricing?: any;
+    product: DbProductRecord;
+    category?: DbCategoryRecord | null;
+    subCategory?: DbCategoryRecord | null;
+    defaultVariant?: DbProductVariantRecord | null;
+    pricing?: DbPricingRecord | null;
   },
-  images: any[] = [],
-  variants: any[] = []
+  images: DbProductImageRecord[] = [],
+  variants: DbProductVariantJoin[] = []
 ): ProductWithCategoryDTO {
   const p = row.product;
   const cat = row.category;
@@ -76,13 +101,13 @@ export function transformDbProductToDto(
   const mrpPrice = pr?.compareAtPrice ? Number(pr.compareAtPrice) : Math.round(price * 1.3);
 
   const mediaUrls = images.length > 0
-    ? images.map((m) => m.imageUrl || m.mediaUrl || m.url).filter(Boolean)
+    ? images.map((m) => m.imageUrl || m.mediaUrl || m.url).filter((url): url is string => Boolean(url))
     : [DEFAULT_IMAGE];
 
   const primaryImage = mediaUrls[0] || DEFAULT_IMAGE;
 
   const sizes = variants.length > 0
-    ? variants.map((v) => v.variant?.name || v.name).filter(Boolean)
+    ? variants.map((v) => v.variant?.name || v.name).filter((s): s is string => Boolean(s))
     : ["S", "M", "L", "XL"];
 
   const catName = cat?.name || "Apparel";
@@ -126,7 +151,7 @@ export function transformDbProductToDto(
   };
 }
 
-export function transformToProductCard(dto: any): TransformedProductCardDTO {
+export function transformToProductCard(dto: ProductWithCategoryDTO): TransformedProductCardDTO {
   return {
     id: dto.product.id,
     name: dto.product.name,

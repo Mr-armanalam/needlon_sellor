@@ -1,7 +1,11 @@
 import { Eye, Heart, ShoppingBag } from "lucide-react";
-import { productType } from "../data/dashboard-productsData";
+import { DashboardProductDto } from "../dto/dashboard.dto";
 
-const ProdLightWtMetricBar = ({product}:{product:productType}) => {
+const ProdLightWtMetricBar = ({
+  product,
+}: {
+  product: Pick<DashboardProductDto, "views" | "likes" | "sales">;
+}) => {
   return (
     <div className="grid grid-cols-3 gap-2 border-y border-neutral-50 py-3 my-1">
       <div className="flex flex-col items-center justify-center gap-0.5 text-neutral-400">

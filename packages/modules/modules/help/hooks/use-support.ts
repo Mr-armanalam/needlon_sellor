@@ -2,6 +2,10 @@ import { apiFetch } from "@/modules/auth/lib/auth-client";
 import { useState, useEffect, useCallback } from "react";
 import { SupportTicketResponseDto, CreateSupportTicketDto } from "../dto/support.dto";
 
+function getErrorMessage(err: unknown, fallback: string): string {
+  return err instanceof Error && err.message ? err.message : fallback;
+}
+
 export function useSupport() {
   const [tickets, setTickets] = useState<SupportTicketResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -16,8 +20,8 @@ export function useSupport() {
       if (json.success && json.data) {
         setTickets(json.data.tickets || []);
       }
-    } catch (err: any) {
-      setError(err.message || "Failed to load support tickets");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to load support tickets"));
     } finally {
       setLoading(false);
     }
@@ -40,8 +44,8 @@ export function useSupport() {
         return { success: true, data: json.data };
       }
       return { success: false, error: json.error?.message || "Failed to create support ticket" };
-    } catch (err: any) {
-      return { success: false, error: err.message };
+    } catch (err: unknown) {
+      return { success: false, error: getErrorMessage(err, "Failed to create support ticket") };
     }
   };
 
@@ -53,8 +57,8 @@ export function useSupport() {
         return { success: true, data: json.data };
       }
       return { success: false, error: json.error?.message || "Failed to load ticket details" };
-    } catch (err: any) {
-      return { success: false, error: err.message };
+    } catch (err: unknown) {
+      return { success: false, error: getErrorMessage(err, "Failed to load ticket details") };
     }
   };
 
@@ -71,8 +75,8 @@ export function useSupport() {
         return { success: true, data: json.data };
       }
       return { success: false, error: json.error?.message || "Failed to send reply" };
-    } catch (err: any) {
-      return { success: false, error: err.message };
+    } catch (err: unknown) {
+      return { success: false, error: getErrorMessage(err, "Failed to send reply") };
     }
   };
 
@@ -89,8 +93,8 @@ export function useSupport() {
         return { success: true, data: json.data };
       }
       return { success: false, error: json.error?.message || "Failed to update ticket status" };
-    } catch (err: any) {
-      return { success: false, error: err.message };
+    } catch (err: unknown) {
+      return { success: false, error: getErrorMessage(err, "Failed to update ticket status") };
     }
   };
 

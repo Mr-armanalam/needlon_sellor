@@ -37,7 +37,9 @@ export async function GET(req: NextRequest) {
 /** * Data Transfer Object (DTO) Mapper
  * Ensures consistent output structure
  */
-function mapToProductDTO(r: any) {
+type NewProductResult = Awaited<ReturnType<typeof NewProductService.getByCategory>>[number];
+
+function mapToProductDTO(r: NewProductResult) {
   return {
     id: r.product.id,
     name: r.product.name,

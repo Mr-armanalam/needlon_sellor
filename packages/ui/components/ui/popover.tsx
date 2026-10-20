@@ -9,11 +9,19 @@ function Popover({ ...props }: PopoverPrimitive.Root.Props) {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />
 }
 
-function PopoverTrigger({ asChild, render, children, ...props }: any) {
+function PopoverTrigger({
+  asChild,
+  render,
+  children,
+  ...props
+}: PopoverPrimitive.Trigger.Props & { asChild?: boolean }) {
   return (
     <PopoverPrimitive.Trigger
       data-slot="popover-trigger"
-      render={render ?? (asChild ? children : undefined)}
+      render={
+        render ??
+        (asChild && React.isValidElement(children) ? children : undefined)
+      }
       {...(asChild && !render ? {} : { children })}
       {...props}
     />

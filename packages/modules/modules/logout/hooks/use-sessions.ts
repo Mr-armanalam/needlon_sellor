@@ -65,7 +65,7 @@ export function useSessions() {
     isLoadingSessions: sessionsQuery.isLoading,
     refetchSessions: sessionsQuery.refetch,
     
-    preferences: preferencesQuery.data || {},
+    preferences: preferencesQuery.data,
     isLoadingPreferences: preferencesQuery.isLoading,
     refetchPreferences: preferencesQuery.refetch,
 

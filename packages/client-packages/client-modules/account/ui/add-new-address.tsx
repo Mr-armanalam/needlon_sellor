@@ -128,7 +128,7 @@ const AddNewAddress = ({
       });
       clearAddressForm();
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       toast.error(err?.message || "Something went wrong while saving the address.");
     },
   });
@@ -163,7 +163,7 @@ const AddNewAddress = ({
     staleTime: Infinity,
   });
 
-  const handleAccordionChange = (val: any) => {
+  const handleAccordionChange = (val: string | string[]) => {
     const nextVal = Array.isArray(val) ? val : val ? [val] : [];
     setAccordionValue(nextVal);
     if (nextVal.length === 0 && editingAddress) {
@@ -197,7 +197,7 @@ const AddNewAddress = ({
         </AccordionTrigger>
 
         <AccordionContent className="max-w-200">
-          <Form {...(form as any)}>
+          <Form {...form}>
             <form
               onSubmit={form.handleSubmit(onSubmit)}
               className="grid grid-cols-2 p-1 space-x-4 space-y-4"

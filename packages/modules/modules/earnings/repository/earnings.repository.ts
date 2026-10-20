@@ -349,7 +349,7 @@ export async function createSellerPayoutRequest(
 
   // 2. Select bank account
   let bankAccountId = dto.bankAccountId;
-  let bankAccountDetails: any = null;
+  let bankAccountDetails: (typeof sellerBankAccounts)["$inferSelect"] | null = null;
 
   if (bankAccountId) {
     const [acc] = await db
@@ -378,7 +378,7 @@ export async function createSellerPayoutRequest(
       .orderBy(desc(sellerBankAccounts.isPrimary))
       .limit(1);
     bankAccountId = primary?.id;
-    bankAccountDetails = primary;
+    bankAccountDetails = primary ?? null;
   }
 
   const payoutNumber = `SET-${Math.floor(1000 + Math.random() * 9000)}`;

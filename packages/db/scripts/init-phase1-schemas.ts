@@ -63,8 +63,11 @@ async function initPhase1Schemas() {
         ALTER TYPE order_source ADD VALUE IF NOT EXISTS 'IN_STORE';
       `;
       console.log("✓ Added 'IN_STORE' to order_source enum.");
-    } catch (e: any) {
-      console.log("Notice on order_source enum:", e.message);
+    } catch (e: unknown) {
+      console.log(
+        "Notice on order_source enum:",
+        e instanceof Error ? e.message : String(e)
+      );
     }
   } catch (err) {
     console.error("Phase 1 Migration error:", err);

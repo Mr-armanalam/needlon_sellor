@@ -203,13 +203,13 @@ async function runDynamicOrderAndReviewTests() {
     assert.ok(dbReview, "Review must be found in reviewsTable");
     assert.strictEqual(dbReview.rating, 5);
     assert.strictEqual(dbReview.content, "Incredible fitting and premium fabric. Arrived in perfect condition!");
-    assert.strictEqual((dbReview.metadata as any)?.orderItemId, testOrderItemId);
+    assert.strictEqual(dbReview.metadata?.orderItemId, testOrderItemId);
     console.log("✓ Database record verified with matching orderItemId metadata.");
 
     // 9. Verify getProductReviews returns orderItemId top-level for client OrderRating matching
     console.log("9. Verifying ReviewService.getProductReviews returns orderItemId top-level...");
     const prodReviews = await ReviewService.getProductReviews(testProductId);
-    const matchedClientReview = prodReviews.reviews.find((r: any) => r.orderItemId === testOrderItemId);
+    const matchedClientReview = prodReviews.reviews.find((r) => r.orderItemId === testOrderItemId);
     assert.ok(matchedClientReview, "Product reviews list must contain review with orderItemId for client matching");
     assert.strictEqual(matchedClientReview.rating, 5);
     console.log("✓ getProductReviews returned orderItemId for seamless UI experience.");

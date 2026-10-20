@@ -1,7 +1,8 @@
 import { apiFetch } from "@/modules/auth/lib/auth-client";
 import { useState } from "react";
+import type { OrderListItemDto } from "@/modules/orders/dto";
 
-export const useManifest = (ordersList: any[] = []) => {
+export const useManifest = (ordersList: OrderListItemDto[] = []) => {
 
     const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>(
         ordersList.map((o) => o.id)
@@ -57,8 +58,8 @@ export const useManifest = (ordersList: any[] = []) => {
             } else {
                 setError(data.error?.message || "Failed to generate manifest.");
             }
-        } catch (err: any) {
-            setError(err.message || "Failed to generate manifest");
+        } catch (err: unknown) {
+            setError(err instanceof Error && err.message ? err.message : "Failed to generate manifest");
         } finally {
             setLoading(false);
         }

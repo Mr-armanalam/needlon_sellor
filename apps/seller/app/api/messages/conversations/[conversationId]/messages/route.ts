@@ -110,7 +110,7 @@ export async function POST(
 
             const message =
                 await messageService.sendMessage(
-                    body as any,
+                    body,
                     sellerProfile.sellerId,
                 );
 

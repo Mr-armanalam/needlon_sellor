@@ -19,8 +19,12 @@ export function useCustomers(searchQuery?: string) {
         setCustomers(json.data.customers || []);
         setTotalCount(json.data.totalCount || 0);
       }
-    } catch (err: any) {
-      setError(err.message || "Failed to load customers");
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? err.message || "Failed to load customers"
+          : "Failed to load customers",
+      );
     } finally {
       setLoading(false);
     }

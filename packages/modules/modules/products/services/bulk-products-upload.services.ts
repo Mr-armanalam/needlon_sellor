@@ -1,6 +1,6 @@
 import {AuthSeller} from "@/types/auth";
-import {bulkProductUpload} from "@/modules/products/repository";
+import {bulkProductUpload, type BulkProductUploadItem} from "@/modules/products/repository";
 
-export const bulkProductsUploadServices = async (seller:AuthSeller, items:any)=> {
+export const bulkProductsUploadServices = async (seller:AuthSeller, items:BulkProductUploadItem[])=> {
     return await bulkProductUpload(seller, items);
 }

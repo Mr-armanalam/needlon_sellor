@@ -3,6 +3,16 @@ import { getCurrentSeller } from "@/modules/auth/lib/get-current-seller";
 import { createBulkManifest, getManifestsListForSeller } from "@/modules/orders/documents/services/manifest-service";
 import { generateManifestHTML } from "@/modules/orders/documents/templates/manifest-generator";
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = (error as { message: unknown }).message;
+    return typeof message === "string" ? message : "";
+  }
+  return "";
+}
+
+
 export async function POST(req: NextRequest) {
   try {
     const seller = await getCurrentSeller();
@@ -35,9 +45,9 @@ export async function POST(req: NextRequest) {
         html,
       },
     });
-  } catch (err: any) {
+  } catch (err) {
     return NextResponse.json(
-      { success: false, error: { code: "INTERNAL_ERROR", message: err.message || "Failed to create shipment manifest" } },
+      { success: false, error: { code: "INTERNAL_ERROR", message: getErrorMessage(err) || "Failed to create shipment manifest" } },
       { status: 500 }
     );
   }
@@ -59,9 +69,9 @@ export async function GET(req: NextRequest) {
       success: true,
       data: manifests,
     });
-  } catch (err: any) {
+  } catch (err) {
     return NextResponse.json(
-      { success: false, error: { code: "INTERNAL_ERROR", message: err.message || "Failed to list manifests" } },
+      { success: false, error: { code: "INTERNAL_ERROR", message: getErrorMessage(err) || "Failed to list manifests" } },
       { status: 500 }
     );
   }

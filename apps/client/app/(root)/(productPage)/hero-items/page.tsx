@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,11 +9,12 @@ import { toast } from "sonner";
 export default function HeroItemUpload() {
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
 
-    const form = new FormData(e.target);
+    const formElement = e.currentTarget;
+    const form = new FormData(formElement);
 
     const res = await fetch("/api/hero-items", {
       method: "POST",
@@ -28,7 +28,7 @@ export default function HeroItemUpload() {
       toast.error(data.error);
     } else {
       toast.success("Hero item uploaded!");
-      e.target.reset();
+      formElement.reset();
     }
   };
 

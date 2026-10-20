@@ -9,6 +9,8 @@ export const DEFAULT_USER_FALLBACK = {
   gender: "male" as const,
 };
 
+export type UserRecord = typeof usersTable.$inferSelect;
+
 export interface UpdateUserProfileDto {
   name?: string;
   phone?: string;
@@ -57,7 +59,7 @@ export const UserService = {
     }
 
     try {
-      const updateData: Record<string, any> = {
+      const updateData: Partial<UserRecord> = {
         updatedAt: new Date(),
       };
 

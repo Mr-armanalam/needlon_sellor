@@ -74,7 +74,7 @@ const SeoNTagsNode = () => {
                     <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Storefront Visibility</label>
                     <select
                         value={formData.customVisibility || 'PUBLIC'}
-                        onChange={(e) => handleInputChange('customVisibility', e.target.value as any)}
+                        onChange={(e) => handleInputChange('customVisibility', e.target.value as (typeof VISIBILITY_OPTIONS)[number])}
                         className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all cursor-pointer font-bold text-neutral-800"
                     >
                         <option value="PUBLIC">PUBLIC — Visible on storefront & search engines</option>

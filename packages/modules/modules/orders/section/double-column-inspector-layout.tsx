@@ -1,6 +1,7 @@
 import React from 'react';
 import OrderMetaNLineItems from "@/modules/orders/components/order-meta-n-line-items";
 import PipelineTracking from "@/modules/orders/components/pipeline-tracking";
+import type {OrderDetailAddressDto, OrderDetailResponseDto, OrderListItemLineDto} from "@/modules/orders/dto";
 
 const DoubleColumnInspectorLayout = (
     {
@@ -16,11 +17,11 @@ const DoubleColumnInspectorLayout = (
         actionLoading,
         handleCancel
     }:{
-        data: any;
+        data: OrderDetailResponseDto;
         currentStatus: string;
-        items: any;
-        formatCurrency: (val: string) => string ;
-        deliveryAddress: any;
+        items: OrderListItemLineDto[];
+        formatCurrency: (val: number | string) => string ;
+        deliveryAddress: OrderDetailAddressDto | undefined;
         stepsTimeline:{
             label: string
             time: string

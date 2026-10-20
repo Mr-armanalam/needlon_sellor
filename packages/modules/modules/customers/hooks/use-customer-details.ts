@@ -7,6 +7,10 @@ export interface CustomerHistoryItem {
   date: string;
   total: string;
   status: string;
+  tailoringStage?: string | null;
+  tailoringNotes?: string | null;
+  source?: string;
+  paymentStatus?: string;
 }
 
 export interface CustomerReviewItem {
@@ -23,8 +27,8 @@ export interface CustomerMeasurementItem {
   gender: string;
   garmentType: string;
   unit: string;
-  essentialMeasurements: Record<string, any>;
-  postureSpecifics: Record<string, any>;
+  essentialMeasurements: Record<string, number | string>;
+  postureSpecifics: Record<string, number | string>;
   fitPreference?: string;
   tailorNotes?: string;
   source: string;

@@ -137,8 +137,9 @@ async function runPhase8Tests() {
         rating: 5,
         comment: "I never bought this product!",
       });
-    } catch (err: any) {
-      if (err.statusCode === 403 || err.message?.includes("Verified purchase required")) {
+    } catch (err) {
+      const e = err as Error & { statusCode?: number };
+      if (e.statusCode === 403 || e.message?.includes("Verified purchase required")) {
         strangerRejected = true;
       }
     }
@@ -156,8 +157,9 @@ async function runPhase8Tests() {
         rating: 5,
         comment: "Order is still in transit, trying to review early",
       });
-    } catch (err: any) {
-      if (err.statusCode === 400 || err.message?.includes("DELIVERED")) {
+    } catch (err) {
+      const e = err as Error & { statusCode?: number };
+      if (e.statusCode === 400 || e.message?.includes("DELIVERED")) {
         undeliveredRejected = true;
       }
     }

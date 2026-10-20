@@ -19,6 +19,7 @@ import { productStatusEnum } from "@/db/schema/catalog/enums";
 export interface DraftBasicInfoInput {
   name?: string;
   brandLabel?: string;
+  brandName?: string | null;
   category?: string;
   subcategory?: string;
   descriptionStory?: string;
@@ -36,6 +37,7 @@ export interface DraftVariantsInput {
   sizesMatrix?: string;
   colorsTrack?: string;
   fabricMaterial?: string;
+  fabric?: string;
   sleevesStyle?: string | null;
   fitType?: string | null;
   occasionFocus?: string | null;
@@ -51,20 +53,38 @@ export interface DraftInventoryInput {
   lowStockThreshold?: number | string;
   allowBackorder?: boolean;
   barcode?: string;
+  reservedQuantity?: number | string;
+  lastAdjustedAt?: string | Date | null;
+  position?: number | string;
   [key: string]: unknown;
 }
 
 export interface DraftDeliveryInput {
   packageWeight?: string | number;
+  pickupHubId?: string | null;
   pickupHubAddress?: string;
+  shippingPartnerId?: string | null;
+  shippingMethodId?: string | null;
+  deliveryZone?: string;
   deliveryRadiusRange?: string;
   estimatedDeliveryWindow?: string;
   [key: string]: unknown;
 }
 
 export interface DraftSeoInput {
-  customVisibility?: string;
-  searchKeywords?: string;
+  customVisibility?: "PUBLIC" | "PRIVATE" | "UNLISTED";
+  searchKeywords?: string | null;
+  slug?: string | null;
+  metaTitle?: string | null;
+  metaDescription?: string | null;
+  canonicalUrl?: string | null;
+  ogTitle?: string | null;
+  ogDescription?: string | null;
+  ogImage?: string | null;
+  twitterTitle?: string | null;
+  twitterDescription?: string | null;
+  twitterImage?: string | null;
+  structuredData?: Record<string, unknown>;
   [key: string]: unknown;
 }
 
@@ -174,12 +194,12 @@ export async function updateDraftProductInventoryService(id: string, input: Draf
     }
 
     await updateDraftProductInventory(id, input.uniqueSku, input.boutiqueStockCount, {
-        lowStockThreshold: input.lowStockThreshold as any,
+        lowStockThreshold: input.lowStockThreshold,
         allowBackorder: input.allowBackorder,
         barcode: input.barcode,
-        reservedQuantity: input.reservedQuantity as any,
-        lastAdjustedAt: input.lastAdjustedAt as any,
-        position: input.position as any,
+        reservedQuantity: input.reservedQuantity,
+        lastAdjustedAt: input.lastAdjustedAt,
+        position: input.position,
     }, sellerId);
 
     return { ...draft, sku: input.uniqueSku, metadata: { ...input } };
@@ -191,7 +211,7 @@ export async function updateDraftProductDeliveryService(id: string, input: Draft
         throw new NotFoundError("Draft product not found.");
     }
 
-    await updateDraftProductDelivery(id, input.packageWeight, input as any, sellerId);
+    await updateDraftProductDelivery(id, input.packageWeight, input, sellerId);
 
     return { ...draft, ...input, metadata: { ...input } };
 }
@@ -209,7 +229,7 @@ export async function updateDraftProductSeoService(id: string, input: DraftSeoIn
         });
     }
 
-    await updateDraftProductSeo(id, input.searchKeywords, input.customVisibility as any, input as any, sellerId);
+    await updateDraftProductSeo(id, input.searchKeywords, input.customVisibility, input, sellerId);
 
     return { ...draft, ...input, metadata: { ...input } };
 }
@@ -224,7 +244,7 @@ export async function publishDraftProductService(id: string, input?: { status?: 
     }
 
     const newStatus = input?.status || "PUBLISHED";
-    const updateData: any = {
+    const updateData: UpdateProductData & { updatedBy?: string } = {
         status: newStatus,
         updatedAt: new Date(),
         ...(sellerId ? { updatedBy: sellerId } : {}),

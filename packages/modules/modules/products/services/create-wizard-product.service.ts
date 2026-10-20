@@ -13,6 +13,19 @@ export interface CreateWizardProductParams {
   data: ProductWizardInput;
 }
 
+function extractRows<T>(result: unknown): T[] {
+  if (result && typeof result === "object" && "rows" in result) {
+    const rows: unknown = (result as { rows: unknown }).rows;
+    if (Array.isArray(rows)) {
+      return rows as T[];
+    }
+  }
+  if (Array.isArray(result)) {
+    return result as T[];
+  }
+  return [];
+}
+
 export async function createWizardProductService({ sellerId, data }: CreateWizardProductParams) {
   if (!sellerId) {
     throw new Error("Seller ID is required.");
@@ -32,7 +45,7 @@ export async function createWizardProductService({ sellerId, data }: CreateWizar
     const catRows = await db.execute(
       sql`INSERT INTO categories (name, slug, level) VALUES (${data.category}, ${catSlug}, 0) RETURNING id`
     );
-    categoryId = (catRows[0] as any)?.id;
+    categoryId = extractRows<{ id: string }>(catRows)[0]?.id ?? null;
   }
 
   if (!categoryId) {

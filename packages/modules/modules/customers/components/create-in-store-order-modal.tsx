@@ -76,8 +76,10 @@ export default function CreateInStoreOrderModal({
       setGarmentName('');
       setAmount('');
       setTailoringNotes('');
-    } catch (err: any) {
-      setError(err.message || 'Failed to create in-store order');
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message || 'Failed to create in-store order' : 'Failed to create in-store order',
+      );
     } finally {
       setSubmitting(false);
     }
@@ -195,7 +197,7 @@ export default function CreateInStoreOrderModal({
               </label>
               <select
                 value={paymentStatus}
-                onChange={(e) => setPaymentStatus(e.target.value as any)}
+                onChange={(e) => setPaymentStatus(e.target.value as 'PAID' | 'PENDING' | 'PARTIAL')}
                 className="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
               >
                 <option value="PAID">Paid in Full</option>

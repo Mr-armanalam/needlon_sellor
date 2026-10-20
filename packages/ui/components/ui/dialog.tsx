@@ -11,11 +11,19 @@ function Dialog({ ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />
 }
 
-function DialogTrigger({ asChild, render, children, ...props }: any) {
+function DialogTrigger({
+  asChild,
+  render,
+  children,
+  ...props
+}: DialogPrimitive.Trigger.Props & { asChild?: boolean }) {
   return (
     <DialogPrimitive.Trigger
       data-slot="dialog-trigger"
-      render={render ?? (asChild ? children : undefined)}
+      render={
+        render ??
+        (asChild && React.isValidElement(children) ? children : undefined)
+      }
       {...(asChild && !render ? {} : { children })}
       {...props}
     />
@@ -26,11 +34,19 @@ function DialogPortal({ ...props }: DialogPrimitive.Portal.Props) {
   return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />
 }
 
-function DialogClose({ asChild, render, children, ...props }: any) {
+function DialogClose({
+  asChild,
+  render,
+  children,
+  ...props
+}: DialogPrimitive.Close.Props & { asChild?: boolean }) {
   return (
     <DialogPrimitive.Close
       data-slot="dialog-close"
-      render={render ?? (asChild ? children : undefined)}
+      render={
+        render ??
+        (asChild && React.isValidElement(children) ? children : undefined)
+      }
       {...(asChild && !render ? {} : { children })}
       {...props}
     />

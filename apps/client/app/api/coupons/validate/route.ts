@@ -4,14 +4,29 @@ import { promotions } from "@needlon/db/db/schema/marketing/promotion";
 import { couponRedemptions } from "@needlon/db/db/schema/marketing/coupon-redemption";
 import { and, eq, isNull, sql } from "drizzle-orm";
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = (error as { message: unknown }).message;
+    return typeof message === "string" ? message : "";
+  }
+  return "";
+}
+
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function isValidUuid(id?: string): boolean {
   return typeof id === "string" && UUID_REGEX.test(id);
 }
 
+interface ValidateCouponRequestBody {
+  code?: string;
+  userId?: string;
+  subtotal?: number;
+}
+
 export async function POST(req: Request) {
   try {
-    const body = await req.json().catch(() => ({}));
+    const body: ValidateCouponRequestBody = await req.json().catch(() => ({}));
     const { code, userId, subtotal = 0 } = body;
 
     if (!code || typeof code !== "string" || !code.trim()) {
@@ -179,10 +194,10 @@ export async function POST(req: Request) {
       { valid: false, message: "Invalid or inactive coupon code" },
       { status: 200 }
     );
-  } catch (error: any) {
+  } catch (error) {
     console.error("COUPON_VALIDATE_ERROR:", error);
     return NextResponse.json(
-      { valid: false, message: error?.message || "Failed to validate coupon code" },
+      { valid: false, message: getErrorMessage(error) || "Failed to validate coupon code" },
       { status: 500 }
     );
   }

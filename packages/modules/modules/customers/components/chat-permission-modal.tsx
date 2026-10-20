@@ -5,6 +5,16 @@ import { apiFetch } from "@/modules/auth/lib/auth-client";
 import React, { useState, useEffect } from 'react';
 import { X, ShieldCheck, Send, Clock, AlertCircle, Loader2 } from 'lucide-react';
 
+interface ChatPermissionState {
+  id?: string;
+  status: string;
+  isEnabled?: boolean;
+  canMessage: boolean;
+  requestMessage?: string | null;
+  requestedAt?: string;
+  respondedAt?: string | null;
+}
+
 interface ChatPermissionModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -20,7 +30,7 @@ export default function ChatPermissionModal({
   customerName,
   onProceedToChat,
 }: ChatPermissionModalProps) {
-  const [permission, setPermission] = useState<any | null>(null);
+  const [permission, setPermission] = useState<ChatPermissionState | null>(null);
   const [loading, setLoading] = useState(true);
   const [requestMessage, setRequestMessage] = useState('');
   const [sending, setSending] = useState(false);
@@ -84,8 +94,10 @@ export default function ChatPermissionModal({
         status: 'REQUESTED',
         canMessage: false,
       });
-    } catch (err: any) {
-      setError(err.message || 'Error sending request');
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message || 'Error sending request' : 'Error sending request',
+      );
     } finally {
       setSending(false);
     }

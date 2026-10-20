@@ -1,6 +1,12 @@
 import "reflect-metadata";
 import * as dotenv from "dotenv";
 import path from "path";
+import type { AuthSeller } from "@/types/auth";
+import type { ShippingMetadata } from "../../../db/db/schema/catalog/products/shipping/metadata";
+
+type ShippingMetadataWithPickupHub = ShippingMetadata & {
+  pickupHubAddress?: string;
+};
 
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 
@@ -52,7 +58,7 @@ async function runBugFixValidationTests() {
   }
 
   const draftService = new DraftProductService();
-  let draftProduct: any = null;
+  let draftProduct: Awaited<ReturnType<InstanceType<typeof DraftProductService>["createDraft"]>> | null = null;
 
   try {
     // 0. Create Draft Product
@@ -103,7 +109,7 @@ async function runBugFixValidationTests() {
     console.log(`✅ Pricing audit fields verified: created_by=${pricingRow.createdBy}, updated_by=${pricingRow.updatedBy}`);
 
     // Verify getProductById returns YYYY-MM-DD strings so HTML date input works
-    const sellerContext = { id: TEST_SELLER_ID, role: "seller", name: "BugFix Seller", email: "bugfix-seller@test.com" } as any;
+    const sellerContext: AuthSeller = { id: TEST_SELLER_ID, role: "seller", name: "BugFix Seller", email: "bugfix-seller@test.com", emailVerified: false };
     let fetched = await getProductById(draftProduct.id, sellerContext);
     if (fetched instanceof Error) throw fetched;
 
@@ -210,8 +216,9 @@ async function runBugFixValidationTests() {
     if (shippingRow.createdBy !== TEST_SELLER_ID || shippingRow.updatedBy !== TEST_SELLER_ID) {
       throw new Error(`Shipping audit fields mismatch! createdBy: ${shippingRow.createdBy}, updatedBy: ${shippingRow.updatedBy}`);
     }
-    if ((shippingRow.metadata as any)?.pickupHubAddress !== manualAddress) {
-      throw new Error(`Manual address not saved in shipping metadata! Got: ${(shippingRow.metadata as any)?.pickupHubAddress}`);
+    const shippingMetadata = shippingRow.metadata as ShippingMetadataWithPickupHub;
+    if (shippingMetadata?.pickupHubAddress !== manualAddress) {
+      throw new Error(`Manual address not saved in shipping metadata! Got: ${shippingMetadata?.pickupHubAddress}`);
     }
     console.log(`✅ Shipping record verified: created_by=${shippingRow.createdBy}, updated_by=${shippingRow.updatedBy}, weight=${shippingRow.weight}`);
 

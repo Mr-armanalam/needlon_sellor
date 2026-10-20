@@ -7,6 +7,7 @@
 // ============================================================================
 
 import {
+    MessageAttachmentType,
     MessageType,
 } from "@/db/schema/messages";
 
@@ -26,6 +27,12 @@ export interface SendMessageAttachmentDto {
      * Display order.
      */
     sortOrder: number;
+
+    /**
+     * Attachment kind, when known to the uploader
+     * (e.g. "IMAGE" for image uploads).
+     */
+    type?: MessageAttachmentType;
 
     fileName?: string;
     originalFileName?: string;

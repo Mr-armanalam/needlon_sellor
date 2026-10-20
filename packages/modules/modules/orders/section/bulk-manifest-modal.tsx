@@ -6,11 +6,12 @@ import BulkManifestDocCourierNDate from "@/modules/orders/components/bulk-manife
 import BulkManifestDocSelectOrder from "@/modules/orders/components/bulk-manifest-doc-select-order";
 import BulkManifestDocHtmlPreview from "@/modules/orders/components/bulk-manifest-doc-html-preview";
 import BulkManifestDocFooterAction from "@/modules/orders/components/bulk-manifest-doc-footer-action";
+import type { OrderListItemDto } from "@/modules/orders/dto";
 
 interface BulkManifestModalProps {
   isOpen: boolean;
   onClose: () => void;
-  ordersList: any[];
+  ordersList: OrderListItemDto[];
 }
 
 export function BulkManifestModal({

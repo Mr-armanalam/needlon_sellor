@@ -65,8 +65,10 @@ export default function UpdateTailoringStageModal({
 
       onStageUpdated();
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Error advancing tailoring milestone');
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message || 'Error advancing tailoring milestone' : 'Error advancing tailoring milestone',
+      );
     } finally {
       setSubmitting(false);
     }

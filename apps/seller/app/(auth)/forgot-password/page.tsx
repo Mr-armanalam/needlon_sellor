@@ -11,6 +11,15 @@ import { Button } from "@/components/ui/button";
 
 import { AuthShell } from "@/modules/auth/components/auth-shell";
 import { useForgotPasswordMutation } from "@/modules/auth/hooks";
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = (error as { message: unknown }).message;
+    return typeof message === "string" ? message : "";
+  }
+  return "";
+}
+
 import {
   forgotPasswordSchema,
   type ForgotPasswordForm,
@@ -40,10 +49,10 @@ export default function ForgotPasswordPage() {
           values.email
         )}&type=reset`
       );
-    } catch (error: any) {
+    } catch (error) {
       console.error(error);
       toast.error(
-        error?.message || "Unable to send reset code. Please try again."
+        getErrorMessage(error) || "Unable to send reset code. Please try again."
       );
     }
   };

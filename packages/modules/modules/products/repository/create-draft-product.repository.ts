@@ -1,7 +1,17 @@
 import { db } from "@/db";
 import { productsTable, Product, NewProduct } from "@/db/schema/catalog/products";
 
-export async function createDraftProduct(data: any): Promise<Product> {
+export interface CreateDraftProductInput {
+    categoryId?: string | null;
+    sellerId?: string;
+    storeId?: string;
+    name?: string;
+    slug?: string;
+    status?: NewProduct["status"];
+    visibility?: NewProduct["visibility"];
+}
+
+export async function createDraftProduct(data: CreateDraftProductInput): Promise<Product> {
     let categoryId = data.categoryId;
     if (!categoryId) {
         const { categoriesTable } = await import("@/db/schema/catalog/categories");
@@ -34,7 +44,7 @@ export async function createDraftProduct(data: any): Promise<Product> {
 
     const draftValues: NewProduct = {
         storeId: sellerId,
-        categoryId: categoryId,
+        categoryId: categoryId as string,
         name: data.name || "Untitled Draft",
         slug: data.slug || `draft-${timestamp}-${randomSuffix}`,
         status: data.status || "DRAFT",

@@ -22,6 +22,16 @@ import {
 } from "@/modules/auth/validations/signup-schema";
 import { useForm, useWatch } from "react-hook-form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = (error as { message: unknown }).message;
+    return typeof message === "string" ? message : "";
+  }
+  return "";
+}
+
 import { Field, FieldError } from "@/components/ui/field";
 
 export default function SignupPage() {
@@ -70,8 +80,8 @@ export default function SignupPage() {
       router.push(
         `/verify-otp?email=${encodeURIComponent(values.email)}&type=signup`,
       );
-    } catch (error: any) {
-      const errMsg = error?.message || "Failed to create account";
+    } catch (error) {
+      const errMsg = getErrorMessage(error) || "Failed to create account";
       setError("email", {
         type: "server",
         message: errMsg,

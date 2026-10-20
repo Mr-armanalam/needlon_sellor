@@ -64,8 +64,10 @@ export default function ScheduleFittingModal({
 
       onScheduled();
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Error scheduling fitting session');
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message || 'Error scheduling fitting session' : 'Error scheduling fitting session',
+      );
     } finally {
       setLoading(false);
     }

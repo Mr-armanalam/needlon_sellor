@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 
 
-function isValidAbsoluteUrl(url?: string): boolean {
+function isValidAbsoluteUrl(url?: string): url is string {
   if (!url || typeof url !== "string") return false;
   try {
     const parsed = new URL(url);
@@ -11,8 +11,22 @@ function isValidAbsoluteUrl(url?: string): boolean {
   }
 }
 
+/** A cart line as consumed by checkout: the cart-slice CartItem shape plus the optional MRP / shipping fields. */
+export interface CheckoutCartItem {
+  id?: string;
+  productId?: string;
+  name: string;
+  price?: number | string;
+  mrp_price?: number | string;
+  quantity?: number | string;
+  size?: string;
+  color?: string;
+  image?: string;
+  shippingCharge?: number | string;
+}
+
 export function mapCartToLineItems(
-  cartItems: any[],
+  cartItems: CheckoutCartItem[],
   podCharge: number = 0,
   includeShippingAsLineItem: boolean = false
 ): Stripe.Checkout.SessionCreateParams.LineItem[] {

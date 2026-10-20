@@ -17,7 +17,10 @@ export interface CreateAddressDto {
 
 export interface UpdateAddressDto extends Partial<CreateAddressDto> {}
 
-export function mapAddressToUi(addr: any) {
+/** A stored user address row (Drizzle-inferred), or a partial row built from a DTO. */
+export type UserAddressRecord = typeof userAddressesTable.$inferSelect;
+
+export function mapAddressToUi(addr: Partial<UserAddressRecord> | null | undefined) {
   if (!addr) return null;
   return {
     ...addr,
@@ -100,7 +103,7 @@ export const AddressService = {
           .where(eq(userAddressesTable.userId, userId));
       }
 
-      const updateData: Record<string, any> = {
+      const updateData: Partial<UserAddressRecord> = {
         updatedAt: new Date(),
       };
 

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 /*
@@ -15,6 +14,7 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
+  type CarouselApi,
 } from "@/components/ui/carousel";
 import { LucideTag } from "lucide-react";
 import Image from "next/image";
@@ -26,7 +26,7 @@ import { useRouter } from "next/navigation";
 
 const HeroSlider = ({tailoringServices}:{tailoringServices: heroProps[]}) => {
   const [current, setCurrent] = useState(0);
-  const [api, setApi] = useState<any>(null);
+  const [api, setApi] = useState<CarouselApi>();
   const router = useRouter();
   
   useEffect(() => {

@@ -5,6 +5,7 @@ import { BulkManifestModal } from "../section/bulk-manifest-modal";
 import HeaderControls from "@/modules/orders/components/header-controls";
 import OrderStagesHorizontalTab from "@/modules/orders/section/order-stages-horizontal-tab";
 import OrderQueueList from "@/modules/orders/section/order-queue-list";
+import type { OrderListItemDto } from "@/modules/orders/dto";
 
 interface OrdersCanvasProps {
   onInspectOrder: (orderId: string) => void;
@@ -30,7 +31,7 @@ export default function OrdersCanvas({ onInspectOrder }: OrdersCanvasProps) {
 
   // Document Modals state
   const [isManifestModalOpen, setIsManifestModalOpen] = useState(false);
-  const [selectedPreviewOrder, setSelectedPreviewOrder] = useState<any | null>(null);
+  const [selectedPreviewOrder, setSelectedPreviewOrder] = useState<OrderListItemDto | null>(null);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
 
   return (

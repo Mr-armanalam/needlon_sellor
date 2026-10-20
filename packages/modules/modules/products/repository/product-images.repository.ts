@@ -28,7 +28,7 @@ export async function findProductImageById(imageId: string) {
 export async function createProductImage(data: CreateProductImageDto) {
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(2, 7);
-  const storageKey = data.storageKey || (data as any).storagePath || `media-${timestamp}-${random}`;
+  const storageKey = data.storageKey || data.storagePath || `media-${timestamp}-${random}`;
   const mediaType = data.mediaType || (data.mimeType && data.mimeType.toLowerCase().startsWith("video/") ? "VIDEO" : "IMAGE");
 
   const [image] = await db

@@ -10,6 +10,19 @@ import { and, eq, isNull } from "drizzle-orm";
 import { PackingSlipData, OrderDocumentItem } from "@/modules/orders/documents/types";
 import { generatePackingSlipHTML } from "@/modules/orders/documents/templates/packing-slip-generator";
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = (error as { message: unknown }).message;
+    return typeof message === "string" ? message : "";
+  }
+  return "";
+}
+
+type SellerStoreRecord = typeof sellerStore.$inferSelect;
+type SellerAddressRecord = typeof sellerAddresses.$inferSelect;
+
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -43,13 +56,13 @@ export async function GET(
     const addresses = await db.select().from(orderAddresses).where(eq(orderAddresses.orderId, orderId));
     const deliveryAddress = addresses.find((a) => a.addressType === "DELIVERY") || addresses[0];
 
-    let store: any = null;
+    let store: SellerStoreRecord | null = null;
     try {
       const storeList = await db.select().from(sellerStore).where(eq(sellerStore.sellerId, seller.id)).limit(1);
       store = storeList[0];
     } catch (e) {}
 
-    let sellerAddr: any = null;
+    let sellerAddr: SellerAddressRecord | null = null;
     try {
       const sellerAddrList = await db.select().from(sellerAddresses).where(eq(sellerAddresses.sellerId, seller.id)).limit(1);
       sellerAddr = sellerAddrList[0];
@@ -113,9 +126,9 @@ export async function GET(
         html,
       },
     });
-  } catch (err: any) {
+  } catch (err) {
     return NextResponse.json(
-      { success: false, error: { code: "INTERNAL_ERROR", message: err.message || "Failed to generate packing slip" } },
+      { success: false, error: { code: "INTERNAL_ERROR", message: getErrorMessage(err) || "Failed to generate packing slip" } },
       { status: 500 }
     );
   }

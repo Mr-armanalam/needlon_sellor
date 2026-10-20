@@ -33,7 +33,7 @@ const OrderListCont = ({
             onClick={() => router.push(`/orders/${order.id}`)}
             className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors duration-200 hover:bg-neutral-50/40 cursor-pointer"
           >
-            <CstnamePrdinfo order={order as any} />
+            <CstnamePrdinfo order={order} />
             <MetaValueNmicroAction
               order={order}
               onAccept={onAccept}

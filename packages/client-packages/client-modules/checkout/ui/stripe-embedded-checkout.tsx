@@ -4,9 +4,14 @@ import React, { useEffect, useRef, useState } from "react";
 import { loadStripe, StripeEmbeddedCheckout } from "@stripe/stripe-js";
 import { Lock, ShieldCheck, AlertCircle, ExternalLink, RefreshCw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { CheckoutCartItem } from "../services/map-cart-to-line-items";
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "";
+}
 
 interface StripeEmbeddedCheckoutWidgetProps {
-  cart: any[];
+  cart: CheckoutCartItem[];
   userId: string;
   addressId?: string;
   couponId?: string;
@@ -114,9 +119,9 @@ export function StripeEmbeddedCheckoutWidget({
       } else {
         throw new Error("Invalid checkout response from server");
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("STRIPE_EMBEDDED_CHECKOUT_ERROR:", err);
-      setError(err.message || "An unexpected error occurred while loading Stripe Checkout");
+      setError(getErrorMessage(err) || "An unexpected error occurred while loading Stripe Checkout");
       setLoading(false);
     }
   };

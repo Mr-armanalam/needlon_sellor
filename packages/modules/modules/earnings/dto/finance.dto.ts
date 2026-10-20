@@ -1,4 +1,6 @@
 import { z } from "zod";
+import type { sellerBankAccounts } from "@/db/schema/seller/seller-bank-account";
+import type { SellerPayoutRequest } from "@/db/schema/seller/seller-payout-request";
 
 export const updateBankAccountSchema = z.object({
   accountHolderName: z.string().min(1, "Account holder name is required"),
@@ -35,6 +37,20 @@ export type RequestPayoutDto = z.infer<typeof requestPayoutSchema>;
 export type EarningsAnalyticsQueryDto = z.infer<typeof earningsAnalyticsQuerySchema>;
 export type LedgerQueryDto = z.infer<typeof ledgerQuerySchema>;
 export type ExportLedgerQueryDto = z.infer<typeof exportLedgerQuerySchema>;
+
+/** Row type of the seller_bank_accounts table (bank accounts API payload). */
+export type SellerBankAccountRecord = (typeof sellerBankAccounts)["$inferSelect"];
+
+/** Data payload returned by a successful payout request. */
+export interface PayoutRequestResultDto {
+  success: boolean;
+  requestId: string;
+  payoutId: string;
+  amount: string;
+  status: SellerPayoutRequest["status"];
+  gatewayPayoutId: string | null;
+  requestedAt: string;
+}
 
 export interface EarningsSummaryResponseDto {
   grossSales: string;

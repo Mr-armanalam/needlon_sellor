@@ -58,7 +58,7 @@ const ContactForm = () => {
   }
 }
   return (
-    <Form {...(form as any)}>
+    <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
         className="grid gap-4 grid-cols-2 text-xs"

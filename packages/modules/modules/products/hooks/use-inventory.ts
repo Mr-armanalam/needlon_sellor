@@ -24,8 +24,8 @@ export function useInventory(options?: { lowStockOnly?: boolean }) {
       } else {
         setError(json.error?.message || "Failed to fetch inventory");
       }
-    } catch (err: any) {
-      setError(err.message || "Network error fetching inventory");
+    } catch (err: unknown) {
+      setError(err instanceof Error && err.message ? err.message : "Network error fetching inventory");
     } finally {
       setLoading(false);
     }

@@ -114,7 +114,7 @@ async function runPhase3TestSuite() {
   const allMeasurements = await getCustomerMeasurements(customer.userId, testCustomerEmail);
   assert.ok(allMeasurements.success);
   assert.ok(allMeasurements.data.length >= 1);
-  const onlineProfile = allMeasurements.data.find((m: any) => m.source === "ONLINE_CUSTOMER");
+  const onlineProfile = allMeasurements.data.find((m) => m.source === "ONLINE_CUSTOMER");
   assert.ok(onlineProfile, "Customer profile reflects online intake measurement");
   console.log("✓ Unified customer measurement profile reflected in personal account!");
 

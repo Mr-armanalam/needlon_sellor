@@ -8,7 +8,7 @@ import { categoriesTable } from "@needlon/db/db/schema/catalog/categories/table"
 import { categoryAttributesTable } from "@needlon/db/db/schema/catalog/category-attributes";
 import { categoryAttributeOptionsTable } from "@needlon/db/db/schema/catalog/category-attribute-options";
 import { productAttributeValuesTable } from "@needlon/db/db/schema/catalog/products/product-attribute-values/table";
-import { eq, and, desc, asc, sql, ilike, or, isNull, aliasedTable } from "drizzle-orm";
+import { eq, and, desc, asc, sql, ilike, or, isNull, aliasedTable, type SQL } from "drizzle-orm";
 
 export interface QueryProductsParams {
   categorySlug?: string;
@@ -48,7 +48,7 @@ export const ProductRepository = {
       const parentCategoryTable = aliasedTable(categoriesTable, "parent_cat");
       const subCategoryTable = aliasedTable(categoriesTable, "sub_cat");
 
-      const conditions: any[] = [
+      const conditions: (SQL | undefined)[] = [
         eq(productsTable.status, "PUBLISHED"),
         eq(productsTable.visibility, "PUBLIC"),
       ];
@@ -73,7 +73,7 @@ export const ProductRepository = {
         const subSlugLower = subcatSlug.toLowerCase().trim();
         const subClean = subSlugLower.replace(/s$/, "");
 
-        let subCondition: any;
+        let subCondition: SQL | undefined;
         if (subSlugLower === "shirts" || subSlugLower === "shirt") {
           subCondition = or(
             ilike(subCategoryTable.slug, "%shirt%"),
@@ -182,7 +182,7 @@ export const ProductRepository = {
       // 5. Order By clauses (priceLow, priceHigh, newest, popular, featured)
       const priceExpr = sql`COALESCE(${pricingTable.price}::numeric, 0)`;
 
-      let orderByClauses: any[] = [];
+      let orderByClauses: SQL[] = [];
       if (sort === "priceLow" || sort === "price-asc") {
         orderByClauses = [asc(priceExpr), desc(productsTable.createdAt)];
       } else if (sort === "priceHigh" || sort === "price-desc") {

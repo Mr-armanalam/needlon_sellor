@@ -51,8 +51,8 @@ export const useDocumentPreview = (
                 } else {
                     setError(data.error?.message || "Failed to load document preview");
                 }
-            } catch (err: any) {
-                setError(err.message || "Failed to connect to server");
+            } catch (err: unknown) {
+                setError(err instanceof Error && err.message ? err.message : "Failed to connect to server");
             } finally {
                 setLoading(false);
             }

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use server";
 
 import { db } from "@/db";
@@ -60,11 +59,11 @@ export const getSignUp = async ({
     }
 
     return { success: true, message: "ok" };
-  } catch (error: any) {
+  } catch (error) {
     console.error("Signup Error:", error);
     return {
       success: false,
-      message: error.message || "An unexpected error occurred.",
+      message: (error instanceof Error ? error.message : "") || "An unexpected error occurred.",
     };
   }
 };
@@ -108,7 +107,7 @@ export const getSignUp = async ({
 //     }
 
 //     return { success: true, message: "ok" };
-//   } catch (error: any) {
+//   } catch (error) {
 //     console.log(error.message);
 //     return {
 //       success: false,

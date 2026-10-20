@@ -3,6 +3,23 @@ import {CATEGORY_SUBCATEGORY_MAP} from "@/modules/products/constants";
 import {useAddProductWizard} from "@/modules/products/hooks/use-add-product-wizard";
 import {Scissors, Lock, Info} from "lucide-react";
 
+interface VerifiedBrand {
+    id: string;
+    name: string;
+}
+
+interface CategoryItem {
+    id: string;
+    name: string;
+    parentId?: string | null;
+}
+
+interface SubcategoryItem {
+    id: string;
+    name: string;
+    parentId?: string | null;
+}
+
 const BasicInformationNode = () => {
     const {
         formData,
@@ -61,7 +78,7 @@ const BasicInformationNode = () => {
                         <select
                             value={formData.brandId || ''}
                             onChange={(e) => {
-                                const selected = verifiedBrands.find((b: any) => b.id === e.target.value);
+                                const selected = verifiedBrands.find((b: VerifiedBrand) => b.id === e.target.value);
                                 if (selected) {
                                     handleSelectBrand(selected.id, selected.name);
                                 }
@@ -69,7 +86,7 @@ const BasicInformationNode = () => {
                             className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all cursor-pointer"
                         >
                             <option value="">Select a verified brand...</option>
-                            {verifiedBrands.map((b: any) => (
+                            {verifiedBrands.map((b: VerifiedBrand) => (
                                 <option key={b.id} value={b.id}>{b.name}</option>
                             ))}
                         </select>
@@ -94,7 +111,7 @@ const BasicInformationNode = () => {
                         value={formData.categoryId || formData.category}
                         onChange={(e) => {
                             const val = e.target.value;
-                            const matched = categoriesData.find((c: any) => c.id === val || c.name === val);
+                            const matched = categoriesData.find((c: CategoryItem) => c.id === val || c.name === val);
                             if (matched) {
                                 handleSelectCategory(matched.id, matched.name);
                             } else {
@@ -104,7 +121,7 @@ const BasicInformationNode = () => {
                         className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all cursor-pointer"
                     >
                         {categoriesData && categoriesData.length > 0 ? (
-                            categoriesData.map((cat: any) => (
+                            categoriesData.map((cat: CategoryItem) => (
                                 <option key={cat.id} value={cat.id}>{cat.name}</option>
                             ))
                         ) : (
@@ -122,7 +139,7 @@ const BasicInformationNode = () => {
                         value={formData.subcategoryId || formData.subcategory}
                         onChange={(e) => {
                             const val = e.target.value;
-                            const matched = filteredSubcategories.find((s: any) => s.id === val || s.name === val);
+                            const matched = filteredSubcategories.find((s: SubcategoryItem) => s.id === val || s.name === val);
                             if (matched) {
                                 handleSelectSubcategory(matched.id, matched.name);
                             } else {
@@ -132,7 +149,7 @@ const BasicInformationNode = () => {
                         className="w-full p-3 bg-neutral-50 border border-neutral-200/60 rounded-xl text-[13px] outline-none focus:bg-white focus:border-neutral-900 transition-all cursor-pointer"
                     >
                         {filteredSubcategories && filteredSubcategories.length > 0 ? (
-                            filteredSubcategories.map((sub: any) => (
+                            filteredSubcategories.map((sub: SubcategoryItem) => (
                                 <option key={sub.id} value={sub.id}>{sub.name}</option>
                             ))
                         ) : subcategoryOptions && subcategoryOptions.length > 0 ? (

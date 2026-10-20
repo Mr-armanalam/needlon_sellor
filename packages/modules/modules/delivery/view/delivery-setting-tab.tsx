@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Map, ShoppingBag, Truck, DollarSign, Globe, Plus, Check, Edit2 } from 'lucide-react';
 import { useDelivery } from '../hooks/use-delivery';
+import { PickupHubDto, ShippingZoneDto } from '../dto/delivery.dto';
 import EditPickupHubModal from './modals/edit-pickup-hub-modal';
 import AddShippingZoneModal from './modals/add-shipping-zone-modal';
 
@@ -18,9 +19,11 @@ export default function DeliverySettingsTabs() {
   const [isZoneModalOpen, setIsZoneModalOpen] = useState(false);
 
   const localRadius = settings?.localRadius || { maxRadiusKm: 15, baseCharge: 5.0 };
-  const pickupHub = settings?.pickupHub || {
+  const pickupHub: PickupHubDto = settings?.pickupHub || {
     hubName: 'Needlon Hub Main Warehouse',
     address: 'Block-C, Industrial Electronics Sector, Pimpri-Chinchwad, India',
+    city: '',
+    pincode: '',
     phone: '+91 98765 43210',
     operatingHours: 'Mon-Sat: 9:00 AM - 7:00 PM',
   };
@@ -182,7 +185,7 @@ export default function DeliverySettingsTabs() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 font-medium text-gray-700">
-                  {zones.map((z: any, idx: number) => (
+                  {zones.map((z: ShippingZoneDto, idx: number) => (
                     <tr key={idx}>
                       <td className="p-3 font-semibold text-gray-900">{z.zoneName}</td>
                       <td className="p-3 text-gray-500">{z.partnerCode} ({z.estimatedDays || '2-4 days'})</td>

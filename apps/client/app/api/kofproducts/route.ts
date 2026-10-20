@@ -1,14 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ProductService } from "@/modules/product/services/kof-productServices";
 import { transformToProductCard } from "@/modules/product/services/product-transformer";
+import type { QueryProductsParams } from "@/modules/product/repositories/product-repository";
+
+type ProductSort = NonNullable<QueryProductsParams["sort"]>;
+
+const PRODUCT_SORTS: readonly ProductSort[] = [
+  "price-asc",
+  "price-desc",
+  "newest",
+  "popular",
+  "priceLow",
+  "priceHigh",
+  "featured",
+];
+
+// Validate the `sort` query parameter against the values the product
+// repository actually supports; anything else falls back to its default.
+function toProductSort(value: string | null): ProductSort | undefined {
+  return PRODUCT_SORTS.find((sort) => sort === value);
+}
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const filterType = searchParams.get("filterType") || searchParams.get("type") || "trending";
-    const sort = searchParams.get("sort") || undefined;
+    const sort = toProductSort(searchParams.get("sort"));
 
-    let products: any[] = [];
+    let products: Awaited<ReturnType<typeof ProductService.getTrending>> = [];
     if (filterType === "premium") {
       products = await ProductService.getPremium();
     } else if (filterType === "bestseller") {

@@ -27,7 +27,7 @@ export function toProductDto(product: Product): ProductDto {
         isFeatured: product.isFeatured ?? false,
         isAvailable: product.status === "PUBLISHED",
         sortOrder: 0,
-        metadata: {} as any,
+        metadata: {},
         publishedAt: product.publishedAt,
         archivedAt: null,
         createdBy: null,

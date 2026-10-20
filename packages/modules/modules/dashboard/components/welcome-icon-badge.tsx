@@ -1,6 +1,13 @@
-import { metricsType } from "../data/welcomeData";
+import type { LucideIcon } from "lucide-react";
 
-const WelcomeIconBadge = ({ metric }: { metric: metricsType }) => {
+export interface WelcomeIconBadgeMetric {
+  icon: LucideIcon;
+  color: string;
+  change: string;
+  isImgDanger?: boolean;
+}
+
+const WelcomeIconBadge = ({ metric }: { metric: WelcomeIconBadgeMetric }) => {
   const Icon = metric.icon;
 
   return (

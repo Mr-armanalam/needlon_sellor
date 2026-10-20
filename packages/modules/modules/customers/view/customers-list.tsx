@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, MapPin, SlidersHorizontal, Award, UserPlus } from 'lucide-react';
 import { useCustomers } from '@/modules/customers/hooks/use-customers';
 import { deduplicateCustomers } from '../utils/customer-utils';
+import type { WalkInCustomerResponseDto } from '../dto/walk-in-customer.dto';
 import AddWalkInModal from '../components/add-walk-in-modal';
 
 export interface CustomerListProps {
@@ -49,7 +50,7 @@ export default function CustomerList({ onSelectCustomer, activeId }: CustomerLis
     }
   }, [activeId, filteredCustomers, onSelectCustomer]);
 
-  const handleCustomerCreated = (newCust: any) => {
+  const handleCustomerCreated = (newCust: WalkInCustomerResponseDto) => {
     refetch();
     onSelectCustomer({
       id: newCust.userId,

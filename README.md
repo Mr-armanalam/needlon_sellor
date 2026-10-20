@@ -1,35 +1,48 @@
+# Needlon Monorepo
 
-## Getting Started
+Marketplace platform: a customer storefront and a seller dashboard, built as a Turborepo + pnpm monorepo.
 
-First, run the development server:
+## Apps
+
+- **`apps/client`** — customer storefront (Next.js App Router): home, product pages, cart, checkout with Stripe, orders, account (addresses, measurements, wishlist), auth via Supabase / NextAuth.
+- **`apps/seller`** — seller dashboard (Next.js App Router): product listing with variants and custom attributes, inventory management, orders, invoices / packing slips / shipping labels, manifests, messaging.
+
+## Packages
+
+- **`packages/db`** (`@needlon/db`) — Drizzle ORM schema, migrations, seed scripts.
+- **`packages/modules`** — shared domain services, repositories, validations.
+- **`packages/client-packages`** — client-app feature modules (auth, cart, checkout, orders, product, account, category).
+- **`packages/ui`** — shared React components (includes the shared `Form` component).
+- **`docs/`** — documentation.
+
+## Requirements
+
+- Node.js (24+ recommended), pnpm 9 (`corepack` or `npm i -g pnpm@9`)
+- A Supabase project (URL + publishable/anon key + secret key)
+- Stripe keys for checkout
+- A Postgres `DATABASE_URL` (the Supabase connection pooler works)
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+
+# Fill in real values, then copy into place (gitignored — never committed)
+cp apps/client/.env.example apps/client/.env.local
+cp apps/seller/.env.example apps/seller/.env.local
+
+pnpm db:generate && pnpm db:migrate && pnpm db:seed
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`pnpm dev` runs both apps through Turbo. Both apps default to port 3000, so run them side by side with distinct ports, e.g. `pnpm --filter <app> dev -- -p 3001`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts (root, via Turbo)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`dev`, `build`, `lint`, `check-types`, `test`, plus `db:generate`, `db:migrate`, `db:seed` (the latter runs `packages/db`'s `seed-database.ts`; `seed-client-data.ts` is available as `pnpm --filter @needlon/db seed:client`).
 
-## Learn More
+## Conventions
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- TypeScript **strict mode**. **Never use `any`** — enforced by `@typescript-eslint/no-explicit-any` (error). Use the actual type, or `unknown` + narrowing at genuine type boundaries.
+- Drizzle ORM only for database access — no raw SQL.
+- ESLint + Prettier. Test files exist across the packages; a test runner is on the roadmap (see the production-grade report).

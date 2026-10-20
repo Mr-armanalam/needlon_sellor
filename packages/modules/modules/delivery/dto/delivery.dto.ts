@@ -1,4 +1,6 @@
 import { z } from "zod";
+import type { shippingPartners } from "@/db/schema/delivery/shipping-partners";
+import type { shippingMethods } from "@/db/schema/delivery/shipping-method";
 
 export const createShippingPartnerSchema = z.object({
   partnerCode: z.string().min(1, "Partner code is required"),
@@ -98,6 +100,37 @@ export type CreateShippingMethodDto = z.infer<typeof createShippingMethodSchema>
 export type CreateShipmentOrderDto = z.infer<typeof createShipmentOrderSchema>;
 export type UpdateShipmentStatusDto = z.infer<typeof updateShipmentStatusSchema>;
 export type GetShipmentsQueryDto = z.infer<typeof getShipmentsQuerySchema>;
+
+export type ShippingPartnerRecord = (typeof shippingPartners)["$inferSelect"];
+export type ShippingMethodRecord = (typeof shippingMethods)["$inferSelect"];
+
+/** Partner row as returned by getShippingPartnersService (partner + its methods). */
+export type ShippingPartnerWithMethodsDto = ShippingPartnerRecord & {
+  methods: ShippingMethodRecord[];
+};
+
+/** Settings payload as returned by getDeliverySettingsRepo / the settings API. */
+export interface DeliverySettingsDto {
+  localRadius: LocalDeliverySettingsDto;
+  pickupHub: PickupHubDto;
+  zones: ShippingZoneDto[];
+}
+
+/** Payload accepted by updateDeliverySettings, keyed by the settings type. */
+export type UpdateDeliverySettingsDataDto =
+  | LocalDeliverySettingsDto
+  | PickupHubDto
+  | ShippingZoneDto;
+
+/** Partner fields used by the connect-carrier UI (full partner rows and
+ *  lightweight fallback entries both satisfy this shape). */
+export interface ConnectCarrierPartnerDto {
+  id: string;
+  partnerCode: string;
+  partnerName: string;
+  name?: string;
+  isActive: boolean;
+}
 
 export interface ShipmentResponseDto {
   id: string;

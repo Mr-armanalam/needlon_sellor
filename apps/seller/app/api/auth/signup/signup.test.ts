@@ -5,15 +5,18 @@ import nodemailer from "nodemailer";
 // Load environment variables from .env in the project root
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 
-// Mock nodemailer to avoid actual SMTP connection attempt during test
-nodemailer.createTransport = () => {
-  return {
-    sendMail: async (options: any) => {
-      console.log(`- [MOCK EMAIL] OTP sent to ${options.to}`);
-      return { messageId: "mock-message-id" };
-    },
-  } as any;
+// Mock nodemailer to avoid actual SMTP connection attempt during test.
+// The mock only implements the sendMail surface the auth mailer uses, so it
+// is bridged to the overloaded createTransport type with a single cast.
+const mockTransporter = {
+  sendMail: async (options: nodemailer.SendMailOptions) => {
+    console.log(`- [MOCK EMAIL] OTP sent to ${options.to}`);
+    return { messageId: "mock-message-id" };
+  },
 };
+
+nodemailer.createTransport = (() =>
+  mockTransporter) as unknown as typeof nodemailer.createTransport;
 
 // Helper for Mocking Request/Response inside Route Handler
 import { NextRequest } from "next/server";
@@ -58,7 +61,7 @@ async function runTests() {
       body: JSON.stringify(payload),
     });
 
-    const response = await POST(req as any);
+    const response = await POST(req);
     const result = await response.json();
 
     if (!response.ok) {

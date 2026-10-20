@@ -5,6 +5,11 @@ import { OrderNotFoundError } from "../errors/order-not-found-error";
 import { InvalidOrderActionError } from "../errors/invalid-order-action-error";
 import { DbTransaction } from "@/db/transactions";
 import { getDatabase } from "@/db/database";
+import type { db } from "@/db";
+import type { OrderStatusAction } from "@/db/schema/orders/order-status-history/types";
+
+type Database = DbTransaction | typeof db;
+type OrderUpdateData = Partial<typeof orders.$inferInsert>;
 
 interface UpdateOrderStatusParams {
     orderId: string;
@@ -21,7 +26,7 @@ export const updateOrderStatus = async ({
     remarks,
     tx,
 }: UpdateOrderStatusParams) => {
-    const execute = async (database: any) => {
+    const execute = async (database: Database) => {
         // Fetch order
         const orderList = await database
             .select()
@@ -36,7 +41,7 @@ export const updateOrderStatus = async ({
         const order = orderList[0];
         const fromStatus = order.status;
         let toStatus = fromStatus;
-        const updateData: any = {};
+        const updateData: OrderUpdateData = {};
 
         if (action === "ADVANCE") {
             if (fromStatus === "PENDING") {
@@ -72,14 +77,14 @@ export const updateOrderStatus = async ({
         updateData.status = toStatus;
         updateData.updatedAt = new Date();
 
-        let historyAction: any = "UPDATED";
+        let historyAction: OrderStatusAction = "UPDATED";
         if (toStatus === "CONFIRMED") historyAction = "ACCEPTED";
         else if (toStatus === "PROCESSING") historyAction = "PACKED";
         else if (toStatus === "READY_TO_SHIP") historyAction = "READY_FOR_SHIPMENT";
         else if (toStatus === "OUT_FOR_DELIVERY") historyAction = "OUT_FOR_DELIVERY";
         else if (toStatus === "COMPLETED") historyAction = "DELIVERED";
         else if (toStatus === "CANCELLED") historyAction = "CANCELLED";
-        else if (toStatus === "RETURNED") historyAction = "RETURNED";
+        else if (toStatus === "RETURNED") historyAction = "RETURNED" as OrderStatusAction;
         else if (toStatus === "RETURN_REJECTED") historyAction = "RETURN_REJECTED";
 
         // Update order
@@ -97,11 +102,11 @@ export const updateOrderStatus = async ({
             for (const line of lines) {
                 if (line.variantId) {
                     if (toStatus === "CONFIRMED") {
-                        await reserveStock(line.variantId, line.quantity, database);
+                        await reserveStock(line.variantId, line.quantity, database as typeof db);
                     } else if (toStatus === "OUT_FOR_DELIVERY" || toStatus === "COMPLETED") {
-                        await releaseStock(line.variantId, line.quantity, true, database);
+                        await releaseStock(line.variantId, line.quantity, true, database as typeof db);
                     } else if (toStatus === "CANCELLED") {
-                        await releaseStock(line.variantId, line.quantity, false, database);
+                        await releaseStock(line.variantId, line.quantity, false, database as typeof db);
                     }
                 }
             }

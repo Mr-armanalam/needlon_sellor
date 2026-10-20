@@ -1,6 +1,7 @@
 import { GroupedOrder } from "@/types/order";
+import type { RawUserOrder } from "../repositories/order-repository";
 
-export function groupOrderItems(rawData: any[]): GroupedOrder[] {
+export function groupOrderItems(rawData: RawUserOrder[]): GroupedOrder[] {
   const grouped = rawData.reduce((acc, row) => {
     const { orderId, createdAt, status, total, currency, paymentId, ...item } = row;
 

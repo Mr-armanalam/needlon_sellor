@@ -9,6 +9,10 @@ import { and, eq, isNull, desc } from "drizzle-orm";
 import { InvoiceData, OrderDocumentItem } from "../types";
 import { generateInvoiceHTML } from "../templates/invoice-generator";
 
+type InvoiceRecord = typeof orderInvoices.$inferSelect;
+type SellerStoreRecord = typeof sellerStore.$inferSelect;
+type SellerAddressRecord = typeof sellerAddresses.$inferSelect;
+
 /**
  * Formats sequence counter into INV-2026-XXXXXX number
  */
@@ -43,7 +47,7 @@ export async function generateInvoiceNumber(): Promise<string> {
 /**
  * Assembles InvoiceData structure from DB tables for an order
  */
-export async function getInvoiceDataForOrder(orderId: string, sellerId: string): Promise<{ invoiceRecord: any; invoiceData: InvoiceData }> {
+export async function getInvoiceDataForOrder(orderId: string, sellerId: string): Promise<{ invoiceRecord: InvoiceRecord; invoiceData: InvoiceData }> {
   // 1. Query Order
   const orderList = await db
     .select()
@@ -57,7 +61,7 @@ export async function getInvoiceDataForOrder(orderId: string, sellerId: string):
   const order = orderList[0];
 
   // 2. Query or create invoice DB record
-  let invoiceRecord: any = null;
+  let invoiceRecord: InvoiceRecord | null = null;
   const existingInvoices = await db
     .select()
     .from(orderInvoices)
@@ -106,7 +110,7 @@ export async function getInvoiceDataForOrder(orderId: string, sellerId: string):
   const deliveryAddress = addresses.find((a) => a.addressType === "DELIVERY") || addresses[0];
 
   // Store details with safe try/catch fallbacks
-  let store: any = null;
+  let store: SellerStoreRecord | null = null;
   try {
     const storeList = await db
       .select()
@@ -118,7 +122,7 @@ export async function getInvoiceDataForOrder(orderId: string, sellerId: string):
     console.error("Failed to query sellerStore in invoice-service, using default fallback:", e);
   }
 
-  let sellerAddr: any = null;
+  let sellerAddr: SellerAddressRecord | null = null;
   try {
     const sellerAddrList = await db
       .select()

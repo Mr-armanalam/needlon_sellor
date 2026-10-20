@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import * as dotenv from "dotenv";
 import path from "path";
+import type { AuthSeller } from "@/types/auth";
 
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 
@@ -25,11 +26,13 @@ async function runBottomWearAndCustomVariantsTests() {
   console.log("👖 Starting Bottom Wear Clothes, Formal Wear Fit & Custom Properties Validation Tests...\n");
 
   const TEST_SELLER_ID = "00000000-0000-0000-0000-000000000001";
-  const sellerContext = {
+  const sellerContext: AuthSeller = {
     id: TEST_SELLER_ID,
+    role: "seller",
     name: "Bottom Wear Test Seller",
     email: "bottom-wear@test.com",
-  } as any;
+    emailVerified: false,
+  };
 
   // 1. Ensure test seller & store exist
   const [existingSeller] = await db.select().from(sellerTable).where(eq(sellerTable.id, TEST_SELLER_ID)).limit(1);
@@ -54,7 +57,7 @@ async function runBottomWearAndCustomVariantsTests() {
   }
 
   const draftService = new DraftProductService();
-  let draftProduct: any = null;
+  let draftProduct: Awaited<ReturnType<InstanceType<typeof DraftProductService>["createDraft"]>> | null = null;
 
   try {
     // -------------------------------------------------------------------------
@@ -116,7 +119,8 @@ async function runBottomWearAndCustomVariantsTests() {
     console.log("\n--- TEST 3: Database Persistence of Null / None Sleeves for Bottom Wear ---");
     draftProduct = await draftService.createDraft({
       sellerId: TEST_SELLER_ID,
-    } as any);
+      storeId: TEST_SELLER_ID,
+    });
     console.log(`✅ Draft product created: ${draftProduct.id}`);
 
     // Update with bottom wear info (Trousers) and None sleeves
@@ -199,7 +203,7 @@ async function runBottomWearAndCustomVariantsTests() {
       throw new Error(`Expected at least 2 customAttributes in getProductById, got: ${JSON.stringify(fetched.customAttributes)}`);
     }
 
-    const fetchedWaist = fetched.customAttributes.find((a: any) => a.name === "Waist Rise");
+    const fetchedWaist = fetched.customAttributes.find((a: { name: string; value: string }) => a.name === "Waist Rise");
     if (!fetchedWaist || fetchedWaist.value !== "Mid Rise") {
       throw new Error(`Expected custom attribute 'Waist Rise' with value 'Mid Rise', got: ${JSON.stringify(fetchedWaist)}`);
     }
@@ -244,7 +248,7 @@ async function runBottomWearAndCustomVariantsTests() {
     if (fetched.fitType !== "High-Waist A-Line Fit") {
       throw new Error(`Expected fitType to be 'High-Waist A-Line Fit', got: "${fetched.fitType}"`);
     }
-    const lengthAttr = fetched.customAttributes.find((a: any) => a.name === "Length");
+    const lengthAttr = fetched.customAttributes.find((a: { name: string; value: string }) => a.name === "Length");
     if (!lengthAttr || lengthAttr.value !== "Midi Length (32 inches)") {
       throw new Error(`Expected Length attribute 'Midi Length (32 inches)', got: ${JSON.stringify(lengthAttr)}`);
     }

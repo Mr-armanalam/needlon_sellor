@@ -6,7 +6,7 @@ import { orderStatusHistory } from "@needlon/db/db/schema/orders/order-status-hi
 import { orderShipments } from "@needlon/db/db/schema/orders/order-shipments/table";
 import { orderPayments } from "@needlon/db/db/schema/orders/order-payments/table";
 import { inventoryTable } from "@needlon/db/db/schema/catalog/products/inventory/table";
-import { eq, and, or, ilike, desc, asc, sql } from "drizzle-orm";
+import { eq, and, or, ilike, desc, asc, sql, type SQL } from "drizzle-orm";
 import { format } from "date-fns";
 
 const FALLBACK_MOCK_ORDERS = [
@@ -99,12 +99,79 @@ export interface OrderTimelineStep {
   isActive: boolean;
 }
 
+/** DB row types inferred from the Drizzle schema. */
+export type OrderRecord = typeof orders.$inferSelect;
+export type OrderStatusHistoryRecord = typeof orderStatusHistory.$inferSelect;
+export type OrderShipmentRecord = typeof orderShipments.$inferSelect;
+
+/** An error carrying an HTTP-style status code, as thrown for ownership / state violations. */
+export type StatusCodeError = Error & { statusCode: number };
+
+export function createStatusCodeError(message: string, statusCode: number): StatusCodeError {
+  return Object.assign(new Error(message), { statusCode });
+}
+
+/** One raw joined order row, as consumed by groupOrderItems. */
+export interface RawUserOrder {
+  orderId: string;
+  orderNumber?: string;
+  createdAt: Date | null;
+  status: string;
+  total: number;
+  currency: string | null;
+  paymentId: string | null;
+  productName: string;
+  image: string | null;
+  price: number;
+  properties: string | null;
+}
+
+export interface OrderShippingAddressSnapshot {
+  id: string;
+  userId: string;
+  name: string;
+  phone: string | null;
+  pincode: string;
+  locality: string;
+  address: string;
+  city: string;
+  state: string;
+  landmark: string;
+  alternate_phone: string;
+  country: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/** One order-detail entry (one per order item), as consumed by the order views. */
+export interface OrderDetailItem {
+  orderDate: Date;
+  orderId: string;
+  rawOrderId: string;
+  shippingAddress: OrderShippingAddressSnapshot;
+  itemName: string;
+  image: string;
+  productId: string;
+  orderItemId: string;
+  orderProperties: string;
+  paymentMode: string;
+  shippingCharge: number;
+  podCharge: number;
+  priceAtperchage: number;
+  totalPurchasePrice: number;
+  couponDiscount: number;
+  orderStatus: string;
+  timeline: OrderTimelineStep[];
+  shipments: OrderShipmentRecord[];
+  canCancel: boolean;
+}
+
 export const OrderRepository = {
   /**
    * Query all orders belonging to a buyer, joined with items and payments.
    * Supports search filter across order number, product name, and order status.
    */
-  async getRawUserOrders(userId: string, search: string = ""): Promise<any[]> {
+  async getRawUserOrders(userId: string, search: string = ""): Promise<RawUserOrder[]> {
     if (!process.env.DATABASE_URL) {
       return this.filterMockOrders(FALLBACK_MOCK_ORDERS, search);
     }
@@ -113,7 +180,7 @@ export const OrderRepository = {
       const isUuid = isValidUuid(userId);
 
       // If not a valid UUID and is mock-user, check if we have any test orders or fallback
-      let conditions: any[] = [];
+      let conditions: (SQL | undefined)[] = [];
       if (isUuid) {
         conditions.push(eq(orders.buyerId, userId));
       } else if (userId === "mock-user") {
@@ -198,7 +265,7 @@ export const OrderRepository = {
    * Performs buyer ownership check to prevent cross-user order access.
    * Assembles comprehensive tracking timeline and shipment info.
    */
-  async getOrderDetail(orderId: string, userId?: string): Promise<any[] | null> {
+  async getOrderDetail(orderId: string, userId?: string): Promise<OrderDetailItem[] | null> {
     if (!process.env.DATABASE_URL) {
       return FALLBACK_MOCK_ORDER_DETAIL;
     }
@@ -224,9 +291,7 @@ export const OrderRepository = {
       // Security check: Verify buyer ownership
       if (userId && userId !== "mock-user" && isValidUuid(userId)) {
         if (foundOrder.buyerId !== userId) {
-          const err = new Error("UNAUTHORIZED_ORDER_ACCESS");
-          (err as any).statusCode = 403;
-          throw err;
+          throw createStatusCodeError("UNAUTHORIZED_ORDER_ACCESS", 403);
         }
       }
 
@@ -339,7 +404,7 @@ export const OrderRepository = {
   /**
    * Build structured timeline steps from order history and shipments
    */
-  buildTimeline(order: any, history: any[], shipments: any[]): OrderTimelineStep[] {
+  buildTimeline(order: OrderRecord, history: OrderStatusHistoryRecord[], shipments: OrderShipmentRecord[]): OrderTimelineStep[] {
     const orderDateStr = format(order.createdAt, "EEE, do MMM ''yy");
 
     // Bespoke In-Store & Custom Tailoring Milestone Tracking
@@ -550,19 +615,16 @@ export const OrderRepository = {
       // Security check: Ownership validation
       if (userId && userId !== "mock-user" && isValidUuid(userId)) {
         if (foundOrder.buyerId !== userId) {
-          const err = new Error("UNAUTHORIZED_ORDER_CANCELLATION");
-          (err as any).statusCode = 403;
-          throw err;
+          throw createStatusCodeError("UNAUTHORIZED_ORDER_CANCELLATION", 403);
         }
       }
 
       // State check: Only PENDING or CONFIRMED orders can be cancelled
       if (!["PENDING", "CONFIRMED"].includes(foundOrder.status)) {
-        const err = new Error(
-          `Cannot cancel order in ${foundOrder.status} status. Only PENDING or CONFIRMED orders can be cancelled.`
+        throw createStatusCodeError(
+          `Cannot cancel order in ${foundOrder.status} status. Only PENDING or CONFIRMED orders can be cancelled.`,
+          400
         );
-        (err as any).statusCode = 400;
-        throw err;
       }
 
       // 1. Update order status to CANCELLED

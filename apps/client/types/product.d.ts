@@ -1,4 +1,8 @@
 import { Address } from "./address";
+import type {
+  OrderShipmentRecord,
+  OrderTimelineStep,
+} from "@/modules/orders/repositories/order-repository";
 
 export interface productDataType {
   id: string;
@@ -84,8 +88,8 @@ export interface OrderItemProp {
   couponDiscount: number;
   totalPurchasePrice: number;
   orderStatus?: string;
-  timeline?: any[];
-  shipments?: any[];
+  timeline?: OrderTimelineStep[];
+  shipments?: OrderShipmentRecord[];
   canCancel?: boolean;
 }
 

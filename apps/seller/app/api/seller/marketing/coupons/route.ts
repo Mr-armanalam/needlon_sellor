@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const validated = createCouponSchema.parse(body);
     const newCoupon = await createCouponService(validated);
-    return successResponse(newCoupon, "Coupon created successfully");
+    return successResponse(newCoupon);
   });
 }
 
@@ -31,6 +31,6 @@ export async function DELETE(req: NextRequest) {
     if (!id) throw new Error("Coupon ID is required");
 
     await deleteCouponService(id);
-    return successResponse(null, "Coupon deleted successfully");
+    return successResponse(null);
   });
 }

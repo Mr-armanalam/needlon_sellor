@@ -1,5 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { OrderCreationService } from "@/modules/orders/services/order-creation-service";
+import { OrderCreationService, type CheckoutOrderItem } from "@/modules/orders/services/order-creation-service";
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = (error as { message: unknown }).message;
+    return typeof message === "string" ? message : "";
+  }
+  return "";
+}
+
+/** One entry of the compact cart summary stored in Stripe session metadata at checkout. */
+interface CartSummaryItem {
+  p?: string;
+  q?: number;
+  s?: string;
+  c?: string;
+  pr?: number;
+  n?: string;
+}
+
 import { CartService } from "@/modules/cart/services/cart-service";
 import { db } from "@needlon/db";
 import { orderPayments } from "@needlon/db/db/schema/orders/order-payments/table";
@@ -18,7 +38,7 @@ export async function POST(req: NextRequest) {
 
     if (webhookSecret && sig && stripeKey) {
       const stripe = new Stripe(stripeKey, {
-        apiVersion: "2024-12-18.acacia" as any,
+        apiVersion: "2025-10-29.clover",
       });
       event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
     } else {
@@ -50,18 +70,19 @@ export async function POST(req: NextRequest) {
       const couponDiscount = Number(metadata.couponDiscount) || 0;
 
       // Retrieve buyer cart items from DB or metadata fallback
-      let cartItems: any[] = [];
+      let cartItems: CheckoutOrderItem[] = [];
       if (userId) {
         cartItems = await CartService.getCart(userId);
       }
 
       if ((!cartItems || cartItems.length === 0) && metadata.cartSummary) {
         try {
-          const parsed = JSON.parse(metadata.cartSummary);
+          const parsed: unknown = JSON.parse(metadata.cartSummary);
           if (Array.isArray(parsed)) {
-            cartItems = parsed.map((it: any) => ({
-              productId: it.p,
-              quantity: it.q,
+            const summaryItems: CartSummaryItem[] = parsed;
+            cartItems = summaryItems.map((it) => ({
+              productId: it.p || "",
+              quantity: it.q ?? 1,
               size: it.s,
               color: it.c,
               price: it.pr,
@@ -95,8 +116,8 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ received: true, success: true }, { status: 200 });
-  } catch (err: any) {
-    console.error("STRIPE_WEBHOOK_ERROR:", err.message);
-    return NextResponse.json({ error: err.message || "Webhook processing failed" }, { status: 400 });
+  } catch (err) {
+    console.error("STRIPE_WEBHOOK_ERROR:", getErrorMessage(err));
+    return NextResponse.json({ error: getErrorMessage(err) || "Webhook processing failed" }, { status: 400 });
   }
 }

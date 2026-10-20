@@ -5,6 +5,7 @@ import { orderItems } from "@needlon/db/db/schema/orders/order-items/table";
 import { seller } from "@needlon/db/db/schema/seller";
 import { usersTable } from "@needlon/db/db/schema/users";
 import { eq, and, sql, desc } from "drizzle-orm";
+import { createStatusCodeError, type OrderRecord } from "../repositories/order-repository";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function isValidUuid(id: string): boolean {
@@ -52,7 +53,7 @@ export const ReviewService = {
     let isVerified = false;
 
     // If orderItemId is provided, locate the linked order item and parent order
-    let linkedOrder: any = null;
+    let linkedOrder: OrderRecord | null = null;
     if (params.orderItemId && isValidUuid(params.orderItemId)) {
       const [matchedItem] = await db
         .select({
@@ -100,19 +101,17 @@ export const ReviewService = {
           isVerified = false;
         } else {
           // If purchased but not yet delivered
-          const err = new Error(
-            "Reviews can only be submitted once the product order is DELIVERED"
+          throw createStatusCodeError(
+            "Reviews can only be submitted once the product order is DELIVERED",
+            400
           );
-          (err as any).statusCode = 400;
-          throw err;
         }
       } else if (!linkedOrder) {
         // Did not purchase
-        const err = new Error(
-          "Verified purchase required: You must have purchased and received this product to leave a verified review"
+        throw createStatusCodeError(
+          "Verified purchase required: You must have purchased and received this product to leave a verified review",
+          403
         );
-        (err as any).statusCode = 403;
-        throw err;
       }
     }
 
@@ -207,7 +206,7 @@ export const ReviewService = {
       return {
         reviews: rows.map((r) => ({
           ...r,
-          orderItemId: (r.metadata as any)?.orderItemId || null,
+          orderItemId: r.metadata?.orderItemId || null,
         })),
         averageRating: avg,
         reviewCount,

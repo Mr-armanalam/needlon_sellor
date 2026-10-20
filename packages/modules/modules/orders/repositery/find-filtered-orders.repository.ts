@@ -1,6 +1,9 @@
 import { orders } from "@/db/schema/orders/table";
 import { orderItems } from "@/db/schema/orders/order-items/table";
-import { and, eq, ilike, isNull, or, sql, inArray } from "drizzle-orm";
+import { and, eq, ilike, isNull, or, sql, inArray, SQL } from "drizzle-orm";
+import type { ShippingMethod } from "@/db/schema/orders/types";
+
+type OrderItemRow = typeof orderItems.$inferSelect;
 import { GetFilteredOrdersRequestDto } from "../dto";
 import { DbTransaction } from "@/db/transactions";
 import { getDatabase } from "@/db/database";
@@ -23,7 +26,7 @@ export const findFilteredOrders = async ({
     const valueTier = dto.valueTier;
     const dateRange = dto.dateRange;
 
-    const conditions: any[] = [];
+    const conditions: SQL[] = [];
     conditions.push(eq(orders.sellerId, sellerId));
     conditions.push(isNull(orders.deletedAt));
 
@@ -37,9 +40,9 @@ export const findFilteredOrders = async ({
     } else if (activeTab === "READY") {
         conditions.push(eq(orders.status, "READY_TO_SHIP"));
     } else if (activeTab === "OUT_FOR_DELIVERY") {
-        conditions.push(or(eq(orders.status, "SHIPPED"), eq(orders.status, "OUT_FOR_DELIVERY")));
+        conditions.push(or(eq(orders.status, "SHIPPED"), eq(orders.status, "OUT_FOR_DELIVERY"))!);
     } else if (activeTab === "COMPLETED") {
-        conditions.push(or(eq(orders.status, "DELIVERED"), eq(orders.status, "COMPLETED")));
+        conditions.push(or(eq(orders.status, "DELIVERED"), eq(orders.status, "COMPLETED"))!);
     } else if (activeTab === "CANCELLED") {
         conditions.push(eq(orders.status, "CANCELLED"));
     } else if (activeTab === "RETURNED") {
@@ -53,12 +56,12 @@ export const findFilteredOrders = async ({
             or(
                 ilike(orders.orderNumber, `%${search}%`),
                 ilike(orders.buyerName, `%${search}%`)
-            )
+            )!
         );
     }
 
     if (deliveryMode && deliveryMode !== "ALL") {
-        conditions.push(eq(orders.shippingMethod, deliveryMode.toUpperCase() as any));
+        conditions.push(eq(orders.shippingMethod, deliveryMode.toUpperCase() as ShippingMethod));
     }
 
     if (valueTier && valueTier !== "ALL") {
@@ -90,7 +93,7 @@ export const findFilteredOrders = async ({
 
     // Load all the order items in a single query
     const orderIds = fetchedOrders.map(o => o.id);
-    let orderLines: any[] = [];
+    let orderLines: OrderItemRow[] = [];
     if (orderIds.length > 0) {
         orderLines = await database
             .select()
@@ -99,7 +102,7 @@ export const findFilteredOrders = async ({
     }
 
     // Group items by orderId
-    const itemsByOrderId = new Map<string, any[]>();
+    const itemsByOrderId = new Map<string, OrderItemRow[]>();
     for (const line of orderLines) {
         if (!itemsByOrderId.has(line.orderId)) {
             itemsByOrderId.set(line.orderId, []);

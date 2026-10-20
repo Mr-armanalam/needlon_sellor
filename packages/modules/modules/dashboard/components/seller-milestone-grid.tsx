@@ -18,8 +18,8 @@ const SellerMileStoneGrid = ({
         <div
           key={item.id}
           onClick={() => {
-            if (!item.completed && (item as any).actionUrl) {
-              router.push((item as any).actionUrl);
+            if (!item.completed && item.actionUrl) {
+              router.push(item.actionUrl);
             }
           }}
           className={`

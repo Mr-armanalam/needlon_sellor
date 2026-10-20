@@ -10,9 +10,27 @@ interface BulkUploadModalProps {
   onSuccess: () => void;
 }
 
+/**
+ * One parsed catalog row from a CSV or JSON bulk-upload file.
+ * CSV cells are always strings; JSON rows may also carry numeric
+ * values (e.g. price / stock), so field values are string | number.
+ * Known fields are the ones validated / consumed below.
+ */
+interface BulkUploadRow {
+  name?: string | number;
+  title?: string | number;
+  productName?: string | number;
+  retailPrice?: string | number;
+  price?: string | number;
+  boutiqueStockCount?: string | number;
+  stock?: string | number;
+  quantity?: string | number;
+  [key: string]: string | number | undefined;
+}
+
 export function BulkUploadModal({ isOpen, onClose, onSuccess }: BulkUploadModalProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [parsedItems, setParsedItems] = useState<any[]>([]);
+  const [parsedItems, setParsedItems] = useState<BulkUploadRow[]>([]);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -22,7 +40,7 @@ export function BulkUploadModal({ isOpen, onClose, onSuccess }: BulkUploadModalP
 
   const parseAndValidateText = (text: string, fileName: string) => {
     try {
-      let items: any[] = [];
+      let items: BulkUploadRow[] = [];
       if (fileName.endsWith('.json')) {
         items = JSON.parse(text);
       } else {
@@ -35,7 +53,7 @@ export function BulkUploadModal({ isOpen, onClose, onSuccess }: BulkUploadModalP
         const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
         for (let i = 1; i < lines.length; i++) {
           const cols = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
-          const row: any = {};
+          const row: Record<string, string> = {};
           headers.forEach((h, idx) => {
             row[h] = cols[idx] || '';
           });
@@ -70,8 +88,8 @@ export function BulkUploadModal({ isOpen, onClose, onSuccess }: BulkUploadModalP
 
       setValidationErrors(errors);
       setParsedItems(items);
-    } catch (err: any) {
-      setValidationErrors([`Failed to parse file: ${err.message}`]);
+    } catch (err: unknown) {
+      setValidationErrors([`Failed to parse file: ${err instanceof Error ? err.message : String(err)}`]);
       setParsedItems([]);
     }
   };
@@ -110,8 +128,8 @@ export function BulkUploadModal({ isOpen, onClose, onSuccess }: BulkUploadModalP
       alert(`Successfully imported ${parsedItems.length} products to your boutique shelf!`);
       onSuccess();
       onClose();
-    } catch (err: any) {
-      setValidationErrors([`Upload failed: ${err.message}`]);
+    } catch (err: unknown) {
+      setValidationErrors([`Upload failed: ${err instanceof Error ? err.message : String(err)}`]);
     } finally {
       setIsUploading(false);
     }

@@ -16,6 +16,11 @@ import { inventoryTable } from "@needlon/db/db/schema/catalog/products/inventory
 import { promotions } from "@needlon/db/db/schema/marketing/promotion";
 import { couponRedemptions } from "@needlon/db/db/schema/marketing/coupon-redemption";
 import { eq, sql, inArray } from "drizzle-orm";
+
+/** DB row types inferred from the Drizzle schema. */
+type UserRecord = typeof usersTable.$inferSelect;
+type ProductRecord = typeof productsTable.$inferSelect;
+type ProductVariantRecord = typeof productVariantsTable.$inferSelect;
 import { randomUUID } from "node:crypto";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -74,7 +79,7 @@ export const OrderCreationService = {
 
     return await db.transaction(async (tx) => {
       // 1. Validate Buyer
-      let buyerRecord: any = null;
+      let buyerRecord: UserRecord | null = null;
       if (isValidUuid(params.buyerId)) {
         const [foundBuyer] = await tx
           .select()
@@ -101,6 +106,10 @@ export const OrderCreationService = {
             .returning();
           buyerRecord = created;
         }
+      }
+
+      if (!buyerRecord) {
+        throw new Error("Buyer could not be resolved for order creation");
       }
 
       // 2. Resolve Delivery Address
@@ -229,8 +238,8 @@ export const OrderCreationService = {
       // 7. Insert Order Items & Decrement Inventory
       const createdItems = [];
       for (const item of items) {
-        let catalogProduct: any = null;
-        let variant: any = null;
+        let catalogProduct: ProductRecord | null = null;
+        let variant: ProductVariantRecord | null = null;
 
         if (isValidUuid(item.productId)) {
           const [foundProd] = await tx

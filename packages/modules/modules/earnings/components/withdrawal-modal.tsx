@@ -2,13 +2,17 @@
 
 import React, { useState } from 'react';
 import { X, Wallet, Building2, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import {
+  SellerBankAccountRecord,
+  PayoutRequestResultDto,
+} from '../dto/finance.dto';
 
 interface WithdrawalModalProps {
   isOpen: boolean;
   onClose: () => void;
   availableBalance: number;
-  bankAccounts: any[];
-  onRequestPayout: (amount: number, bankAccountId?: string) => Promise<{ success: boolean; error?: string; data?: any }>;
+  bankAccounts: SellerBankAccountRecord[];
+  onRequestPayout: (amount: number, bankAccountId?: string) => Promise<{ success: boolean; error?: string; data?: PayoutRequestResultDto }>;
 }
 
 export default function WithdrawalModal({
