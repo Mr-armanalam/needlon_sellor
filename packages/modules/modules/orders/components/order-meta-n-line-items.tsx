@@ -1,7 +1,17 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {STATUS_LABELS} from "@/modules/orders/constants";
 import {FileText, User, Camera, UploadCloud, Loader2, Ruler, AlertCircle, CheckCircle2, Truck, Phone, MapPin, Plus, Edit3, X} from "lucide-react";
 import type {OrderDetailAddressDto, OrderDetailResponseDto, OrderListItemLineDto} from "@/modules/orders/dto";
+
+/** Roster entry as returned by GET /api/seller/delivery/executives. */
+interface RosterExecutive {
+    id: string;
+    name: string;
+    phone: string;
+    vehicleType: string | null;
+    vehicleNumber: string | null;
+    isAvailable: boolean;
+}
 
 const OrderMetaNLineItems = (
     {
@@ -24,16 +34,36 @@ const OrderMetaNLineItems = (
     const [uploadError, setUploadError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Modal state for delivery executive assignment
+    // Modal state for delivery executive assignment (roster picker: the
+    // seller picks a real delivery_executives row; free-text name/phone
+    // entry is gone — assignment is by executive id only)
     const [showExecutiveModal, setShowExecutiveModal] = useState(false);
     const [assignLoading, setAssignLoading] = useState(false);
-    const [executiveName, setExecutiveName] = useState(data?.shipment?.executive?.executiveName || "");
-    const [executivePhone, setExecutivePhone] = useState(data?.shipment?.executive?.executivePhone || "");
-    const [vehicleType, setVehicleType] = useState(data?.shipment?.executive?.vehicleType || "Bike / Two Wheeler");
-    const [courierPartner, setCourierPartner] = useState(data?.shipment?.executive?.courierPartner || "In-House Local Delivery");
-    const [trackingNumber, setTrackingNumber] = useState(data?.shipment?.trackingNumber || "");
-    const [deliveryStatus, setDeliveryStatus] = useState(data?.shipment?.status || "OUT_FOR_DELIVERY");
-    const [deliveryNotes, setDeliveryNotes] = useState(data?.shipment?.executive?.notes || "");
+    const [rosterLoading, setRosterLoading] = useState(false);
+    const [roster, setRoster] = useState<RosterExecutive[]>([]);
+    const [selectedExecutiveId, setSelectedExecutiveId] = useState("");
+
+    useEffect(() => {
+        if (!showExecutiveModal) return;
+        let cancelled = false;
+        setRosterLoading(true);
+        fetch("/api/seller/delivery/executives?status=ACTIVE")
+            .then((res) => res.json())
+            .then((json: { data?: { executives?: RosterExecutive[] } }) => {
+                if (!cancelled) {
+                    setRoster(json?.data?.executives ?? []);
+                }
+            })
+            .catch(() => {
+                if (!cancelled) setRoster([]);
+            })
+            .finally(() => {
+                if (!cancelled) setRosterLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [showExecutiveModal]);
 
     // Modal state for adding/updating doorstep delivery address
     const [showAddressModal, setShowAddressModal] = useState(false);
@@ -52,6 +82,10 @@ const OrderMetaNLineItems = (
 
     const handleAssignExecutive = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!selectedExecutiveId) {
+            setModalError("Select a delivery executive from the roster");
+            return;
+        }
         setAssignLoading(true);
         setModalError(null);
         try {
@@ -59,13 +93,7 @@ const OrderMetaNLineItems = (
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    executiveName,
-                    executivePhone,
-                    vehicleType,
-                    courierPartner,
-                    trackingNumber: trackingNumber || undefined,
-                    status: deliveryStatus,
-                    notes: deliveryNotes || undefined,
+                    executiveId: selectedExecutiveId,
                 }),
             });
             const json = await res.json();
@@ -579,110 +607,43 @@ const OrderMetaNLineItems = (
                         )}
 
                         <form onSubmit={handleAssignExecutive} className="flex flex-col gap-3">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
-                                        Executive Name *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={executiveName}
-                                        onChange={(e) => setExecutiveName(e.target.value)}
-                                        placeholder="e.g. Ramesh Kumar"
-                                        className="w-full px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-medium text-neutral-800 focus:outline-none focus:ring-1 focus:ring-neutral-900"
-                                    />
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
-                                        Phone Number *
-                                    </label>
-                                    <input
-                                        type="tel"
-                                        required
-                                        value={executivePhone}
-                                        onChange={(e) => setExecutivePhone(e.target.value)}
-                                        placeholder="e.g. 9876543210"
-                                        className="w-full px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-medium text-neutral-800 focus:outline-none focus:ring-1 focus:ring-neutral-900"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
-                                        Delivery Mode / Vehicle
-                                    </label>
-                                    <select
-                                        value={vehicleType}
-                                        onChange={(e) => setVehicleType(e.target.value)}
-                                        className="w-full px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-medium text-neutral-800 focus:outline-none focus:ring-1 focus:ring-neutral-900 cursor-pointer"
-                                    >
-                                        <option value="Bike / Two Wheeler">Bike / Two Wheeler</option>
-                                        <option value="Van / Four Wheeler">Van / Four Wheeler</option>
-                                        <option value="Electric Scooter">Electric Scooter</option>
-                                        <option value="Local Courier Fleet">Local Courier Fleet</option>
-                                    </select>
-                                </div>
-
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
-                                        Logistics Fleet / Partner
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={courierPartner}
-                                        onChange={(e) => setCourierPartner(e.target.value)}
-                                        placeholder="e.g. In-House Local Fleet"
-                                        className="w-full px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-medium text-neutral-800 focus:outline-none focus:ring-1 focus:ring-neutral-900"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
-                                        Tracking / AWB Number
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={trackingNumber}
-                                        onChange={(e) => setTrackingNumber(e.target.value)}
-                                        placeholder="Auto-generated if empty"
-                                        className="w-full px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-medium text-neutral-800 focus:outline-none focus:ring-1 focus:ring-neutral-900"
-                                    />
-                                </div>
-
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
-                                        Fulfillment Status
-                                    </label>
-                                    <select
-                                        value={deliveryStatus}
-                                        onChange={(e) => setDeliveryStatus(e.target.value)}
-                                        className="w-full px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-medium text-neutral-800 focus:outline-none focus:ring-1 focus:ring-neutral-900 cursor-pointer"
-                                    >
-                                        <option value="READY_TO_SHIP">Ready to Ship</option>
-                                        <option value="IN_TRANSIT">In Transit</option>
-                                        <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
-                                        <option value="DELIVERED">Delivered</option>
-                                    </select>
-
-                                </div>
-                            </div>
-
                             <div className="flex flex-col gap-1">
                                 <label className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
-                                    Special Instructions / Notes
+                                    Delivery Executive *
                                 </label>
-                                <textarea
-                                    rows={2}
-                                    value={deliveryNotes}
-                                    onChange={(e) => setDeliveryNotes(e.target.value)}
-                                    placeholder="e.g. Call before arrival, handle bridal lehenga carefully"
-                                    className="w-full p-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-medium text-neutral-800 focus:outline-none focus:ring-1 focus:ring-neutral-900 resize-none"
-                                />
+                                {rosterLoading ? (
+                                    <span className="text-xs text-neutral-400 flex items-center gap-1.5 py-2">
+                                        <Loader2 size={13} className="animate-spin" /> Loading roster...
+                                    </span>
+                                ) : roster.length === 0 ? (
+                                    <p className="text-xs text-neutral-500 bg-neutral-50 border border-dashed border-neutral-200 rounded-xl p-3">
+                                        No active delivery executives on the roster yet. Executives are onboarded from the delivery roster before they can be assigned.
+                                    </p>
+                                ) : (
+                                    <select
+                                        required
+                                        value={selectedExecutiveId}
+                                        onChange={(e) => setSelectedExecutiveId(e.target.value)}
+                                        className="w-full px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-medium text-neutral-800 focus:outline-none focus:ring-1 focus:ring-neutral-900 cursor-pointer"
+                                    >
+                                        <option value="" disabled>Select an executive</option>
+                                        {roster.map((exec) => (
+                                            <option key={exec.id} value={exec.id}>
+                                                {exec.name} - {exec.phone}
+                                                {exec.vehicleType ? ` (${exec.vehicleType})` : ""}
+                                                {exec.isAvailable ? "" : " - unavailable"}
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
                             </div>
+
+                            {data.shipment?.executive && (
+                                <p className="text-[11px] text-neutral-400 leading-relaxed">
+                                    Currently assigned: {data.shipment.executive.executiveName} ({data.shipment.executive.executivePhone}).
+                                    Assigning a different executive closes the current assignment as reassigned and records the new one in the assignment history.
+                                </p>
+                            )}
 
                             <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-100">
                                 <button

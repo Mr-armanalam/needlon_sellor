@@ -84,7 +84,8 @@ export interface ShippingLabelData {
   courierName: string;
   isCod: boolean;
   codAmount: number;
-  weightKg: number;
+  /** Real parcel weight in kg when a weight source exists; omitted otherwise. */
+  weightKg?: number;
   seller: SellerInfo;
   buyer: {
     name: string;

@@ -8,20 +8,35 @@ import {
 import { eq, ilike, or, and, sql } from "drizzle-orm";
 
 export async function getKnowledgeBaseArticlesRepo(category?: string) {
+  // Seller-side reads only ever expose published articles — drafts saved
+  // through the admin authoring surface stay hidden until published.
   if (category && category !== "all") {
     return await db
       .select()
       .from(knowledgeBaseArticles)
-      .where(eq(knowledgeBaseArticles.category, category));
+      .where(
+        and(
+          eq(knowledgeBaseArticles.category, category),
+          eq(knowledgeBaseArticles.isPublished, true)
+        )
+      );
   }
-  return await db.select().from(knowledgeBaseArticles);
+  return await db
+    .select()
+    .from(knowledgeBaseArticles)
+    .where(eq(knowledgeBaseArticles.isPublished, true));
 }
 
 export async function getArticleBySlugRepo(slug: string) {
   const [article] = await db
     .select()
     .from(knowledgeBaseArticles)
-    .where(eq(knowledgeBaseArticles.slug, slug));
+    .where(
+      and(
+        eq(knowledgeBaseArticles.slug, slug),
+        eq(knowledgeBaseArticles.isPublished, true)
+      )
+    );
 
   if (article) {
     // Increment view count
@@ -61,10 +76,13 @@ export async function searchHelpCenterRepo(sellerId: string, query: string) {
     .select()
     .from(knowledgeBaseArticles)
     .where(
-      or(
-        ilike(knowledgeBaseArticles.title, searchTerm),
-        ilike(knowledgeBaseArticles.description, searchTerm),
-        ilike(knowledgeBaseArticles.content, searchTerm)
+      and(
+        eq(knowledgeBaseArticles.isPublished, true),
+        or(
+          ilike(knowledgeBaseArticles.title, searchTerm),
+          ilike(knowledgeBaseArticles.description, searchTerm),
+          ilike(knowledgeBaseArticles.content, searchTerm)
+        )
       )
     )
     .limit(5);

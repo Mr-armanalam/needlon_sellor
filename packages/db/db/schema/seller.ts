@@ -19,6 +19,9 @@ export const seller = pgTable("seller", {
   passwordHash: text("password_hash"),
   emailVerified: boolean("email_verified").default(false).notNull(),
   role: roleEnum("role").default("seller").notNull(),
+  // Platform suspension flag, managed from the admin surface. Suspended
+  // accounts are rejected at login (see apps/seller/app/api/auth/login).
+  isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   // deletedAt: timestamp("deleted_at", {

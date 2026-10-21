@@ -5,6 +5,7 @@ import { orderStatusHistory } from "@/db/schema/orders/order-status-history/tabl
 import { orderPayments } from "@/db/schema/orders/order-payments/table";
 import { customerMeasurementsTable } from "@/db/schema/customization/measurements";
 import { shipmentOrders } from "@/db/schema/delivery/shipping-orders";
+import { deliveryExecutives } from "@/db/schema/delivery/delivery-executives";
 import { and, desc, eq, inArray, isNull, or } from "drizzle-orm";
 import { OrderNotFoundError } from "../errors/order-not-found-error";
 import { DeliveryExecutiveAssignment, OrderShipmentDomain } from "../types";
@@ -120,7 +121,27 @@ export const findOrderById = async ({
     if (shipments.length > 0) {
         const s = shipments[0];
         let executive: DeliveryExecutiveAssignment | null = null;
-        if (s.notes) {
+        // Current assignments live on the roster: resolve the executive via
+        // shipment_orders.executiveId. The notes-JSON parse below remains
+        // only as a legacy fallback for shipments assigned before the
+        // roster existed.
+        if (s.executiveId) {
+            const [exec] = await database
+                .select()
+                .from(deliveryExecutives)
+                .where(eq(deliveryExecutives.id, s.executiveId))
+                .limit(1);
+            if (exec) {
+                executive = {
+                    executiveName: exec.name,
+                    executivePhone: exec.phone,
+                    vehicleType: exec.vehicleType ?? undefined,
+                    trackingNumber: s.trackingNumber ?? undefined,
+                    status: s.status,
+                };
+            }
+        }
+        if (!executive && s.notes) {
             try {
                 const parsed: unknown = JSON.parse(s.notes);
                 if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {

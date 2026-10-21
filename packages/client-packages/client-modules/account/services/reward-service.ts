@@ -8,44 +8,12 @@ function isValidUuid(id: string): boolean {
   return typeof id === "string" && UUID_REGEX.test(id);
 }
 
-const FALLBACK_REWARDS = [
-  {
-    id: "rw-1",
-    userId: "mock-user",
-    coupon_id: "cpn-1",
-    title: "Welcome Reward",
-    description: "First purchase discount",
-    points: 200,
-    status: "active",
-    expiresAt: new Date("2026-12-31"),
-    coupon_code: "WELCOME20",
-    createdAt: new Date("2026-09-01"),
-  },
-  {
-    id: "rw-2",
-    userId: "mock-user",
-    coupon_id: "cpn-2",
-    title: "Loyalty Reward",
-    description: "Loyalty member exclusive",
-    points: 500,
-    status: "active",
-    expiresAt: new Date("2026-11-30"),
-    coupon_code: "LOYAL15",
-    createdAt: new Date("2026-09-15"),
-  },
-  {
-    id: "rw-3",
-    userId: "mock-user",
-    coupon_id: null,
-    title: "Points Milestone",
-    description: "1000 points milestone bonus",
-    points: 1000,
-    status: "pending",
-    expiresAt: new Date("2027-01-31"),
-    coupon_code: null,
-    createdAt: new Date("2026-10-01"),
-  },
-];
+/** Honest zero state used whenever real reward data cannot be loaded:
+ *  no rewards, a zero balance, and no tier — never invented figures. */
+const EMPTY_REWARDS_STATE = {
+  rewards: [] as never[],
+  loyaltyAccount: { pointsBalance: 0, tier: null as string | null },
+};
 
 export const RewardService = {
   /**
@@ -53,10 +21,7 @@ export const RewardService = {
    */
   async getBuyerRewards(userId: string) {
     if (!process.env.DATABASE_URL || !isValidUuid(userId)) {
-      return {
-        rewards: FALLBACK_REWARDS,
-        loyaltyAccount: { pointsBalance: 250, tier: "SILVER" },
-      };
+      return EMPTY_REWARDS_STATE;
     }
 
     try {
@@ -120,15 +85,12 @@ export const RewardService = {
       }
 
       return {
-        rewards: activeRewards.length > 0 ? activeRewards : FALLBACK_REWARDS,
+        rewards: activeRewards,
         loyaltyAccount,
       };
     } catch (error) {
       console.error("RewardService.getBuyerRewards error:", error);
-      return {
-        rewards: FALLBACK_REWARDS,
-        loyaltyAccount: { pointsBalance: 0, tier: "BRONZE" },
-      };
+      return EMPTY_REWARDS_STATE;
     }
   },
 };

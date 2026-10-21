@@ -12,6 +12,7 @@ import { sellerStore } from "@needlon/db/db/schema/seller/seller-store";
 import { sellerAddresses } from "@needlon/db/db/schema/seller/seller-address";
 import { productsTable } from "@needlon/db/db/schema/catalog/products/table";
 import { productVariantsTable } from "@needlon/db/db/schema/catalog/products/product-variants/table";
+import { pricingTable } from "@needlon/db/db/schema/catalog/products/pricing/table";
 import { inventoryTable } from "@needlon/db/db/schema/catalog/products/inventory/table";
 import { promotions } from "@needlon/db/db/schema/marketing/promotion";
 import { couponRedemptions } from "@needlon/db/db/schema/marketing/coupon-redemption";
@@ -28,6 +29,47 @@ import { randomUUID } from "node:crypto";
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function isValidUuid(id: string): boolean {
   return typeof id === "string" && UUID_REGEX.test(id);
+}
+
+const ORDER_PAYMENT_METHODS = [
+  "COD",
+  "UPI",
+  "CARD",
+  "NET_BANKING",
+  "WALLET",
+  "BANK_TRANSFER",
+] as const;
+type OrderPaymentMethod = (typeof ORDER_PAYMENT_METHODS)[number];
+
+function isOrderPaymentMethod(
+  value: string | undefined,
+): value is OrderPaymentMethod {
+  return (
+    value !== undefined &&
+    (ORDER_PAYMENT_METHODS as readonly string[]).includes(value)
+  );
+}
+
+const PAYMENT_GATEWAYS = [
+  "STRIPE",
+  "RAZORPAY",
+  "PHONEPE",
+  "PAYTM",
+  "CASHFREE",
+  "COD",
+  "UPI",
+  "BANK_TRANSFER",
+  "OTHER",
+] as const;
+type PaymentGateway = (typeof PAYMENT_GATEWAYS)[number];
+
+function isPaymentGateway(
+  value: string | undefined,
+): value is PaymentGateway {
+  return (
+    value !== undefined &&
+    (PAYMENT_GATEWAYS as readonly string[]).includes(value)
+  );
 }
 
 export interface CheckoutOrderItem {
@@ -70,13 +112,9 @@ export const OrderCreationService = {
    */
   async createOrderFromCheckoutSession(params: CreateOrderParams) {
     if (!process.env.DATABASE_URL) {
-      console.warn("DATABASE_URL not configured. Returning mock order result.");
-      return {
-        success: true,
-        orderId: "ord-mock-local",
-        orderNumber: `ORD-${Date.now()}-MOCK`,
-        grandTotal: 2499,
-      };
+      // Fail closed: an order that was never persisted must never be
+      // reported as a successful checkout.
+      throw new Error("DATABASE_URL is not configured; cannot create orders");
     }
 
     return await db.transaction(async (tx) => {
@@ -92,37 +130,35 @@ export const OrderCreationService = {
       }
 
       if (!buyerRecord) {
-        // Fallback: look up or create a guest buyer
-        const [anyBuyer] = await tx.select().from(usersTable).limit(1);
-        if (anyBuyer) {
-          buyerRecord = anyBuyer;
-        } else {
-          const guestId = isValidUuid(params.buyerId) ? params.buyerId : randomUUID();
-          const [created] = await tx
-            .insert(usersTable)
-            .values({
-              id: guestId,
-              name: params.shippingAddressSnapshot?.recipientName || "Guest Buyer",
-              email: `buyer-${Date.now()}@needlon.com`,
-            })
-            .returning();
-          buyerRecord = created;
-        }
+        // Guest checkout: create a NEW guest buyer record. An order must
+        // never be attributed to an arbitrary existing customer.
+        const guestId = isValidUuid(params.buyerId) ? params.buyerId : randomUUID();
+        const [created] = await tx
+          .insert(usersTable)
+          .values({
+            id: guestId,
+            name: params.shippingAddressSnapshot?.recipientName || "Guest Buyer",
+            email: `buyer-${Date.now()}@needlon.com`,
+          })
+          .returning();
+        buyerRecord = created;
       }
 
       if (!buyerRecord) {
         throw new Error("Buyer could not be resolved for order creation");
       }
 
-      // 2. Resolve Delivery Address
+      // 2. Resolve Delivery Address — from the checkout snapshot or the
+      // buyer's saved address only. A real parcel needs a real address:
+      // missing core fields fail the checkout instead of being fabricated.
       let deliveryAddress = {
-        recipientName: params.shippingAddressSnapshot?.recipientName || buyerRecord.name || "Customer",
-        phoneNumber: params.shippingAddressSnapshot?.phoneNumber || "9876543210",
-        addressLine1: params.shippingAddressSnapshot?.addressLine1 || "Needlon Fashion St 101",
+        recipientName: params.shippingAddressSnapshot?.recipientName || buyerRecord.name || "",
+        phoneNumber: params.shippingAddressSnapshot?.phoneNumber || "",
+        addressLine1: params.shippingAddressSnapshot?.addressLine1 || "",
         addressLine2: params.shippingAddressSnapshot?.addressLine2 || null,
-        city: params.shippingAddressSnapshot?.city || "New Delhi",
-        state: params.shippingAddressSnapshot?.state || "Delhi",
-        postalCode: params.shippingAddressSnapshot?.postalCode || "110001",
+        city: params.shippingAddressSnapshot?.city || "",
+        state: params.shippingAddressSnapshot?.state || "",
+        postalCode: params.shippingAddressSnapshot?.postalCode || "",
         country: params.shippingAddressSnapshot?.country || "India",
       };
 
@@ -146,51 +182,129 @@ export const OrderCreationService = {
         }
       }
 
-      // 3. Resolve / Ensure Seller, Store, and Seller Warehouse Dispatch Address
-      let [sellerRecord] = await tx.select().from(seller).limit(1);
-      if (!sellerRecord) {
-        [sellerRecord] = await tx
-          .insert(seller)
-          .values({
-            name: "Needlon Flagship Seller",
-            email: `seller-platform-${Date.now()}@needlon.com`,
-          })
-          .returning();
+      // 3. Resolve the order's seller from the cart items themselves.
+      // An order belongs to the seller who sells the products — never to
+      // an arbitrary first row, and a missing seller/store/address is a
+      // hard error, not something to fabricate. The order schema is
+      // single-seller, so a mixed-seller cart fails loudly here instead
+      // of silently misattributing the order.
+      if (
+        !deliveryAddress.recipientName ||
+        !deliveryAddress.phoneNumber ||
+        !deliveryAddress.addressLine1 ||
+        !deliveryAddress.city ||
+        !deliveryAddress.state ||
+        !deliveryAddress.postalCode
+      ) {
+        throw new Error(
+          "A complete delivery address (name, phone, address, city, state, postal code) is required to place an order",
+        );
       }
 
-      let [storeRecord] = await tx.select().from(sellerStore).limit(1);
-      if (!storeRecord) {
-        [storeRecord] = await tx
-          .insert(sellerStore)
-          .values({
-            sellerId: sellerRecord.id,
-            storeName: "Needlon Official Store",
-            storeSlug: `needlon-official-${Date.now()}`,
-          })
-          .returning();
-      }
-
-      let [sellerAddressRecord] = await tx.select().from(sellerAddresses).limit(1);
-      if (!sellerAddressRecord) {
-        [sellerAddressRecord] = await tx
-          .insert(sellerAddresses)
-          .values({
-            sellerId: sellerRecord.id,
-            label: "Main Warehouse",
-            addressType: "WAREHOUSE",
-            addressLine1: "Needlon Central Hub, Sector 62",
-            city: "Noida",
-            district: "Gautam Buddha Nagar",
-            state: "Uttar Pradesh",
-            postalCode: "201301",
-          })
-          .returning();
-      }
-
-      // 4. Calculate Financials
       const items = params.cartItems.length > 0 ? params.cartItems : [];
-      const subtotal = items.reduce(
-        (sum, item) => sum + (Number(item.price) || 2499) * (Number(item.quantity) || 1),
+      if (items.length === 0) {
+        throw new Error("Cannot create an order with an empty cart");
+      }
+
+      interface ResolvedItem {
+        input: CheckoutOrderItem;
+        product: ProductRecord;
+        variant: ProductVariantRecord | null;
+        unitPrice: number;
+        quantity: number;
+      }
+      const resolvedItems: ResolvedItem[] = [];
+      const sellerIds = new Set<string>();
+
+      for (const item of items) {
+        if (!isValidUuid(item.productId)) {
+          throw new Error(`Invalid product id in cart: ${item.productId}`);
+        }
+        const [product] = await tx
+          .select()
+          .from(productsTable)
+          .where(eq(productsTable.id, item.productId))
+          .limit(1);
+        if (!product) {
+          throw new Error(`Product not found for cart item: ${item.productId}`);
+        }
+        // products.store_id stores the owning seller's id (the column
+        // references seller_store.seller_id).
+        if (!product.storeId) {
+          throw new Error(`Product ${product.id} is not assigned to any seller`);
+        }
+        sellerIds.add(product.storeId);
+
+        const [variant] = await tx
+          .select()
+          .from(productVariantsTable)
+          .where(eq(productVariantsTable.productId, item.productId))
+          .limit(1);
+
+        let unitPrice = Number(item.price);
+        if (!Number.isFinite(unitPrice) || unitPrice <= 0) {
+          if (!variant) {
+            throw new Error(`No purchasable variant for product: ${product.id}`);
+          }
+          const [pricing] = await tx
+            .select()
+            .from(pricingTable)
+            .where(eq(pricingTable.variantId, variant.id))
+            .limit(1);
+          unitPrice = Number(pricing?.price);
+        }
+        if (!Number.isFinite(unitPrice) || unitPrice <= 0) {
+          throw new Error(`Price could not be resolved for product: ${product.id}`);
+        }
+
+        resolvedItems.push({
+          input: item,
+          product,
+          variant: variant ?? null,
+          unitPrice,
+          quantity: Number(item.quantity) || 1,
+        });
+      }
+
+      if (sellerIds.size !== 1) {
+        throw new Error(
+          "Cart contains products from multiple sellers; split it into one order per seller",
+        );
+      }
+      const [orderSellerId] = [...sellerIds];
+
+      const [sellerRecord] = await tx
+        .select()
+        .from(seller)
+        .where(eq(seller.id, orderSellerId))
+        .limit(1);
+      if (!sellerRecord) {
+        throw new Error(`Seller not found for cart products: ${orderSellerId}`);
+      }
+
+      const [storeRecord] = await tx
+        .select()
+        .from(sellerStore)
+        .where(eq(sellerStore.sellerId, sellerRecord.id))
+        .limit(1);
+      if (!storeRecord) {
+        throw new Error(`Seller ${sellerRecord.id} has no store configured`);
+      }
+
+      const [sellerAddressRecord] = await tx
+        .select()
+        .from(sellerAddresses)
+        .where(eq(sellerAddresses.sellerId, sellerRecord.id))
+        .limit(1);
+      if (!sellerAddressRecord) {
+        throw new Error(
+          `Seller ${sellerRecord.id} has no dispatch address configured`,
+        );
+      }
+
+      // 4. Calculate Financials (prices resolved from the catalog above)
+      const subtotal = resolvedItems.reduce(
+        (sum, item) => sum + item.unitPrice * item.quantity,
         0
       );
       const couponDiscount = Math.max(0, Number(params.couponDiscount) || 0);
@@ -209,7 +323,9 @@ export const OrderCreationService = {
           orderNumber,
           status: "PENDING",
           paymentStatus: "PAID",
-          paymentMethod: "CARD",
+          paymentMethod: isOrderPaymentMethod(params.paymentMethod)
+            ? params.paymentMethod
+            : "COD",
           currency: params.currency || "INR",
           buyerName: deliveryAddress.recipientName,
           buyerEmail: buyerRecord.email,
@@ -239,28 +355,12 @@ export const OrderCreationService = {
 
       // 7. Insert Order Items & Decrement Inventory
       const createdItems = [];
-      for (const item of items) {
-        let catalogProduct: ProductRecord | null = null;
-        let variant: ProductVariantRecord | null = null;
-
-        if (isValidUuid(item.productId)) {
-          const [foundProd] = await tx
-            .select()
-            .from(productsTable)
-            .where(eq(productsTable.id, item.productId))
-            .limit(1);
-          catalogProduct = foundProd;
-
-          const [foundVar] = await tx
-            .select()
-            .from(productVariantsTable)
-            .where(eq(productVariantsTable.productId, item.productId))
-            .limit(1);
-          variant = foundVar;
-        }
-
-        const unitPrice = Number(item.price) || 2499;
-        const qty = Number(item.quantity) || 1;
+      for (const resolved of resolvedItems) {
+        const item = resolved.input;
+        const catalogProduct: ProductRecord = resolved.product;
+        const variant: ProductVariantRecord | null = resolved.variant;
+        const unitPrice = resolved.unitPrice;
+        const qty = resolved.quantity;
         const itemSubtotal = unitPrice * qty;
 
         // Resolve product image dynamically from catalog or product media
@@ -287,11 +387,11 @@ export const OrderCreationService = {
           .values({
             orderId: newOrder.id,
             sellerId: sellerRecord.id,
-            productId: catalogProduct?.id || item.productId,
+            productId: catalogProduct.id,
             variantId: variant?.id || null,
-            sku: variant?.sku || `SKU-${String(item.productId).slice(0, 8)}`,
-            productSlug: catalogProduct?.slug || "tailored-product",
-            productName: catalogProduct?.name || item.name || "Needlon Tailored Product",
+            sku: variant?.sku || catalogProduct.slug,
+            productSlug: catalogProduct.slug,
+            productName: catalogProduct.name,
             variantName: item.size ? `Size: ${item.size}` : null,
             unitPrice: unitPrice.toFixed(2),
             quantity: qty,
@@ -304,7 +404,7 @@ export const OrderCreationService = {
         createdItems.push(createdItem);
 
         // Check for bespoke measurement attachment for this item
-        const pId = catalogProduct?.id || item.productId;
+        const pId = catalogProduct.id;
         if (isValidUuid(pId)) {
           let userMatchClause: SQL | undefined = undefined;
           if (buyerRecord?.id && isValidUuid(buyerRecord.id) && buyerRecord?.email) {
@@ -335,22 +435,10 @@ export const OrderCreationService = {
             matchingMeasurement = matched;
           }
 
-          if (!matchingMeasurement) {
-            // Check for recent unassigned measurement for this product
-            const [unassigned] = await tx
-              .select()
-              .from(customerMeasurementsTable)
-              .where(
-                and(
-                  eq(customerMeasurementsTable.productId, pId),
-                  isNull(customerMeasurementsTable.orderId)
-                )
-              )
-              .orderBy(desc(customerMeasurementsTable.createdAt))
-              .limit(1);
-            matchingMeasurement = unassigned;
-          }
-
+          // Only measurements belonging to THIS buyer may attach to their
+          // order. There is deliberately no "any unassigned measurement"
+          // fallback — attaching another customer's measurements would
+          // leak their data and corrupt the order.
           if (matchingMeasurement) {
             await tx
               .update(customerMeasurementsTable)
@@ -410,7 +498,9 @@ export const OrderCreationService = {
           paymentNumber: `PAY-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
           paymentStatus: "SETTLED",
           paymentMethod: "ONLINE",
-          paymentGateway: "STRIPE",
+          paymentGateway: isPaymentGateway(params.paymentGateway)
+            ? params.paymentGateway
+            : "STRIPE",
           currency: params.currency || "INR",
           amount: grandTotal.toFixed(2),
           netAmount: grandTotal.toFixed(2),

@@ -20,7 +20,7 @@ export default function ConnectCarrierModal({
   partner,
   onSubmit,
 }: ConnectCarrierModalProps) {
-  const [apiKey, setApiKey] = useState('sbx_test_key_89127391');
+  const [apiKey, setApiKey] = useState('');
   const [apiSecret, setApiSecret] = useState('');
   const [isSandbox, setIsSandbox] = useState(true);
   const [isActive, setIsActive] = useState(partner?.isActive ?? true);

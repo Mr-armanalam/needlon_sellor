@@ -1,4 +1,4 @@
-import { DollarSign, ShoppingBag, Users, MessageSquare } from "lucide-react";
+import { DollarSign, ShoppingBag, MessageSquare } from "lucide-react";
 
 export const metrics = [
   {
@@ -16,14 +16,6 @@ export const metrics = [
     isPositive: true,
     icon: ShoppingBag,
     color: "bg-blue-50 text-blue-600",
-  },
-  {
-    title: "Visitors",
-    value: "1,240",
-    change: "+8%",
-    isPositive: true,
-    icon: Users,
-    color: "bg-purple-50 text-purple-600",
   },
   {
     title: "Pending Messages",

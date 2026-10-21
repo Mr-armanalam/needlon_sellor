@@ -1,10 +1,11 @@
 import { metricsType } from "../data/performance-snapData";
 
 const SparkInlineCont = ({ metric }: { metric: metricsType }) => {
-  
+  const hasSeries = metric.sparkline.length >= 2;
+
   // Normalize points to render inside a clean minimal inline SVG sparkline
-  const min = Math.min(...metric.sparkline);
-  const max = Math.max(...metric.sparkline);
+  const min = hasSeries ? Math.min(...metric.sparkline) : 0;
+  const max = hasSeries ? Math.max(...metric.sparkline) : 0;
   const points = metric.sparkline
     .map((val, index) => {
       const x = (index / (metric.sparkline.length - 1)) * 80;
@@ -19,7 +20,8 @@ const SparkInlineCont = ({ metric }: { metric: metricsType }) => {
         {metric.value}
       </span>
 
-      {/* Highly Polished SVG Mini-Sparkline */}
+      {/* Highly Polished SVG Mini-Sparkline (only when a real series exists) */}
+      {hasSeries && (
       <div className="w-20 h-6.25">
         <svg className="w-full h-full overflow-visible">
           <polyline
@@ -33,6 +35,7 @@ const SparkInlineCont = ({ metric }: { metric: metricsType }) => {
           />
         </svg>
       </div>
+      )}
     </div>
   );
 };
