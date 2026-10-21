@@ -52,8 +52,9 @@ export const AddressService = {
 
   async addAddress(userId: string, dto: CreateAddressDto) {
     if (!process.env.DATABASE_URL) {
-      const mock = { id: "mock-addr-id", userId, ...dto, isDefault: dto.isDefault ?? false };
-      return mapAddressToUi(mock);
+      // Fail honestly: never present an address as saved when nothing was
+      // persisted. The API route surfaces this as an error response.
+      throw new Error("Cannot save address: database is not configured (DATABASE_URL is not set).");
     }
 
     try {
@@ -83,16 +84,14 @@ export const AddressService = {
 
       return mapAddressToUi(inserted);
     } catch (error) {
-      console.warn("Add address DB query fallback:", (error as Error).message);
-      const mock = { id: "mock-addr-id", userId, ...dto, isDefault: dto.isDefault ?? false };
-      return mapAddressToUi(mock);
+      console.error("Add address DB query failed:", (error as Error).message);
+      throw error instanceof Error ? error : new Error("Failed to save address.");
     }
   },
 
   async updateAddress(userId: string, addressId: string, dto: UpdateAddressDto) {
     if (!process.env.DATABASE_URL) {
-      const mock = { id: addressId, userId, ...dto };
-      return mapAddressToUi(mock);
+      throw new Error("Cannot update address: database is not configured (DATABASE_URL is not set).");
     }
 
     try {
@@ -130,9 +129,8 @@ export const AddressService = {
 
       return mapAddressToUi(updated);
     } catch (error) {
-      console.warn("Update address DB fallback:", (error as Error).message);
-      const mock = { id: addressId, userId, ...dto };
-      return mapAddressToUi(mock);
+      console.error("Update address DB query failed:", (error as Error).message);
+      throw error instanceof Error ? error : new Error("Failed to update address.");
     }
   },
 

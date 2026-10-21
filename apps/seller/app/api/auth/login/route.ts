@@ -84,6 +84,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Platform suspension (admin-managed via seller.is_active).
+    if (!existingSeller.isActive) {
+      return loginError(
+        "This account has been suspended. Please contact support.",
+        403,
+        "ACCOUNT_SUSPENDED",
+      );
+    }
+
     /**
      * Active sessions
      */

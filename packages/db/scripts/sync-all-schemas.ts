@@ -363,6 +363,173 @@ async function syncAllSchemas() {
 
     console.log("  ? Product Listing fields and indexes verified.");
 
+    // -------------------------------------------------------------
+    // 8. Delivery platform tables (executives, assignments, per-seller
+    //    delivery settings/zones, carrier connections) + partner/shipment
+    //    extensions. Mirrors packages/db/db/schema/delivery/*.
+    // -------------------------------------------------------------
+    console.log("\n--> [8/8] Verifying delivery platform tables...");
+
+    await sql`
+      DO $$ BEGIN
+        CREATE TYPE partner_integration_type AS ENUM ('AGGREGATOR_API', 'DIRECT_API', 'MANUAL', 'INHOUSE');
+      EXCEPTION WHEN duplicate_object THEN null; END $$;
+    `;
+    await sql`
+      DO $$ BEGIN
+        CREATE TYPE delivery_executive_status AS ENUM ('PENDING_VERIFICATION', 'ACTIVE', 'SUSPENDED', 'INACTIVE');
+      EXCEPTION WHEN duplicate_object THEN null; END $$;
+    `;
+    await sql`
+      DO $$ BEGIN
+        CREATE TYPE delivery_assignment_status AS ENUM ('ASSIGNED', 'ACCEPTED', 'PICKED_UP', 'DELIVERED', 'FAILED', 'REASSIGNED', 'CANCELLED');
+      EXCEPTION WHEN duplicate_object THEN null; END $$;
+    `;
+    await sql`
+      DO $$ BEGIN
+        CREATE TYPE carrier_environment AS ENUM ('SANDBOX', 'LIVE');
+      EXCEPTION WHEN duplicate_object THEN null; END $$;
+    `;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS delivery_executives (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        name VARCHAR(150) NOT NULL,
+        phone VARCHAR(30) NOT NULL UNIQUE,
+        email VARCHAR(255),
+        password_hash VARCHAR(255),
+        vehicle_type VARCHAR(50),
+        vehicle_number VARCHAR(30),
+        license_number VARCHAR(50),
+        address_line TEXT,
+        city VARCHAR(150),
+        state VARCHAR(150),
+        pincode VARCHAR(20),
+        status delivery_executive_status NOT NULL DEFAULT 'PENDING_VERIFICATION',
+        is_available BOOLEAN NOT NULL DEFAULT true,
+        created_by UUID REFERENCES seller(id) ON DELETE SET NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        deleted_at TIMESTAMPTZ
+      );
+    `;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS delivery_assignments (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        shipment_id UUID NOT NULL REFERENCES shipment_orders(id) ON DELETE CASCADE,
+        order_id UUID NOT NULL REFERENCES product_orders(id) ON DELETE CASCADE,
+        executive_id UUID NOT NULL REFERENCES delivery_executives(id) ON DELETE RESTRICT,
+        assigned_by UUID NOT NULL REFERENCES seller(id) ON DELETE RESTRICT,
+        status delivery_assignment_status NOT NULL DEFAULT 'ASSIGNED',
+        assigned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        accepted_at TIMESTAMPTZ,
+        picked_up_at TIMESTAMPTZ,
+        delivered_at TIMESTAMPTZ,
+        completed_at TIMESTAMPTZ,
+        failure_reason TEXT,
+        notes TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `;
+    await sql`ALTER TABLE delivery_assignments ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ;`;
+    await sql`CREATE INDEX IF NOT EXISTS delivery_assignments_shipment_idx ON delivery_assignments(shipment_id);`;
+    await sql`CREATE INDEX IF NOT EXISTS delivery_assignments_executive_idx ON delivery_assignments(executive_id);`;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS seller_delivery_settings (
+        seller_id UUID PRIMARY KEY REFERENCES seller(id) ON DELETE CASCADE,
+        max_radius_km NUMERIC(6, 2) NOT NULL DEFAULT 15,
+        base_charge NUMERIC(10, 2) NOT NULL DEFAULT 0,
+        free_shipping_threshold NUMERIC(10, 2) NOT NULL DEFAULT 0,
+        hub_name VARCHAR(200),
+        hub_address VARCHAR(500),
+        hub_city VARCHAR(150),
+        hub_pincode VARCHAR(20),
+        hub_phone VARCHAR(30),
+        operating_hours VARCHAR(200),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS seller_shipping_zones (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        seller_id UUID NOT NULL REFERENCES seller(id) ON DELETE CASCADE,
+        zone_name VARCHAR(150) NOT NULL,
+        partner_code VARCHAR(50),
+        flat_rate_fee NUMERIC(10, 2) NOT NULL DEFAULT 0,
+        estimated_days VARCHAR(50),
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS seller_shipping_zones_seller_idx ON seller_shipping_zones(seller_id);`;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS seller_carrier_connections (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        seller_id UUID NOT NULL REFERENCES seller(id) ON DELETE CASCADE,
+        partner_id UUID NOT NULL REFERENCES shipping_partners(id) ON DELETE CASCADE,
+        environment carrier_environment NOT NULL DEFAULT 'SANDBOX',
+        credentials_encrypted TEXT,
+        config JSONB,
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        last_verified_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `;
+    await sql`CREATE UNIQUE INDEX IF NOT EXISTS seller_carrier_connections_seller_partner_unique ON seller_carrier_connections(seller_id, partner_id);`;
+
+    await sql`CREATE UNIQUE INDEX IF NOT EXISTS shipping_partners_partner_code_unique ON shipping_partners(partner_code);`;
+    await sql`ALTER TABLE shipping_partners ADD COLUMN IF NOT EXISTS integration_type partner_integration_type NOT NULL DEFAULT 'MANUAL';`;
+    await sql`ALTER TABLE shipping_partners ADD COLUMN IF NOT EXISTS api_base_url VARCHAR(500);`;
+    await sql`ALTER TABLE shipment_orders ADD COLUMN IF NOT EXISTS executive_id UUID REFERENCES delivery_executives(id) ON DELETE SET NULL;`;
+    await sql`ALTER TABLE shipment_orders ADD COLUMN IF NOT EXISTS label_url TEXT;`;
+    await sql`ALTER TABLE shipment_orders ADD COLUMN IF NOT EXISTS label_generated_at TIMESTAMPTZ;`;
+
+    console.log("  ? Delivery platform tables verified.");
+
+    // =======================================================================
+    // 9. PLATFORM ADMIN FOUNDATION
+    // =======================================================================
+    console.log("\n--> [9/9] Verifying platform admin tables (platform_settings, seller suspension, method charges)...");
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS platform_settings (
+        key TEXT PRIMARY KEY,
+        value JSONB NOT NULL,
+        updated_by UUID REFERENCES seller(id) ON DELETE SET NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `;
+
+    // Seed the platform commission rate (5%) exactly once — admin edits
+    // made later through the admin surface must never be overwritten.
+    await sql`
+      INSERT INTO platform_settings (key, value)
+      VALUES ('commissionRate', '0.05'::jsonb)
+      ON CONFLICT (key) DO NOTHING;
+    `;
+
+    // Seller suspension flag (admin-managed; enforced at login).
+    await sql`ALTER TABLE seller ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true;`;
+
+    // Admin-managed rate card columns on shipping methods.
+    await sql`ALTER TABLE shipping_methods ADD COLUMN IF NOT EXISTS base_charge NUMERIC(10, 2) NOT NULL DEFAULT 0;`;
+    await sql`ALTER TABLE shipping_methods ADD COLUMN IF NOT EXISTS per_kg_charge NUMERIC(10, 2) NOT NULL DEFAULT 0;`;
+
+    // Knowledge-base publish flag (admin authoring). IF EXISTS: the table
+    // itself is created by init-help-feedback-tables.ts.
+    await sql`ALTER TABLE IF EXISTS knowledge_base_articles ADD COLUMN IF NOT EXISTS is_published BOOLEAN NOT NULL DEFAULT true;`;
+
+    console.log("  ? Platform admin tables verified.");
+
     console.log("\n=================================================================");
     console.log("== ALL SUPABASE SCHEMAS SUCCESSFULLY SYNCHRONIZED!             ==");
     console.log("=================================================================");

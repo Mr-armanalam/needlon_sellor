@@ -12,6 +12,7 @@ import {
   LedgerResponseDto,
 } from "../dto/finance.dto";
 import { PayoutGatewayService } from "../services/payout-gateway.service";
+import { getCommissionRate } from "@/modules/platform-settings/services/platform-settings.service";
 
 export async function getSellerEarningsSummary(
   sellerId: string
@@ -19,6 +20,11 @@ export async function getSellerEarningsSummary(
   const now = new Date();
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
   const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+  // ISO variants for the raw sql`` aggregates below: the postgres driver
+  // cannot serialize raw Date parameters inside sql templates (same bug
+  // class previously fixed in the dashboard repository).
+  const thirtyDaysAgoIso = thirtyDaysAgo.toISOString();
+  const sixtyDaysAgoIso = sixtyDaysAgo.toISOString();
 
   // 1. Lifetime sales aggregation
   const [salesAgg] = await db
@@ -26,8 +32,8 @@ export async function getSellerEarningsSummary(
       totalGross: sql<string>`COALESCE(SUM(${orders.grandTotal}), 0)`,
       completedGross: sql<string>`COALESCE(SUM(CASE WHEN ${orders.status} IN ('DELIVERED', 'COMPLETED') THEN ${orders.grandTotal} ELSE 0 END), 0)`,
       pendingGross: sql<string>`COALESCE(SUM(CASE WHEN ${orders.status} IN ('PENDING', 'CONFIRMED', 'PROCESSING', 'READY_TO_SHIP', 'SHIPPED', 'OUT_FOR_DELIVERY') THEN ${orders.grandTotal} ELSE 0 END), 0)`,
-      currentMonthGross: sql<string>`COALESCE(SUM(CASE WHEN ${orders.status} IN ('DELIVERED', 'COMPLETED') AND ${orders.createdAt} >= ${thirtyDaysAgo} THEN ${orders.grandTotal} ELSE 0 END), 0)`,
-      prevMonthGross: sql<string>`COALESCE(SUM(CASE WHEN ${orders.status} IN ('DELIVERED', 'COMPLETED') AND ${orders.createdAt} >= ${sixtyDaysAgo} AND ${orders.createdAt} < ${thirtyDaysAgo} THEN ${orders.grandTotal} ELSE 0 END), 0)`,
+      currentMonthGross: sql<string>`COALESCE(SUM(CASE WHEN ${orders.status} IN ('DELIVERED', 'COMPLETED') AND ${orders.createdAt} >= ${thirtyDaysAgoIso} THEN ${orders.grandTotal} ELSE 0 END), 0)`,
+      prevMonthGross: sql<string>`COALESCE(SUM(CASE WHEN ${orders.status} IN ('DELIVERED', 'COMPLETED') AND ${orders.createdAt} >= ${sixtyDaysAgoIso} AND ${orders.createdAt} < ${thirtyDaysAgoIso} THEN ${orders.grandTotal} ELSE 0 END), 0)`,
     })
     .from(orders)
     .where(and(eq(orders.sellerId, sellerId), isNull(orders.deletedAt)));
@@ -47,7 +53,8 @@ export async function getSellerEarningsSummary(
     );
 
   const grossSalesNum = parseFloat(salesAgg?.completedGross || "0");
-  const commissionRate = 0.05; // 5% marketplace commission
+  // Platform commission rate from platform_settings (admin-managed).
+  const commissionRate = await getCommissionRate();
   const commissionFeesNum = grossSalesNum * commissionRate;
   const netRevenueNum = grossSalesNum - commissionFeesNum;
 
@@ -237,6 +244,8 @@ export async function getLedgerRecords(
   sellerId: string,
   viewType: "transactions" | "settlements"
 ): Promise<LedgerResponseDto> {
+  // Platform commission rate from platform_settings (admin-managed).
+  const commissionRate = await getCommissionRate();
   if (viewType === "transactions") {
     const orderRows = await db
       .select({
@@ -252,7 +261,7 @@ export async function getLedgerRecords(
       .limit(50);
 
     const items: LedgerItemDto[] = orderRows.map((r) => {
-      const net = (parseFloat(r.grandTotal || "0") * 0.95).toFixed(2);
+      const net = (parseFloat(r.grandTotal || "0") * (1 - commissionRate)).toFixed(2);
       const isDelivered = r.status === "DELIVERED" || r.status === "COMPLETED";
       return {
         id: `TXN-${r.orderNumber.replace(/[^0-9]/g, "").slice(-4) || "1024"}`,
@@ -415,14 +424,15 @@ export async function createSellerPayoutRequest(
       : undefined,
   });
 
-  // 5. Update payout request status
+  // 5. Update payout request status (FAILED results persist the real reason)
   const [updatedRequest] = await db
     .update(sellerPayoutRequests)
     .set({
       status: gatewayResult.status,
       gateway: gatewayResult.gateway,
-      gatewayPayoutId: gatewayResult.gatewayPayoutId,
+      gatewayPayoutId: gatewayResult.gatewayPayoutId || null,
       gatewayResponse: gatewayResult.rawResponse,
+      failureReason: gatewayResult.failureReason ?? null,
       processedAt: new Date(),
       updatedAt: new Date(),
     })
@@ -430,7 +440,7 @@ export async function createSellerPayoutRequest(
     .returning();
 
   return {
-    success: true,
+    success: gatewayResult.success,
     requestId: updatedRequest.payoutNumber,
     payoutId: updatedRequest.id,
     amount: updatedRequest.amount,

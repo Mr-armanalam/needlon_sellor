@@ -20,6 +20,7 @@ import { db } from "@needlon/db";
 import { usersTable } from "@needlon/db/db/schema/users";
 import { seller } from "@needlon/db/db/schema/seller";
 import { sellerStore } from "@needlon/db/db/schema/seller/seller-store";
+import { sellerAddresses } from "@needlon/db/db/schema/seller/seller-address";
 import { categoriesTable } from "@needlon/db/db/schema/catalog/categories/table";
 import { productsTable } from "@needlon/db/db/schema/catalog/products/table";
 import { productVariantsTable } from "@needlon/db/db/schema/catalog/products/product-variants/table";
@@ -30,6 +31,7 @@ import { customerMeasurementsTable } from "@needlon/db/db/schema/customization/m
 import { shippingPartners } from "@needlon/db/db/schema/delivery/shipping-partners";
 import { shippingMethods } from "@needlon/db/db/schema/delivery/shipping-method";
 import { shipmentOrders } from "@needlon/db/db/schema/delivery/shipping-orders";
+import { deliveryAssignments } from "@needlon/db/db/schema/delivery/delivery-assignments";
 
 import { OrderCreationService } from "../client-modules/orders/services/order-creation-service";
 import {
@@ -43,6 +45,7 @@ import {
   getSellerShipments,
   updateShipmentStatus,
 } from "../../modules/modules/delivery/repository/delivery.repository";
+import { createExecutive } from "../../modules/modules/delivery/repository/executive.repository";
 
 async function runFlowTest() {
   console.log("=== FLOW: inventory -> order -> measurement -> delivery ===");
@@ -63,6 +66,18 @@ async function runFlowTest() {
     sellerId,
     storeName: "Flow Test Store",
     storeSlug: `flow-store-${stamp}`,
+  });
+  // Checkout requires the seller to have a real dispatch address on file.
+  await db.insert(sellerAddresses).values({
+    id: randomUUID(),
+    sellerId,
+    label: "Main Warehouse",
+    addressType: "WAREHOUSE",
+    addressLine1: "1 Flow Street",
+    city: "Pune",
+    district: "Pune",
+    state: "Maharashtra",
+    postalCode: "411001",
   });
   await db.insert(usersTable).values({
     id: buyerId,
@@ -202,6 +217,9 @@ async function runFlowTest() {
     id: partnerId,
     partnerCode: `FLOW-${stamp}`,
     partnerName: "Flow Express",
+    // The fixture models the platform's own fleet: in-house shipments get a
+    // deterministic platform AWB (NDL-<orderNumber>) from createShipmentOrder.
+    integrationType: "INHOUSE",
     supportsCod: true,
     isActive: true,
   });
@@ -235,22 +253,63 @@ async function runFlowTest() {
   assert.strictEqual(shipmentRow?.buyerId, buyerId, "Shipment must reference the customer");
   console.log("✓ Shipment created with delivery partner, order, seller and customer relations");
 
-  await assignDeliveryExecutiveRepo(sellerId, bespokeOrder.id, {
-    executiveName: "Ravi Kumar",
-    executivePhone: "+91 9888888888",
-    vehicleType: "Bike / Two Wheeler",
-    courierPartner: "Flow Express",
-    trackingNumber: `TRK-${stamp}`,
-    status: "OUT_FOR_DELIVERY",
-  });
+  // Assignment is by roster identity: create a real executive row first,
+  // then assign it to the shipment by id.
+  const executive = await createExecutive(
+    {
+      name: "Ravi Kumar",
+      phone: `+91 97777${stamp}`,
+      vehicleType: "Bike / Two Wheeler",
+      password: "flow-exec-password",
+    },
+    sellerId,
+  );
+  assert.ok(executive.id, "Executive fixture must be created");
+  assert.strictEqual(executive.status, "ACTIVE", "Roster-created executive defaults to ACTIVE");
+
+  const assignResult = await assignDeliveryExecutiveRepo(
+    shipment.id,
+    sellerId,
+    executive.id,
+  );
+  assert.ok(assignResult.assignment?.id, "Assignment row must be returned");
+  assert.strictEqual(assignResult.assignment.status, "ASSIGNED");
+
+  const [assignmentRow] = await db
+    .select({
+      executiveId: deliveryAssignments.executiveId,
+      status: deliveryAssignments.status,
+    })
+    .from(deliveryAssignments)
+    .where(eq(deliveryAssignments.id, assignResult.assignment.id));
+  assert.strictEqual(
+    assignmentRow?.executiveId,
+    executive.id,
+    "delivery_assignments row must reference the executive"
+  );
+  const [shipmentAfterAssign] = await db
+    .select({ executiveId: shipmentOrders.executiveId })
+    .from(shipmentOrders)
+    .where(eq(shipmentOrders.id, shipment.id));
+  assert.strictEqual(
+    shipmentAfterAssign?.executiveId,
+    executive.id,
+    "shipment_orders.executiveId must be set by the assignment"
+  );
+
   const shipments = await getSellerShipments(sellerId);
   // getSellerShipments exposes the order number as `orderId` and the order
   // UUID as `rawOrderId`.
   const mine = shipments.find((s) => s.rawOrderId === bespokeOrder.id);
   assert.ok(mine, "Seller shipments must include the assigned shipment");
+  assert.strictEqual(
+    mine.executive?.executiveName,
+    "Ravi Kumar",
+    "Shipment list must resolve the assigned executive via the FK"
+  );
   console.log(`✓ Delivery executive assigned; shipment status=${mine.status}`);
 
-  await updateShipmentStatus({ shipmentId: shipment.id, status: "DELIVERED" });
+  await updateShipmentStatus(sellerId, { shipmentId: shipment.id, status: "DELIVERED" });
   const [finalShipment] = await db
     .select({ status: shipmentOrders.status })
     .from(shipmentOrders)

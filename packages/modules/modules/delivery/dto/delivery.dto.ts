@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { shippingPartners } from "@/db/schema/delivery/shipping-partners";
 import type { shippingMethods } from "@/db/schema/delivery/shipping-method";
+import type { sellerCarrierConnections } from "@/db/schema/delivery/seller-carrier-connections";
 
 export const createShippingPartnerSchema = z.object({
   partnerCode: z.string().min(1, "Partner code is required"),
@@ -92,14 +93,14 @@ export const getShipmentsQuerySchema = z.object({
   search: z.string().optional(),
 });
 
+/**
+ * Assignment is by roster identity only: the seller picks a real
+ * delivery_executives row. (The previous free-text name/phone/vehicle
+ * payload was stuffed into shipment_orders.notes as JSON — that practice
+ * is what delivery_assignments replaces.)
+ */
 export const assignDeliveryExecutiveSchema = z.object({
-  executiveName: z.string().min(2, "Executive name is required"),
-  executivePhone: z.string().min(5, "Executive phone number is required"),
-  vehicleType: z.string().optional().default("Bike / Two Wheeler"),
-  courierPartner: z.string().optional().default("In-House Local Delivery"),
-  trackingNumber: z.string().optional(),
-  status: z.enum(["READY_TO_SHIP", "IN_TRANSIT", "OUT_FOR_DELIVERY", "DELIVERED"]).optional().default("OUT_FOR_DELIVERY"),
-  notes: z.string().optional(),
+  executiveId: z.string().uuid("Invalid delivery executive ID"),
 });
 
 
@@ -130,10 +131,23 @@ export type AddOrderDeliveryAddressDto = z.infer<typeof addOrderDeliveryAddressS
 
 export type ShippingPartnerRecord = (typeof shippingPartners)["$inferSelect"];
 export type ShippingMethodRecord = (typeof shippingMethods)["$inferSelect"];
+export type CarrierConnectionRecord = (typeof sellerCarrierConnections)["$inferSelect"];
 
-/** Partner row as returned by getShippingPartnersService (partner + its methods). */
+/** Partner row as returned by getShippingPartnersService: the partner, its
+ *  methods, and the current seller's connection state. `isActive` reflects
+ *  the seller's connection when one exists; otherwise it is the partner's
+ *  platform-level flag, for display only. */
 export type ShippingPartnerWithMethodsDto = ShippingPartnerRecord & {
   methods: ShippingMethodRecord[];
+  connected: boolean;
+  environment: CarrierConnectionRecord["environment"] | null;
+};
+
+/** Response of connectCarrierService: the partner row plus the seller's
+ *  connection state. Never carries credentials or ciphertext. */
+export type ConnectCarrierResultDto = ShippingPartnerRecord & {
+  environment: CarrierConnectionRecord["environment"];
+  hasCredentials: boolean;
 };
 
 /** Settings payload as returned by getDeliverySettingsRepo / the settings API. */
@@ -159,8 +173,11 @@ export interface ConnectCarrierPartnerDto {
   isActive: boolean;
 }
 
-/** Delivery executive assignment, persisted as JSON in `shipment_orders.notes`
- *  by assignDeliveryExecutiveRepo and parsed back by getSellerShipments. */
+/** Delivery executive display payload for a shipment. Sourced from the
+ *  delivery_executives row via `shipment_orders.executiveId` when set;
+ *  for legacy rows it is parsed from the JSON that
+ *  assignDeliveryExecutiveRepo historically persisted in
+ *  `shipment_orders.notes`. */
 export interface DeliveryExecutiveDto {
   executiveName: string;
   executivePhone: string;

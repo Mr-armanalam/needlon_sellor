@@ -26,6 +26,15 @@ export const shippingMethods = pgTable("shipping_methods", {
 
   maxWeightKg: numeric("max_weight_kg", { precision: 8, scale: 2 }),
 
+  // Admin-managed rate card for the method: flat base charge plus a
+  // per-kilogram surcharge (currency units, e.g. INR).
+  baseCharge: numeric("base_charge", { precision: 10, scale: 2 })
+    .notNull()
+    .default("0"),
+  perKgCharge: numeric("per_kg_charge", { precision: 10, scale: 2 })
+    .notNull()
+    .default("0"),
+
   supportsCod: boolean("supports_cod").notNull().default(false),
   supportsPickup: boolean("supports_pickup").notNull().default(true),
   supportsReturn: boolean("supports_return").notNull().default(true),

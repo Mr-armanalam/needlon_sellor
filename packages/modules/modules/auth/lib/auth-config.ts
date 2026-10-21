@@ -17,6 +17,13 @@ export const PUBLIC_ROUTES = [
 
 export const ADMIN_ROUTES = ["/admin"];
 
+// Delivery executives are not sellers: their page authenticates with its
+// own `executive-session` cookie (see modules/delivery/lib/executive-session),
+// so the seller-session proxy must let the page through untouched. The
+// page's data routes live under /api (outside the proxy matcher) and check
+// the executive cookie themselves.
+export const EXECUTIVE_ROUTES = ["/delivery-executive"];
+
 function matchesRoute(pathname: string, route: string): boolean {
   return pathname === route || pathname.startsWith(`${route}/`);
 }
@@ -25,8 +32,13 @@ export function isProtectedRoute(pathname: string): boolean {
   return (
     !isPublicRoute(pathname) &&
     !isAuthRoute(pathname) &&
-    !isAdminRoute(pathname)
+    !isAdminRoute(pathname) &&
+    !isExecutiveRoute(pathname)
   );
+}
+
+export function isExecutiveRoute(pathname: string): boolean {
+  return EXECUTIVE_ROUTES.some((route) => matchesRoute(pathname, route));
 }
 
 export function isAuthRoute(pathname: string): boolean {

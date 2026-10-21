@@ -52,8 +52,14 @@ export async function ensureHelpAndFeedbackTables() {
         "views" integer DEFAULT 0 NOT NULL,
         "helpful_votes" integer DEFAULT 0 NOT NULL,
         "unhelpful_votes" integer DEFAULT 0 NOT NULL,
+        "is_published" boolean DEFAULT true NOT NULL,
         "created_at" timestamp with time zone DEFAULT now() NOT NULL
       );
+    `;
+
+    await sql`
+      ALTER TABLE "knowledge_base_articles"
+      ADD COLUMN IF NOT EXISTS "is_published" boolean DEFAULT true NOT NULL;
     `;
 
     await sql`

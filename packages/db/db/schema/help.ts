@@ -53,6 +53,10 @@ export const knowledgeBaseArticles = pgTable("knowledge_base_articles", {
   content: text("content").notNull(),
   readTime: varchar("read_time", { length: 32 }).notNull().default("4 min read"),
   icon: varchar("icon", { length: 64 }).notNull().default("BookOpen"),
+  // Admin-managed publish flag: drafts are hidden from every seller-side
+  // read path (list, slug lookup, help search). Existing content defaults
+  // to published so nothing already live disappears.
+  isPublished: boolean("is_published").notNull().default(true),
   views: integer("views").notNull().default(0),
   helpfulVotes: integer("helpful_votes").notNull().default(0),
   unhelpfulVotes: integer("unhelpful_votes").notNull().default(0),

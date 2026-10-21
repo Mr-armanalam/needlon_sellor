@@ -136,44 +136,55 @@ function testMonthOverMonthCalculations() {
 }
 
 async function testFreeTestPaymentGatewayAdapter() {
-  console.log("--> Testing Free Test Payment Gateway Integration Adapters...");
+  console.log("--> Testing Payment Gateway Adapters (fail-closed contract)...");
 
-  // 1. Payout Gateway test
-  const payoutResult = await PayoutGatewayService.processPayout({
-    sellerId: "test-seller-uuid",
-    amount: 1500,
-    currency: "INR",
-    payoutNumber: "SET-TEST-9999",
-    bankAccount: {
-      accountHolderName: "Arman Alam",
-      bankName: "HDFC Bank",
-      accountNumberLast4: "7890",
-      ifscCode: "HDFC0001234",
-    },
-  });
+  // With no Stripe key configured the gateways must fail closed: no
+  // fabricated COMPLETED payouts and no fabricated SUCCESS payments.
+  const savedKey = process.env.STRIPE_SECRET_KEY;
+  delete process.env.STRIPE_SECRET_KEY;
+  try {
+    // 1. Payout Gateway test
+    const payoutResult = await PayoutGatewayService.processPayout({
+      sellerId: "test-seller-uuid",
+      amount: 1500,
+      currency: "INR",
+      payoutNumber: "SET-TEST-9999",
+      bankAccount: {
+        accountHolderName: "Arman Alam",
+        bankName: "HDFC Bank",
+        accountNumberLast4: "7890",
+        ifscCode: "HDFC0001234",
+      },
+    });
 
-  assert.strictEqual(payoutResult.success, true);
-  assert.strictEqual(payoutResult.status, "COMPLETED");
-  assert.ok(payoutResult.gatewayPayoutId.startsWith("tr_test_") || payoutResult.gatewayPayoutId.startsWith("tr_"));
-  assert.strictEqual(payoutResult.rawResponse.amount, 1500);
-  assert.strictEqual(payoutResult.rawResponse.currency, "INR");
+    assert.strictEqual(payoutResult.success, false);
+    assert.strictEqual(payoutResult.status, "FAILED");
+    assert.strictEqual(payoutResult.gatewayPayoutId, "");
+    assert.ok(payoutResult.failureReason?.includes("not configured"));
 
-  // 2. Subscription Payment Gateway test
-  const subPaymentResult = await SubscriptionPaymentGatewayService.processPayment({
-    sellerId: "test-seller-uuid",
-    planId: "123e4567-e89b-12d3-a456-426614174000",
-    planName: "Pro Merchant Plan",
-    amount: 999,
-    currency: "INR",
-    billingCycle: "MONTHLY",
-  });
+    // 2. Subscription Payment Gateway test
+    const subPaymentResult = await SubscriptionPaymentGatewayService.processPayment({
+      sellerId: "test-seller-uuid",
+      planId: "123e4567-e89b-12d3-a456-426614174000",
+      planName: "Pro Merchant Plan",
+      amount: 999,
+      currency: "INR",
+      billingCycle: "MONTHLY",
+    });
 
-  assert.strictEqual(subPaymentResult.success, true);
-  assert.strictEqual(subPaymentResult.status, "SUCCESS");
-  assert.ok(subPaymentResult.gatewayPaymentId.startsWith("pi_test_") || subPaymentResult.gatewayPaymentId.startsWith("pi_"));
-  assert.strictEqual(subPaymentResult.paymentMethod, "CARD");
+    assert.strictEqual(subPaymentResult.success, false);
+    assert.strictEqual(subPaymentResult.status, "FAILED");
+    assert.strictEqual(subPaymentResult.gatewayPaymentId, "");
+    assert.ok(subPaymentResult.failureReason?.includes("not configured"));
+  } finally {
+    if (savedKey === undefined) {
+      delete process.env.STRIPE_SECRET_KEY;
+    } else {
+      process.env.STRIPE_SECRET_KEY = savedKey;
+    }
+  }
 
-  console.log("✓ Free Test Payment Gateway Adapters passed.");
+  console.log("✓ Payment Gateway fail-closed adapters passed.");
 }
 
 function testSubscriptionTierPricingMath() {

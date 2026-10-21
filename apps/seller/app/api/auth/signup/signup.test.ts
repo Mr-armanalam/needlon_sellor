@@ -27,8 +27,11 @@ async function runTests() {
   const { seller } = await import("@/db/schema/seller");
   const { eq } = await import("drizzle-orm");
 
-  console.log("Running Backend Signup Role-based Tests...");
+  console.log("Running Backend Signup Role-Safety Tests...");
 
+  // Security contract: public signup must NEVER honour a role supplied in
+  // the request body. Every payload below — including the one attempting
+  // role: "admin" — must land in the database as a plain "seller".
   const testEmailSeller = `test-seller-${Date.now()}@needlon.com`;
   const testEmailAdmin = `test-admin-${Date.now()}@needlon.com`;
 
@@ -41,7 +44,7 @@ async function runTests() {
       role: "seller" as const,
     },
     {
-      name: "Test Admin User",
+      name: "Test Admin Escalation Attempt",
       email: testEmailAdmin,
       password: "Password123!",
       confirmPassword: "Password123!",
@@ -50,7 +53,7 @@ async function runTests() {
   ];
 
   for (const payload of signupPayloads) {
-    console.log(`\nTesting signup flow for role: "${payload.role}"`);
+    console.log(`\nTesting signup flow with submitted role: "${payload.role}" (must be stored as "seller")`);
 
     // Create a mock NextRequest object
     const req = new Request("http://localhost:3000/api/auth/signup", {
@@ -85,12 +88,12 @@ async function runTests() {
 
     console.log(`- Database record found. Role is: "${dbUser.role}"`);
 
-    if (dbUser.role !== payload.role) {
-      console.error(`FAILED: Expected role "${payload.role}", but database shows "${dbUser.role}"`);
+    if (dbUser.role !== "seller") {
+      console.error(`FAILED: Expected stored role "seller" regardless of submitted role "${payload.role}", but database shows "${dbUser.role}"`);
       process.exit(1);
     }
 
-    console.log(`- Role correctly verified in DB: "${dbUser.role}"`);
+    console.log(`- Role escalation blocked; stored role verified in DB: "${dbUser.role}"`);
 
     // Cleanup test record
     await db.delete(seller).where(eq(seller.email, payload.email));

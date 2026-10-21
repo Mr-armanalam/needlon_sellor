@@ -2,19 +2,65 @@
 
 import React, { useState } from 'react';
 import { Package, Printer, Compass, ArrowUpRight } from 'lucide-react';
+import { apiFetch } from '@/modules/auth/lib/auth-client';
 import { useDelivery } from '../hooks/use-delivery';
-import ShippingLabelModal from './modals/shipping-label-modal';
 import { ShipmentResponseDto } from '../dto/delivery.dto';
 import TrackingTimelineModal from './modals/tracking-timeline-modal';
 
 import Link from 'next/link';
 
+interface ShippingLabelApiResponse {
+  success: boolean;
+  data?: {
+    html?: string;
+  };
+  error?: {
+    message?: string;
+  };
+}
+
 export default function ShipmentDispatchTable() {
   const { shipments, loading, updateStatus } = useDelivery();
   const [selectedShipment, setSelectedShipment] = useState<ShipmentResponseDto | null>(null);
-  const [activeModal, setActiveModal] = useState<'label' | 'track' | null>(null);
+  const [trackOpen, setTrackOpen] = useState(false);
+  const [labelLoadingId, setLabelLoadingId] = useState<string | null>(null);
+  const [labelError, setLabelError] = useState<string | null>(null);
 
   const displayShipments = shipments;
+
+  // Fetch the real label document for the shipment's order and open it in a
+  // print window (same flow as the orders document preview). The label's
+  // courier/AWB come from the shipment itself — see the shipping-label route.
+  const handlePrintLabel = async (shp: ShipmentResponseDto) => {
+    const orderId = shp.rawOrderId || shp.orderId;
+    setLabelError(null);
+    setLabelLoadingId(shp.id);
+    try {
+      const res = await apiFetch(`/api/orders/${orderId}/shipping-label`);
+      const json: ShippingLabelApiResponse = await res.json();
+      if (!json.success || !json.data?.html) {
+        setLabelError(json.error?.message || 'Failed to generate shipping label');
+        return;
+      }
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(json.data.html);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+          printWindow.print();
+        }, 300);
+      } else {
+        setLabelError('Popup blocked — allow popups to print the shipping label');
+      }
+    } catch (err: unknown) {
+      setLabelError(
+        err instanceof Error && err.message ? err.message : 'Failed to generate shipping label'
+      );
+    } finally {
+      setLabelLoadingId(null);
+    }
+  };
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4 flex-shrink-0">
@@ -27,6 +73,12 @@ export default function ShipmentDispatchTable() {
           {loading ? "Loading dispatches..." : `${displayShipments.length} active dispatches`}
         </span>
       </div>
+
+      {labelError && (
+        <div className="px-3 py-2 text-[11px] font-semibold text-red-600 bg-red-50 border border-red-100 rounded-xl">
+          {labelError}
+        </div>
+      )}
 
       {loading ? (
         <div className="py-12 text-center text-xs text-gray-400">Loading seller dispatches...</div>
@@ -100,17 +152,17 @@ export default function ShipmentDispatchTable() {
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => {
-                          setSelectedShipment(shp);
-                          setActiveModal('label');
+                          void handlePrintLabel(shp);
                         }}
-                        className="px-2.5 py-1 text-[11px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                        disabled={labelLoadingId === shp.id}
+                        className="px-2.5 py-1 text-[11px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
                       >
-                        <Printer className="w-3 h-3" /> Label
+                        <Printer className="w-3 h-3" /> {labelLoadingId === shp.id ? 'Loading...' : 'Label'}
                       </button>
                       <button
                         onClick={() => {
                           setSelectedShipment(shp);
-                          setActiveModal('track');
+                          setTrackOpen(true);
                         }}
                         className="px-2.5 py-1 text-[11px] font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
                       >
@@ -125,16 +177,9 @@ export default function ShipmentDispatchTable() {
         </div>
       )}
 
-
-      <ShippingLabelModal
-        isOpen={activeModal === 'label'}
-        onClose={() => setActiveModal(null)}
-        shipment={selectedShipment ?? undefined}
-      />
-
       <TrackingTimelineModal
-        isOpen={activeModal === 'track'}
-        onClose={() => setActiveModal(null)}
+        isOpen={trackOpen}
+        onClose={() => setTrackOpen(false)}
         shipment={selectedShipment ?? undefined}
       />
     </div>

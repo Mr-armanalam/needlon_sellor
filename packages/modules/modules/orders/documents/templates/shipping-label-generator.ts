@@ -45,7 +45,7 @@ export function generateShippingLabelHTML(data: ShippingLabelData): string {
     <!-- Courier Header -->
     <div class="courier-header">
       <div>
-        <div class="courier-name">${data.courierName || "EXPRESS LOGISTICS"}</div>
+        <div class="courier-name">${data.courierName}</div>
         <div style="font-size: 10px; font-weight: 700;">TRACKING: ${data.trackingNumber}</div>
       </div>
       <div>
@@ -80,7 +80,7 @@ export function generateShippingLabelHTML(data: ShippingLabelData): string {
         <div>Order Date: <strong>${data.date}</strong></div>
       </div>
       <div>
-        <div>Est. Weight: <strong>${data.weightKg ? data.weightKg.toFixed(2) : "0.50"} kg</strong></div>
+        ${data.weightKg != null ? `<div>Est. Weight: <strong>${data.weightKg.toFixed(2)} kg</strong></div>` : ""}
         <div>Routing: <strong>${data.buyer.shippingAddress.city.substring(0, 3).toUpperCase()}/STD</strong></div>
       </div>
     </div>
@@ -91,7 +91,7 @@ export function generateShippingLabelHTML(data: ShippingLabelData): string {
         <h4>RETURN IF UNDELIVERED TO (SENDER):</h4>
         <div><strong>${data.seller.storeName}</strong></div>
         <div>${data.seller.address.addressLine1}, ${data.seller.address.city} - ${data.seller.address.postalCode}</div>
-        <div>Phone: ${data.seller.phone || "+91 9876543210"}</div>
+        <div>Phone: ${data.seller.phone || ""}</div>
       </div>
       <div style="text-align: right;" class="summary-text">
         Needlon Marketplace Partner

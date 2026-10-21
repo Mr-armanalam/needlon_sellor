@@ -47,8 +47,18 @@ import { brands } from "./schema/seller/brand";
 import { shippingPartners } from "./schema/delivery/shipping-partners";
 import { shippingMethods } from "./schema/delivery/shipping-method";
 import { shipmentOrders } from "./schema/delivery/shipping-orders";
+import { shipmentTrackingEvents } from "./schema/delivery/shipping-tracking-events";
+import { pickupRequests } from "./schema/delivery/pickup-lifecycle";
+import { deliveryExecutives } from "./schema/delivery/delivery-executives";
+import { deliveryAssignments } from "./schema/delivery/delivery-assignments";
+import {
+  sellerDeliverySettings,
+  sellerShippingZones,
+} from "./schema/delivery/seller-delivery-settings";
+import { sellerCarrierConnections } from "./schema/delivery/seller-carrier-connections";
+import { platformSettings } from "./schema/platform-settings";
 
-export { sellerCustomers, chatPermissions, customerMeasurementsTable, fittingAppointmentsTable, brands, shippingPartners, shippingMethods, shipmentOrders };
+export { sellerCustomers, chatPermissions, customerMeasurementsTable, fittingAppointmentsTable, brands, shippingPartners, shippingMethods, shipmentOrders, shipmentTrackingEvents, pickupRequests, deliveryExecutives, deliveryAssignments, sellerDeliverySettings, sellerShippingZones, sellerCarrierConnections, platformSettings };
 
 export const schema = {
   ...ordersSchema,
@@ -102,6 +112,14 @@ export const schema = {
   shippingPartners,
   shippingMethods,
   shipmentOrders,
+  shipmentTrackingEvents,
+  pickupRequests,
+  deliveryExecutives,
+  deliveryAssignments,
+  sellerDeliverySettings,
+  sellerShippingZones,
+  sellerCarrierConnections,
+  platformSettings,
 };
 
 const client = postgres(process.env.DATABASE_URL!);

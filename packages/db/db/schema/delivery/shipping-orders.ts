@@ -13,6 +13,7 @@ import { usersTable } from "../users";
 import { orders } from "../orders/table";
 import { shippingPartners } from "./shipping-partners";
 import { shippingMethods } from "./shipping-method";
+import { deliveryExecutives } from "./delivery-executives";
 
 // Enums
 export const shipmentStatusEnum = pgEnum("shipment_status", [
@@ -57,6 +58,16 @@ export const shipmentOrders = pgTable("shipment_orders", {
   shipmentNumber: varchar("shipment_number", { length: 100 }).notNull(),
   awbNumber: varchar("awb_number", { length: 150 }),
   trackingNumber: varchar("tracking_number", { length: 150 }),
+
+  // Current delivery executive (in-house fulfilment). Assignment history
+  // lives in delivery_assignments; this is the live pointer.
+  executiveId: uuid("executive_id").references(() => deliveryExecutives.id, {
+    onDelete: "set null",
+  }),
+
+  // Carrier-issued label artifact (URL) when the booking API returns one.
+  labelUrl: text("label_url"),
+  labelGeneratedAt: timestamp("label_generated_at", { withTimezone: true }),
 
   status: shipmentStatusEnum("status").notNull().default("PENDING"),
 
