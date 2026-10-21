@@ -4,16 +4,18 @@ import { redirect } from "next/navigation";
 
 import { getCurrentSeller } from "@/modules/auth/lib/get-current-seller";
 
+import LogoutButton from "./logout-button";
+
 const ADMIN_NAV = [
-  { href: "/admin", label: "Overview" },
-  { href: "/admin/executives", label: "Delivery Executives" },
-  { href: "/admin/delivery-partners", label: "Delivery Partners" },
-  { href: "/admin/categories", label: "Categories" },
-  { href: "/admin/sellers", label: "Sellers" },
-  { href: "/admin/support", label: "Support Inbox" },
-  { href: "/admin/knowledge-base", label: "Knowledge Base" },
-  { href: "/admin/hero-banners", label: "Hero Banners" },
-  { href: "/admin/settings", label: "Platform Settings" },
+  { href: "/", label: "Overview" },
+  { href: "/executives", label: "Delivery Executives" },
+  { href: "/delivery-partners", label: "Delivery Partners" },
+  { href: "/categories", label: "Categories" },
+  { href: "/sellers", label: "Sellers" },
+  { href: "/support", label: "Support Inbox" },
+  { href: "/knowledge-base", label: "Knowledge Base" },
+  { href: "/hero-banners", label: "Hero Banners" },
+  { href: "/settings", label: "Platform Settings" },
 ] as const;
 
 type Props = {
@@ -35,19 +37,17 @@ export default async function AdminLayout({ children }: Props) {
             Admin access required
           </h1>
           <p className="mt-2 text-sm text-gray-500">
-            This section is restricted to platform administrators. Your
+            This console is restricted to platform administrators. Your
             account ({currentSeller.email}) has the{" "}
             <span className="font-medium text-gray-700">
               {currentSeller.role}
             </span>{" "}
             role.
           </p>
-          <Link
-            href="/dashboard"
+          <LogoutButton
+            label="Sign out and use another account"
             className="mt-6 inline-block rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-          >
-            Back to seller dashboard
-          </Link>
+          />
         </div>
       </div>
     );
@@ -78,12 +78,7 @@ export default async function AdminLayout({ children }: Props) {
         <div className="px-2 text-xs text-gray-400">
           <p className="font-medium text-gray-600">{currentSeller.name}</p>
           <p className="truncate">{currentSeller.email}</p>
-          <Link
-            href="/dashboard"
-            className="mt-3 inline-block font-medium text-gray-600 hover:text-gray-900"
-          >
-            ← Seller dashboard
-          </Link>
+          <LogoutButton className="mt-3 inline-block font-medium text-gray-600 hover:text-gray-900" />
         </div>
       </aside>
       <div className="flex w-full flex-col overflow-y-auto bg-slate-50">

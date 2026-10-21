@@ -5,7 +5,6 @@ import {
   ACCESS_COOKIE,
   PUBLIC_ROUTES,
   REFRESH_COOKIE,
-  isAdminRoute,
   isAuthRoute,
   isExecutiveRoute,
   isProtectedRoute,
@@ -41,34 +40,18 @@ export async function proxy(request: NextRequest) {
   const accessToken = request.cookies.get(ACCESS_COOKIE)?.value;
   const payload = accessToken ? await verifyAccessToken(accessToken) : null;
   const authenticated = !!payload;
-  const role = payload?.role ?? null;
   const hasRefreshToken = !!request.cookies.get(REFRESH_COOKIE)?.value;
 
-  if (isAdminRoute(pathname)) {
-    if (!authenticated) {
-      if (hasRefreshToken) {
-        return NextResponse.next();
-      }
-
-      const loginUrl = new URL("/login", request.url);
-      loginUrl.searchParams.set("callbackUrl", pathname);
-      return NextResponse.redirect(loginUrl);
-    }
-
-    if (role !== "admin") {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
-
-    return NextResponse.next();
-  }
+  // There is no /admin section in this app — the platform admin console
+  // is the standalone apps/admin project. /admin here is a normal
+  // protected path that simply does not exist (404).
 
   if (isAuthRoute(pathname)) {
     if (!authenticated) {
       return NextResponse.next();
     }
 
-    const destination = role === "admin" ? "/admin" : "/dashboard";
-    return NextResponse.redirect(new URL(destination, request.url));
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   if (isProtectedRoute(pathname) && !authenticated && !hasRefreshToken) {
