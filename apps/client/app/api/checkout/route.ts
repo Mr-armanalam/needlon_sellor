@@ -66,8 +66,10 @@ export async function POST(req: Request) {
         ? 0
         : 49;
 
-    // 1. Stock Validation against inventoryTable
-    if (process.env.DATABASE_URL && Array.isArray(cartItems)) {
+    // 1. Stock Validation against inventoryTable — always runs. Without a
+    // database the queries below fail and checkout fails closed instead of
+    // silently skipping validation.
+    if (Array.isArray(cartItems)) {
       for (const item of cartItems) {
         const pId = item.productId || item.id;
         if (pId && isValidUuid(pId)) {
@@ -102,7 +104,7 @@ export async function POST(req: Request) {
     // 2. Validate Coupon if provided
     let verifiedCouponCode: string | undefined = undefined;
     const lookupCoupon = couponCode || couponId;
-    if (process.env.DATABASE_URL && lookupCoupon) {
+    if (lookupCoupon) {
       const [promo] = await db
         .select()
         .from(promotions)
@@ -119,8 +121,9 @@ export async function POST(req: Request) {
       if (promo) {
         verifiedCouponCode = promo.couponCode || undefined;
       }
-    } else if (lookupCoupon) {
-      verifiedCouponCode = String(lookupCoupon).toUpperCase();
+      // No promo row found: the coupon is not verified and no discount is
+      // applied. (Previously an unverified code was trusted as-is whenever
+      // DATABASE_URL was unset.)
     }
 
     // 3. Process Checkout (Live Stripe vs Sandbox Fulfillment)

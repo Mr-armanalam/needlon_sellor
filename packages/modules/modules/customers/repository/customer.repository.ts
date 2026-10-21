@@ -18,8 +18,7 @@ import { sellerCustomers } from "@/db/schema/seller/seller-customers";
 import { chatPermissions } from "@/db/schema/messaging/chat-permissions";
 import { notifications } from "@/db/schema/notifications/notification-events";
 import { orderAddresses } from "@/db/schema/orders/order-address";
-import { shipmentOrders } from "@/db/schema/delivery/shipping-orders";
-import { shippingMethods } from "@/db/schema/delivery/shipping-method";
+import { createShipmentOrder } from "../../delivery/repository/delivery.repository";
 import { and, desc, eq, isNull, or, sql, inArray } from "drizzle-orm";
 import type { CreateWalkInCustomerDto } from "../dto/walk-in-customer.dto";
 import type { CustomerItemResponseDto } from "../dto/customer.dto";
@@ -587,24 +586,18 @@ export async function createInStoreOrderRepo(sellerId: string, data: CreateInSto
 
     if (data.shippingPartnerId) {
       try {
-        const [method] = await db
-          .select()
-          .from(shippingMethods)
-          .where(eq(shippingMethods.partnerId, data.shippingPartnerId))
-          .limit(1);
-        const shpNum = `SHP-${Date.now().toString(36).toUpperCase()}`;
-        await db.insert(shipmentOrders).values({
+        // Go through the canonical delivery path: it enforces order
+        // ownership, resolves the partner's method, and applies the AWB
+        // provenance rules (in-house shipments get a platform AWB; external
+        // carriers must supply a real AWB — nothing is fabricated here).
+        // When no AWB can be issued yet it throws, and the seller creates
+        // the shipment from the dispatch flow instead.
+        await createShipmentOrder(sellerId, {
           orderId: createdOrder.id,
-          sellerId,
           buyerId: data.customerId,
           shippingPartnerId: data.shippingPartnerId,
-          shippingMethodId: method?.id || data.shippingPartnerId,
-          shipmentNumber: shpNum,
-          awbNumber: `AWB-${Math.floor(10000000 + Math.random() * 90000000)}`,
-          trackingNumber: `TRK-${Math.floor(10000000 + Math.random() * 90000000)}`,
-          status: "READY_TO_SHIP",
-          shippingCost: "0",
-          estimatedDeliveryAt: data.estimatedDeliveryAt ? new Date(data.estimatedDeliveryAt) : null,
+          shippingCost: 0,
+          codAmount: 0,
           notes: "In-store bespoke commission booked for home delivery",
         });
       } catch (shpErr) {

@@ -18,9 +18,13 @@ async function runClientServicesTests() {
     isDefault: true,
   };
 
-  const createdAddress = await AddressService.addAddress(mockUserId, addressData);
-  assert.ok(createdAddress, "Address should be created");
-  assert.strictEqual(createdAddress.fullName, "John Doe");
+  // Without a configured database, saving an address must fail closed with
+  // a clear error — the service no longer fabricates a saved record.
+  await assert.rejects(
+    () => AddressService.addAddress(mockUserId, addressData),
+    /database is not configured/,
+    "Address creation without a database should throw",
+  );
 
   const addresses = await AddressService.getUserAddresses(mockUserId);
   assert.ok(Array.isArray(addresses), "Addresses should be an array");

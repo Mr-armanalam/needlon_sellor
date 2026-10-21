@@ -6,7 +6,7 @@ export const welcomeMetricSchema = z.object({
   change: z.string(),
   isPositive: z.boolean().default(true),
   isImgDanger: z.boolean().optional(),
-  type: z.enum(["sales", "orders", "visitors", "messages"]),
+  type: z.enum(["sales", "orders", "messages"]),
 });
 
 export const weeklyChartPointSchema = z.object({
@@ -70,8 +70,6 @@ export const dashboardProductSchema = z.object({
   name: z.string(),
   slug: z.string(),
   stock: z.number(),
-  views: z.number(),
-  likes: z.number(),
   sales: z.number(),
   price: z.string(),
   initials: z.string(),

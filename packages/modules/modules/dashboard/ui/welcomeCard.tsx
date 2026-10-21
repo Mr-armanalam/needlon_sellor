@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpRight, DollarSign, ShoppingBag, Users, MessageSquare } from "lucide-react";
+import { ArrowUpRight, DollarSign, ShoppingBag, MessageSquare } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { metrics as defaultMetrics } from "../data/welcomeData";
 import { WelcomeMetricDto } from "../dto/dashboard.dto";
@@ -14,14 +14,12 @@ interface WelcomeCardProps {
 const iconMap = {
   sales: DollarSign,
   orders: ShoppingBag,
-  visitors: Users,
   messages: MessageSquare,
 };
 
 const routeMap = {
   sales: "/earnings",
   orders: "/orders",
-  visitors: "/analytics",
   messages: "/orders?status=PENDING",
 };
 
@@ -41,7 +39,7 @@ export default function WelcomeCard({ metrics }: WelcomeCardProps) {
       }))
     : defaultMetrics.map((m, idx) => ({
         ...m,
-        targetUrl: ["/earnings", "/orders", "/analytics", "/orders?status=PENDING"][idx] || "/dashboard",
+        targetUrl: ["/earnings", "/orders", "/orders?status=PENDING"][idx] || "/dashboard",
       }));
 
   return (

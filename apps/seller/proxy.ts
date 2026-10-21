@@ -7,6 +7,7 @@ import {
   REFRESH_COOKIE,
   isAdminRoute,
   isAuthRoute,
+  isExecutiveRoute,
   isProtectedRoute,
 } from "@/modules/auth/lib/auth-config";
 
@@ -28,6 +29,12 @@ export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   if (PUBLIC_ROUTES.includes(pathname)) {
+    return NextResponse.next();
+  }
+
+  // Delivery-executive pages carry their own session cookie and must not
+  // be bounced to the seller login.
+  if (isExecutiveRoute(pathname)) {
     return NextResponse.next();
   }
 

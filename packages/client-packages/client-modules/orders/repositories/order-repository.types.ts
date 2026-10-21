@@ -5,6 +5,8 @@
 import { orders } from "@needlon/db/db/schema/orders/table";
 import { orderStatusHistory } from "@needlon/db/db/schema/orders/order-status-history/table";
 import { orderShipments } from "@needlon/db/db/schema/orders/order-shipments/table";
+import { shipmentOrders } from "@needlon/db/db/schema/delivery/shipping-orders";
+import { shipmentTrackingEvents } from "@needlon/db/db/schema/delivery/shipping-tracking-events";
 import {
   type CustomerMeasurementRecord,
 } from "@needlon/db/db/schema/customization/measurements";
@@ -26,7 +28,21 @@ export interface OrderTimelineStep {
 export type OrderRecord = typeof orders.$inferSelect;
 export type OrderStatusHistoryRecord = typeof orderStatusHistory.$inferSelect;
 export type OrderShipmentRecord = typeof orderShipments.$inferSelect;
+export type ShipmentOrderRecord = typeof shipmentOrders.$inferSelect;
+export type ShipmentTrackingEventRecord = typeof shipmentTrackingEvents.$inferSelect;
 export type { CustomerMeasurementRecord };
+
+/**
+ * A buyer-facing shipment: the order's real shipment_orders row (the seller
+ * fulfilment system of record), its partner's display name, and its tracking
+ * events oldest-first. Replaces the legacy order_shipments reads, which no
+ * production code ever wrote.
+ */
+export interface BuyerOrderShipment {
+  shipment: ShipmentOrderRecord;
+  partnerName: string;
+  trackingEvents: ShipmentTrackingEventRecord[];
+}
 
 /** An error carrying an HTTP-style status code, as thrown for ownership / state violations. */
 export type StatusCodeError = Error & { statusCode: number };
@@ -94,7 +110,7 @@ export interface OrderDetailItem {
   isPickup: boolean;
   mediaUrls: string[];
   timeline: OrderTimelineStep[];
-  shipments: OrderShipmentRecord[];
+  shipments: BuyerOrderShipment[];
   canCancel: boolean;
   hasMeasurement: boolean;
   measurementData: CustomerMeasurementRecord | null;

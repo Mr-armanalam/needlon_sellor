@@ -3,7 +3,9 @@ import { orders } from "@needlon/db/db/schema/orders/table";
 import { orderItems } from "@needlon/db/db/schema/orders/order-items/table";
 import { orderAddresses } from "@needlon/db/db/schema/orders/order-address";
 import { orderStatusHistory } from "@needlon/db/db/schema/orders/order-status-history/table";
-import { orderShipments } from "@needlon/db/db/schema/orders/order-shipments/table";
+import { shipmentOrders } from "@needlon/db/db/schema/delivery/shipping-orders";
+import { shippingPartners } from "@needlon/db/db/schema/delivery/shipping-partners";
+import { shipmentTrackingEvents } from "@needlon/db/db/schema/delivery/shipping-tracking-events";
 import { orderPayments } from "@needlon/db/db/schema/orders/order-payments/table";
 import { inventoryTable } from "@needlon/db/db/schema/catalog/products/inventory/table";
 import { productsTable } from "@needlon/db/db/schema/catalog/products/table";
@@ -16,11 +18,6 @@ import { usersTable } from "@needlon/db/db/schema/users";
 import { eq, and, or, ilike, desc, asc, sql, isNull, type SQL } from "drizzle-orm";
 import { format } from "date-fns";
 
-import {
-  FALLBACK_MOCK_ORDERS,
-  FALLBACK_MOCK_ORDER_DETAIL,
-} from "./order-mock-data";
-
 export {
   isValidUuid,
   createStatusCodeError,
@@ -30,6 +27,9 @@ export type {
   OrderRecord,
   OrderStatusHistoryRecord,
   OrderShipmentRecord,
+  BuyerOrderShipment,
+  ShipmentOrderRecord,
+  ShipmentTrackingEventRecord,
   CustomerMeasurementRecord,
   StatusCodeError,
   RawUserOrder,
@@ -41,7 +41,7 @@ import type {
   OrderDetailItem,
   OrderRecord,
   OrderStatusHistoryRecord,
-  OrderShipmentRecord,
+  BuyerOrderShipment,
   OrderTimelineStep,
 } from "./order-repository.types";
 import {
@@ -56,7 +56,9 @@ export const OrderRepository = {
    */
   async getRawUserOrders(userId: string, search: string = ""): Promise<RawUserOrder[]> {
     if (!process.env.DATABASE_URL) {
-      return this.filterMockOrders(FALLBACK_MOCK_ORDERS, search);
+      // Honest empty result: without a database there are no orders to show.
+      // (Previously this returned fabricated mock orders.)
+      return [];
     }
 
     try {
@@ -159,27 +161,15 @@ export const OrderRepository = {
   },
 
   /**
-   * Helper to filter mock orders by query string
-   */
-  filterMockOrders(mockList: typeof FALLBACK_MOCK_ORDERS, search: string) {
-    if (!search.trim()) return mockList;
-    const q = search.toLowerCase();
-    return mockList.filter(
-      (o) =>
-        o.orderId.toLowerCase().includes(q) ||
-        o.productName.toLowerCase().includes(q) ||
-        o.status.toLowerCase().includes(q)
-    );
-  },
-
-  /**
    * Fetch single order detail by ID or orderNumber.
    * Performs buyer ownership check to prevent cross-user order access.
    * Assembles comprehensive tracking timeline and shipment info.
    */
   async getOrderDetail(orderId: string, userId?: string): Promise<OrderDetailItem[] | null> {
     if (!process.env.DATABASE_URL) {
-      return FALLBACK_MOCK_ORDER_DETAIL;
+      // Same not-found behaviour as the DB path: without a database the
+      // order cannot be found. (Previously returned a fabricated detail.)
+      return null;
     }
 
     try {
@@ -227,12 +217,34 @@ export const OrderRepository = {
         .where(eq(orderStatusHistory.orderId, foundOrder.id))
         .orderBy(asc(orderStatusHistory.changedAt));
 
-      // Fetch shipments
-      const shipments = await db
-        .select()
-        .from(orderShipments)
-        .where(eq(orderShipments.orderId, foundOrder.id))
-        .orderBy(asc(orderShipments.createdAt));
+      // Fetch shipments from shipment_orders — the seller fulfilment system
+      // of record — with each shipment's tracking events. (The legacy
+      // order_shipments table was never written by production code, so buyer
+      // tracking built from it was permanently empty.)
+      const shipmentRows = await db
+        .select({
+          shipment: shipmentOrders,
+          partnerName: shippingPartners.partnerName,
+        })
+        .from(shipmentOrders)
+        .innerJoin(
+          shippingPartners,
+          eq(shipmentOrders.shippingPartnerId, shippingPartners.id)
+        )
+        .where(eq(shipmentOrders.orderId, foundOrder.id))
+        .orderBy(desc(shipmentOrders.createdAt));
+
+      const shipments: BuyerOrderShipment[] = await Promise.all(
+        shipmentRows.map(async (row) => ({
+          shipment: row.shipment,
+          partnerName: row.partnerName,
+          trackingEvents: await db
+            .select()
+            .from(shipmentTrackingEvents)
+            .where(eq(shipmentTrackingEvents.shipmentId, row.shipment.id))
+            .orderBy(asc(shipmentTrackingEvents.occurredAt)),
+        }))
+      );
 
       // Build tracking timeline
       const timeline = this.buildTimeline(foundOrder, history, shipments);
@@ -431,7 +443,7 @@ export const OrderRepository = {
   /**
    * Build structured timeline steps from order history and shipments
    */
-  buildTimeline(order: OrderRecord, history: OrderStatusHistoryRecord[], shipments: OrderShipmentRecord[]): OrderTimelineStep[] {
+  buildTimeline(order: OrderRecord, history: OrderStatusHistoryRecord[], shipments: BuyerOrderShipment[]): OrderTimelineStep[] {
     const orderDateStr = format(order.createdAt, "EEE, do MMM ''yy");
 
     // Bespoke In-Store & Custom Tailoring Milestone Tracking
@@ -529,7 +541,7 @@ export const OrderRepository = {
     const isReady = ["READY_TO_SHIP", "SHIPPED", "OUT_FOR_DELIVERY", "COMPLETED", "DELIVERED"].includes(order.status);
     const activeShipment = shipments[0];
     const shipmentDesc = activeShipment
-      ? `Dispatched via ${activeShipment.carrierName || "Carrier Logistics"} - ${activeShipment.trackingNumber || activeShipment.shipmentNumber}`
+      ? `Dispatched via ${activeShipment.partnerName} - ${activeShipment.shipment.awbNumber || activeShipment.shipment.trackingNumber || activeShipment.shipment.shipmentNumber}`
       : (readyEvent?.remarks || (isReady ? "Package is ready and staged for carrier logistics pickup." : "Awaiting logistics carrier pickup."));
     defaultSteps.push({
       title: "Ready for Shipment",
@@ -537,6 +549,26 @@ export const OrderRepository = {
       details: [shipmentDesc],
       isActive: isReady,
     });
+
+    // Real carrier/fleet tracking events for the active shipment, recorded in
+    // shipment_tracking_events by the fulfilment flow (label generation,
+    // pickup, delivery scans...), oldest first.
+    const trackingSteps: OrderTimelineStep[] = (activeShipment?.trackingEvents ?? []).map((event) => {
+      const location = [event.locationName, event.city, event.state]
+        .filter((part) => Boolean(part))
+        .join(", ");
+      return {
+        title: event.eventDescription,
+        date: format(event.occurredAt, "EEE, do MMM ''yy - h:mma"),
+        details: [
+          location
+            ? `Location: ${location}`
+            : `Status: ${event.trackingStatus.replaceAll("_", " ")}`,
+        ],
+        isActive: true,
+      };
+    });
+    defaultSteps.push(...trackingSteps);
 
     // 5. Out For Delivery (OUT_FOR_DELIVERY)
     const outForDeliveryEvent = history.find((h) => h.toStatus === "OUT_FOR_DELIVERY" || h.action === "OUT_FOR_DELIVERY");
@@ -576,12 +608,9 @@ export const OrderRepository = {
    */
   async cancelOrder(orderId: string, userId: string, reason?: string) {
     if (!process.env.DATABASE_URL) {
-      return {
-        success: true,
-        orderId,
-        status: "CANCELLED",
-        message: "Order cancelled successfully (local mode)",
-      };
+      // Fail honestly: a cancellation must never report success when no
+      // order was actually cancelled.
+      throw new Error("Cannot cancel order: database is not configured (DATABASE_URL is not set).");
     }
 
     return await db.transaction(async (tx) => {

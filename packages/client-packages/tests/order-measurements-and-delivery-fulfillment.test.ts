@@ -16,6 +16,9 @@ import {
   assignDeliveryExecutiveRepo,
   addOrderDeliveryAddressRepo,
 } from "../../modules/modules/delivery/repository/delivery.repository";
+import { createExecutive } from "../../modules/modules/delivery/repository/executive.repository";
+import { shippingPartners } from "@needlon/db/db/schema/delivery/shipping-partners";
+import { shippingMethods } from "@needlon/db/db/schema/delivery/shipping-method";
 import { eq } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 
@@ -118,25 +121,50 @@ async function runTest() {
 
 
 
-  // 3. Test assigning delivery executive to the order
+  // 3. Test assigning delivery executive to the order.
+  // Roster contract (Phase 3): the executive is a real delivery_executives
+  // row, a shipment must exist first, and assignment writes a
+  // delivery_assignments row — it no longer fabricates a shipment, stuffs
+  // JSON into notes, or advances the order status by itself.
   console.log("--> Testing Delivery Executive Assignment implementation...");
-  const assignResult = await assignDeliveryExecutiveRepo(sellerId, testOrderId, {
-    executiveName: "Vikram Delivery Hero",
-    executivePhone: "9812345678",
-    vehicleType: "Electric Scooter",
-    courierPartner: "In-House Local Delivery",
-    trackingNumber: `TRK-${Date.now().toString().slice(-6)}`,
-    status: "OUT_FOR_DELIVERY",
-    notes: "Handle silk garments in waterproof cover",
-  });
+  const executive = await createExecutive(
+    {
+      name: "Vikram Delivery Hero",
+      phone: "9812345678",
+      vehicleType: "Electric Scooter",
+    },
+    sellerId,
+  );
 
-  assert.ok(assignResult.shipment, "Shipment record must be created/updated");
-  assert.strictEqual(assignResult.executive.executiveName, "Vikram Delivery Hero");
-  assert.strictEqual(assignResult.executive.executivePhone, "9812345678");
+  const [fixturePartner] = await db.select().from(shippingPartners).limit(1);
+  const [fixtureMethod] = await db
+    .select()
+    .from(shippingMethods)
+    .where(eq(shippingMethods.partnerId, fixturePartner.id))
+    .limit(1);
+  const [fixtureShipment] = await db
+    .insert(shipmentOrders)
+    .values({
+      shipmentNumber: `SHP-FIXTURE-${Date.now().toString().slice(-6)}`,
+      orderId: testOrderId,
+      sellerId,
+      buyerId: updatedOrder.buyerId,
+      shippingPartnerId: fixturePartner.id,
+      shippingMethodId: fixtureMethod.id,
+      status: "READY_TO_SHIP",
+    })
+    .returning();
 
-  // Verify order status updated to OUT_FOR_DELIVERY
-  const [outOrder] = await db.select().from(orders).where(eq(orders.id, testOrderId));
-  assert.strictEqual(outOrder.status, "OUT_FOR_DELIVERY");
+  const assignResult = await assignDeliveryExecutiveRepo(
+    fixtureShipment.id,
+    sellerId,
+    executive.id,
+  );
+
+  assert.ok(assignResult.shipment, "Assignment must return the shipment");
+  assert.strictEqual(assignResult.shipment.executiveId, executive.id);
+  assert.strictEqual(assignResult.assignment.executiveId, executive.id);
+  assert.strictEqual(assignResult.assignment.status, "ASSIGNED");
 
   // Verify findOrderById retrieves shipment and executive details
   const postAssignRes = await findOrderById({ orderId: testOrderId, sellerId });

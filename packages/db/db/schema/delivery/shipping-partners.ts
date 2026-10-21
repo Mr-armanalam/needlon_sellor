@@ -5,14 +5,32 @@ import {
   boolean,
   smallint,
   timestamp,
+  pgEnum,
 } from "drizzle-orm/pg-core";
+
+// How a partner is integrated with the platform:
+// - AGGREGATOR_API: booked through an aggregator API (e.g. Shiprocket)
+// - DIRECT_API: booked through the carrier's own API
+// - MANUAL: seller books outside the platform and records the real AWB here
+// - INHOUSE: the platform's own delivery-executive fleet fulfils the shipment
+export const partnerIntegrationTypeEnum = pgEnum("partner_integration_type", [
+  "AGGREGATOR_API",
+  "DIRECT_API",
+  "MANUAL",
+  "INHOUSE",
+]);
 
 // Shipping Partners Table
 export const shippingPartners = pgTable("shipping_partners", {
   id: uuid("id").defaultRandom().primaryKey(),
 
-  partnerCode: varchar("partner_code", { length: 50 }).notNull(),
+  partnerCode: varchar("partner_code", { length: 50 }).notNull().unique(),
   partnerName: varchar("partner_name", { length: 150 }).notNull(),
+
+  integrationType: partnerIntegrationTypeEnum("integration_type")
+    .notNull()
+    .default("MANUAL"),
+  apiBaseUrl: varchar("api_base_url", { length: 500 }),
 
   websiteUrl: varchar("website_url", { length: 255 }),
   trackingUrlTemplate: varchar("tracking_url_template", { length: 500 }),

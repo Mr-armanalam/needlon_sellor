@@ -11,7 +11,7 @@ interface BalanceMetaDetailsProps {
 
 const BalanceMetaDetails = ({
   balance = "₹12,450",
-  growthText = "+18.4% growth this week",
+  growthText = "—",
   isPositiveGrowth = true,
 }: BalanceMetaDetailsProps) => {
   const router = useRouter();

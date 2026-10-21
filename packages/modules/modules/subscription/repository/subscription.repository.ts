@@ -238,11 +238,22 @@ export async function updateSellerSubscriptionPlan(
         netAmount: planPriceNum.toFixed(2),
         paymentMethod: paymentResult.paymentMethod,
         status: paymentResult.status,
-        paidAt: paymentResult.paidAt,
+        paidAt: paymentResult.success ? paymentResult.paidAt : null,
         gatewayResponse: paymentResult.rawResponse,
       })
       .returning();
     paymentRecord = insertedPayment;
+
+    // Fail closed: a failed charge is recorded above for the ledger, but it
+    // must not produce a PAID invoice or activate the paid plan.
+    if (!paymentResult.success) {
+      throw new Error(
+        `Subscription payment failed: ${
+          paymentResult.failureReason ??
+          "the payment gateway did not complete the charge."
+        } The subscription plan was not changed.`
+      );
+    }
 
     // Insert into subscriptionInvoices
     const [insertedInvoice] = await db
