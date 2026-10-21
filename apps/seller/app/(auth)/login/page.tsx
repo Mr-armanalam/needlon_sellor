@@ -41,7 +41,12 @@ export default function LoginPage() {
       });
 
       toast.success("Login successful");
-      const destination = data.user.role === "admin" ? "/admin" : "/dashboard";
+      // Admins are served by the standalone admin app (apps/admin), not by
+      // this seller app. NEXT_PUBLIC_ADMIN_APP_URL points at its origin.
+      const adminAppUrl =
+        process.env.NEXT_PUBLIC_ADMIN_APP_URL ?? "http://localhost:3002";
+      const destination =
+        data.user.role === "admin" ? adminAppUrl : "/dashboard";
       await mutate("/api/auth/me");
       window.location.assign(destination);
     } catch (error: unknown) {
