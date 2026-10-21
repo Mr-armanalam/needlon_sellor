@@ -1,6 +1,8 @@
 import assert from "node:assert";
 import { getFilteredOrdersQuerySchema, getOrderByIdParamsSchema, updateOrderStatusBodySchema } from "../modules/orders/validations";
 import { toOrderDomain, toOrderListItemDto, toOrderDetailResponse } from "../modules/orders/mapper";
+import { orders } from "@needlon/db/db/schema/orders/table";
+import { orderItems } from "@needlon/db/db/schema/orders/order-items/table";
 
 function testValidationSchemas() {
   console.log("--> Testing Zod validations for orders...");
@@ -46,7 +48,7 @@ function testValidationSchemas() {
 function testOrderMapper() {
   console.log("--> Testing OrderMapper...");
   
-  const mockDbOrder = {
+  const mockDbOrder: typeof orders.$inferSelect = {
     id: "123e4567-e89b-12d3-a456-426614174000",
     sellerId: "223e4567-e89b-12d3-a456-426614174000",
     buyerId: "323e4567-e89b-12d3-a456-426614174000",
@@ -71,12 +73,28 @@ function testOrderMapper() {
     taxAmount: "180.00",
     grandTotal: "1230.00",
     isGift: false,
+    giftMessage: null,
+    requiresSignature: false,
+    sellerRemark: null,
+    internalRemark: null,
+    tailoringStage: null,
+    tailoringNotes: null,
+    mediaUrls: [],
+    expectedDeliveryDate: null,
+    actualDeliveryDate: null,
+    acceptedAt: null,
+    packedAt: null,
+    readyAt: null,
+    shippedAt: null,
+    deliveredAt: null,
+    cancelledAt: null,
+    returnedAt: null,
     createdAt: new Date("2026-08-03T12:00:00Z"),
     updatedAt: new Date("2026-08-03T12:05:00Z"),
     deletedAt: null,
   };
 
-  const mockDbItems = [
+  const mockDbItems: Array<typeof orderItems.$inferSelect> = [
     {
       id: "723e4567-e89b-12d3-a456-426614174000",
       orderId: "123e4567-e89b-12d3-a456-426614174000",
@@ -90,6 +108,28 @@ function testOrderMapper() {
       variantName: null,
       brandName: "Brand",
       categoryName: "Category",
+      thumbnailUrl: null,
+      imageUrl: null,
+      snapshotSource: "PRODUCT",
+      currency: "INR",
+      compareAtPrice: null,
+      discountType: "NONE",
+      discountAmount: "0.00",
+      taxType: "NONE",
+      taxRate: "0.00",
+      taxAmount: "0.00",
+      subtotal: "1200.00",
+      weight: null,
+      length: null,
+      width: null,
+      height: null,
+      inventoryLocation: null,
+      warehouseName: null,
+      fulfillmentType: "STANDARD",
+      itemStatus: "PENDING",
+      sellerSku: null,
+      notes: null,
+      deletedAt: null,
       unitPrice: "600.00",
       quantity: 2,
       total: "1200.00",

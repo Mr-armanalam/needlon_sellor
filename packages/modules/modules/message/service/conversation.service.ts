@@ -14,7 +14,12 @@ import {
     conversationsTable,
     messagesTable,
 } from "@/db/schema/messages";
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import type {
+    ConversationType,
+} from "@/db/schema/messages";
+import { usersTable } from "@/db/schema/users";
+import { orders } from "@/db/schema/orders/table";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 
 import {
     conversationRepository,
@@ -53,6 +58,27 @@ interface HydratedConversationMember {
     isOnline: boolean;
 
     lastSeenAt: Date | null;
+}
+
+/**
+ * Resolve the DTO conversation type for a row. The enum `type` column wins;
+ * the legacy free-text `conversationType` column is only honoured when it
+ * holds a known enum value, otherwise the conversation is an order chat.
+ */
+function resolveConversationType(conv: ConversationRow): ConversationType {
+    if (conv.type) {
+        return conv.type;
+    }
+
+    switch (conv.conversationType) {
+        case "DIRECT":
+        case "ORDER":
+        case "PRODUCT":
+        case "SUPPORT":
+            return conv.conversationType;
+        default:
+            return "ORDER";
+    }
 }
 
 /** Last-message entry as hydrated for the conversation mapper. */
@@ -141,6 +167,48 @@ export class ConversationService {
             }
         }
 
+        // Fetch buyer and order info for order-linked conversations
+        const buyerIds = Array.from(
+            new Set(
+                rawConversations
+                    .map((c) => c.buyerId)
+                    .filter(Boolean),
+            ),
+        ) as string[];
+
+        let buyersMap = new Map<string, { id: string; name: string | null; email: string | null }>();
+        if (buyerIds.length > 0) {
+            const buyers = await db
+                .select({
+                    id: usersTable.id,
+                    name: usersTable.name,
+                    email: usersTable.email,
+                })
+                .from(usersTable)
+                .where(inArray(usersTable.id, buyerIds));
+            buyersMap = new Map(buyers.map((b) => [b.id, b]));
+        }
+
+        const orderIds = Array.from(
+            new Set(
+                rawConversations
+                    .map((c) => c.orderId)
+                    .filter(Boolean),
+            ),
+        ) as string[];
+
+        let ordersMap = new Map<string, { id: string; orderNumber: string }>();
+        if (orderIds.length > 0) {
+            const orderRows = await db
+                .select({
+                    id: orders.id,
+                    orderNumber: orders.orderNumber,
+                })
+                .from(orders)
+                .where(inArray(orders.id, orderIds));
+            ordersMap = new Map(orderRows.map((o) => [o.id, o]));
+        }
+
         // 2. Fetch last messages (if conversations contain lastMessageId)
         const lastMessageIds = rawConversations
             .map((c) => c.lastMessageId)
@@ -153,7 +221,8 @@ export class ConversationService {
                     id: messagesTable.id,
                     conversationId: messagesTable.conversationId,
                     senderId: messagesTable.senderId,
-                    body: messagesTable.text,
+                    senderType: messagesTable.senderType,
+                    body: sql<string>`COALESCE(${messagesTable.text}, ${messagesTable.content})`,
                     messageType: messagesTable.type,
                     createdAt: messagesTable.createdAt,
                     deletedAt: messagesTable.deletedAt,
@@ -167,47 +236,93 @@ export class ConversationService {
 
             lastMessagesMap = new Map<string, HydratedConversationLastMessage>(
                 lastMessages.map(
-                    (m): [string, HydratedConversationLastMessage] => [
-                        m.id,
-                        {
-                            id: m.id,
-                            senderId: m.senderId,
-                            senderName: m.senderDisplayName || m.senderName || "User",
-                            body: m.body,
-                            messageType: m.messageType,
-                            createdAt: m.createdAt,
-                            isDeleted: m.deletedAt !== null,
-                        },
-                    ],
+                    (m): [string, HydratedConversationLastMessage] => {
+                        let displayName = m.senderDisplayName || m.senderName;
+                        if (!displayName && m.senderId && buyersMap.has(m.senderId)) {
+                            displayName = buyersMap.get(m.senderId)?.name || buyersMap.get(m.senderId)?.email?.split("@")[0] || "Customer";
+                        }
+
+                        return [
+                            m.id,
+                            {
+                                id: m.id,
+                                senderId: m.senderId,
+                                senderName: displayName || (m.senderType === "BUYER" ? "Customer" : "User"),
+                                body: m.body,
+                                messageType: m.messageType,
+                                createdAt: m.createdAt,
+                                isDeleted: m.deletedAt !== null,
+                            },
+                        ];
+                    },
                 ),
             );
         }
 
         return rawConversations.map((conv) => {
-            const members = membersMap.get(conv.id) || [];
-            const memberCount = memberCounts.get(conv.id) || 0;
+            const members = [...(membersMap.get(conv.id) || [])];
             const membership = sellerMembershipMap.get(conv.id);
+            const buyerUser = conv.buyerId ? buyersMap.get(conv.buyerId) : null;
+            const buyerDisplayName = buyerUser?.name || buyerUser?.email?.split("@")[0] || "Customer";
+
+            // If buyer is not in members, add buyer member
+            if (conv.buyerId && !members.some((m) => m.sellerId === conv.buyerId)) {
+                members.push({
+                    sellerId: conv.buyerId,
+                    displayName: buyerDisplayName,
+                    avatarUrl: null,
+                    role: "BUYER",
+                    isOnline: false,
+                    lastSeenAt: null,
+                });
+            }
+
+            // If seller is not in members, add seller member
+            if (!members.some((m) => m.sellerId === currentSellerId)) {
+                members.push({
+                    sellerId: currentSellerId,
+                    displayName: "You",
+                    avatarUrl: null,
+                    role: "SELLER",
+                    isOnline: true,
+                    lastSeenAt: new Date(),
+                });
+            }
+
+            const orderInfo = conv.orderId ? ordersMap.get(conv.orderId) : null;
+            const derivedTitle = conv.title || (orderInfo ? `${buyerDisplayName} (Order #${orderInfo.orderNumber})` : buyerDisplayName);
+
             const lastMessage = conv.lastMessageId
-                ? lastMessagesMap.get(conv.lastMessageId) ?? null
-                : null;
+                ? (lastMessagesMap.get(conv.lastMessageId) || null)
+                : (conv.lastMessagePreview
+                    ? {
+                        id: conv.lastMessageId || "msg-fallback",
+                        senderId: conv.buyerId || "",
+                        senderName: buyerDisplayName,
+                        body: conv.lastMessagePreview,
+                        messageType: conv.lastMessageType || "TEXT",
+                        createdAt: conv.lastMessageAt || conv.updatedAt,
+                        isDeleted: false,
+                    }
+                    : null);
 
             return toConversationDto({
                 conversation: {
                     id: conv.id,
-                    type: conv.type,
-                    status: conv.status,
-                    title: conv.title,
+                    type: resolveConversationType(conv),
+                    status: conv.status || "ACTIVE",
+                    title: derivedTitle,
                     avatarUrl: conv.avatarUrl || null,
                     description: conv.description || null,
                     createdAt: conv.createdAt,
                     updatedAt: conv.updatedAt,
                 },
                 currentSellerId,
-                memberCount,
-                unreadCount: membership?.unreadCount || 0,
-                isPinned: membership?.isPinned || false,
-                isMuted: membership?.isMuted || false,
-                isArchived: membership?.isArchived || false,
+                memberCount: members.length,
+                unreadCount: membership?.unreadCount || conv.unreadCount || 0,
+                isPinned: membership?.isPinned || conv.isPinned || false,
+                isMuted: membership?.isMuted || conv.isMuted || false,
+                isArchived: membership?.isArchived || conv.isArchived || false,
                 isActive: conv.status === "ACTIVE",
                 members,
                 lastMessage,

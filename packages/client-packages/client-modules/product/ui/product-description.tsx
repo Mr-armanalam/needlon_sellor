@@ -18,7 +18,7 @@ const ProductDescriptionn = ({
 }) => {
   const dispatch = useAppDispatch();
   const { data: session } = useSession();
-  const userId = session?.user.id;
+  const userId = session?.user?.id;
 
   useEffect(() => {
     if (userId) {

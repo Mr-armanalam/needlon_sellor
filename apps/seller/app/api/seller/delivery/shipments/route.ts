@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
       total: shipments.length,
       inTransit: shipments.filter((s) => s.status === "IN_TRANSIT" || s.status === "OUT_FOR_DELIVERY").length,
       delivered: shipments.filter((s) => s.status === "DELIVERED").length,
-      pending: shipments.filter((s) => s.status === "PENDING" || s.status === "READY_FOR_PICKUP").length,
+      pending: shipments.filter((s) => s.status === "READY_TO_SHIP" || s.status === "LABEL_GENERATED" || s.status === "MANIFEST_GENERATED").length,
     };
 
     return successResponse({ shipments, counts });

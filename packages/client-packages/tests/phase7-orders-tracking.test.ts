@@ -274,9 +274,11 @@ async function runPhase7Tests() {
     const itemDetail = orderDetail[0];
 
     // Address verification
-    assert.strictEqual(itemDetail.shippingAddress.name, "Aarav Mehta");
-    assert.strictEqual(itemDetail.shippingAddress.city, "Hyderabad");
-    assert.strictEqual(itemDetail.shippingAddress.pincode, "500034");
+    const shippingAddress = itemDetail.shippingAddress;
+    assert.ok(shippingAddress, "Shipping address must be present for this order");
+    assert.strictEqual(shippingAddress.name, "Aarav Mehta");
+    assert.strictEqual(shippingAddress.city, "Hyderabad");
+    assert.strictEqual(shippingAddress.pincode, "500034");
 
     // Financial breakdown verification
     assert.strictEqual(itemDetail.totalPurchasePrice, 5047);

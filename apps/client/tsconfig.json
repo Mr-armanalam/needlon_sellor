@@ -25,6 +25,11 @@
       "@/schema/*": ["../../packages/db/db/schema/*"],
       "@/components/ui/*": ["../../packages/ui/components/ui/*"],
       "@/components/*": ["./components/*", "../../packages/ui/components/*", "../../packages/ui/components/ui/*"],
+      "@/types/auth": ["../../apps/seller/types/auth"],
+      "@/modules/shared/errors/*": ["../../packages/modules/modules/shared/errors/*"],
+      "@/modules/shared/storage/*": ["../../packages/modules/modules/shared/storage/*"],
+      "@/modules/auth/lib/*": ["../../packages/modules/modules/auth/lib/*"],
+      "@/modules/seller-profile/*": ["../../packages/modules/modules/seller-profile/*"],
       "@/modules/*": ["../../packages/client-packages/client-modules/*"],
       "@/data/*": ["../../packages/client-packages/data/*"],
       "@/features/*": ["../../packages/client-packages/features/*"],
@@ -33,7 +38,7 @@
       "@needlon/ui": ["../../packages/ui"],
       "@needlon/db/*": ["../../packages/db/*"],
       "@needlon/db": ["../../packages/db/db/index.ts"],
-      "@needlon/modules/*": ["../../packages/modules/*"],
+      "@needlon/modules/*": ["../../packages/modules/modules/*", "../../packages/modules/*"],
       "@needlon/modules": ["../../packages/modules/modules/index.ts"],
       "@/*": ["./*"]
     }

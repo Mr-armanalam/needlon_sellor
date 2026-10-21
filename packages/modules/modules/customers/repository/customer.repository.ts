@@ -17,11 +17,14 @@ import { fittingAppointmentsTable } from "@/db/schema/customization/fitting-appo
 import { sellerCustomers } from "@/db/schema/seller/seller-customers";
 import { chatPermissions } from "@/db/schema/messaging/chat-permissions";
 import { notifications } from "@/db/schema/notifications/notification-events";
-import { and, desc, eq, isNull, or, sql } from "drizzle-orm";
+import { orderAddresses } from "@/db/schema/orders/order-address";
+import { shipmentOrders } from "@/db/schema/delivery/shipping-orders";
+import { shippingMethods } from "@/db/schema/delivery/shipping-method";
+import { and, desc, eq, isNull, or, sql, inArray } from "drizzle-orm";
 import type { CreateWalkInCustomerDto } from "../dto/walk-in-customer.dto";
 import type { CustomerItemResponseDto } from "../dto/customer.dto";
-import type { RecordInStoreMeasurementDto } from "../dto/in-store-measurement.dto";
-import type { CreateInStoreOrderDto, UpdateTailoringStageDto } from "../dto/create-in-store-order.dto";
+import type { RecordInStoreMeasurementInput } from "../dto/in-store-measurement.dto";
+import type { CreateInStoreOrderDto, CreateInStoreOrderInput, UpdateTailoringStageDto } from "../dto/create-in-store-order.dto";
 import type {
   ScheduleFittingAppointmentDto,
   UpdateFittingAppointmentDto,
@@ -168,10 +171,26 @@ export async function getCustomerDetailsRepo(sellerId: string, buyerId: string) 
     .orderBy(sql`${reviewsTable.createdAt} DESC`)
     .limit(10);
 
+  const orderIds = customerOrders.map((o) => o.orderId);
+  const itemsForOrders =
+    orderIds.length > 0
+      ? await db
+          .select({
+            orderId: orderItems.orderId,
+            productId: orderItems.productId,
+            variantName: orderItems.variantName,
+            productName: orderItems.productName,
+          })
+          .from(orderItems)
+          .where(inArray(orderItems.orderId, orderIds))
+      : [];
+
   type CustomerMeasurementRow = Pick<
     CustomerMeasurementRecord,
     | "id"
     | "orderId"
+    | "orderItemId"
+    | "productId"
     | "gender"
     | "garmentType"
     | "measurementUnit"
@@ -181,14 +200,20 @@ export async function getCustomerDetailsRepo(sellerId: string, buyerId: string) 
     | "tailorNotes"
     | "source"
     | "status"
+    | "isEditable"
+    | "editRequested"
+    | "editRequestReason"
     | "createdAt"
-  >;
+  > & { orderNumber: string | null };
   let measurements: CustomerMeasurementRow[] = [];
   try {
     measurements = await db
       .select({
         id: customerMeasurementsTable.id,
         orderId: customerMeasurementsTable.orderId,
+        orderItemId: customerMeasurementsTable.orderItemId,
+        productId: customerMeasurementsTable.productId,
+        orderNumber: orders.orderNumber,
         gender: customerMeasurementsTable.gender,
         garmentType: customerMeasurementsTable.garmentType,
         measurementUnit: customerMeasurementsTable.measurementUnit,
@@ -198,13 +223,25 @@ export async function getCustomerDetailsRepo(sellerId: string, buyerId: string) 
         tailorNotes: customerMeasurementsTable.tailorNotes,
         source: customerMeasurementsTable.source,
         status: customerMeasurementsTable.status,
+        isEditable: customerMeasurementsTable.isEditable,
+        editRequested: customerMeasurementsTable.editRequested,
+        editRequestReason: customerMeasurementsTable.editRequestReason,
         createdAt: customerMeasurementsTable.createdAt,
       })
       .from(customerMeasurementsTable)
+      .leftJoin(orders, eq(customerMeasurementsTable.orderId, orders.id))
       .where(
         and(
-          eq(customerMeasurementsTable.userId, buyerId),
-          eq(customerMeasurementsTable.sellerId, sellerId)
+          orderIds.length > 0
+            ? or(
+                eq(customerMeasurementsTable.userId, buyerId),
+                inArray(customerMeasurementsTable.orderId, orderIds)
+              )
+            : eq(customerMeasurementsTable.userId, buyerId),
+          or(
+            eq(customerMeasurementsTable.sellerId, sellerId),
+            isNull(customerMeasurementsTable.sellerId)
+          )
         )
       )
       .orderBy(sql`${customerMeasurementsTable.createdAt} DESC`)
@@ -214,16 +251,31 @@ export async function getCustomerDetailsRepo(sellerId: string, buyerId: string) 
   }
     
   return {
-    history: customerOrders.map((o) => ({
-      id: o.id,
-      orderId: o.orderId,
-      date: o.date ? new Date(o.date).toLocaleDateString() : "N/A",
-      total: `₹${parseFloat(o.total || "0").toFixed(2)}`,
-      status: o.status,
-      tailoringStage: o.tailoringStage || null,
-      tailoringNotes: o.tailoringNotes || null,
-      source: o.source || "WEB",
-    })),
+    history: customerOrders.map((o) => {
+      const orderItemsList = itemsForOrders.filter((it) => it.orderId === o.orderId);
+      const matchingMeasurement = measurements.find(
+        (m) =>
+          m.orderId === o.orderId ||
+          (m.orderNumber && (m.orderNumber === o.id || m.orderNumber === o.orderId)) ||
+          orderItemsList.some((it) => (m.productId && it.productId === m.productId) || (m.orderItemId && it.orderId === m.orderId))
+      );
+      const isBespoke = !!matchingMeasurement || !!o.tailoringStage;
+      const sizeTag = orderItemsList[0]?.variantName || null;
+
+      return {
+        id: o.id,
+        orderId: o.orderId,
+        date: o.date ? new Date(o.date).toLocaleDateString() : "N/A",
+        total: `₹${parseFloat(o.total || "0").toFixed(2)}`,
+        status: o.status,
+        tailoringStage: o.tailoringStage || null,
+        tailoringNotes: o.tailoringNotes || null,
+        source: o.source || "WEB",
+        isBespoke,
+        garmentType: matchingMeasurement?.garmentType || null,
+        size: !isBespoke ? sizeTag || "Ready-to-Wear" : (sizeTag || "Custom Fit"),
+      };
+    }),
     reviews: customerReviews.map((r) => ({
       id: r.id,
       rating: r.rating || 5,
@@ -231,21 +283,57 @@ export async function getCustomerDetailsRepo(sellerId: string, buyerId: string) 
       product: r.productName || "Purchased Product",
       date: r.date ? new Date(r.date).toLocaleDateString() : "N/A",
     })),
-    measurements: measurements.map((m) => ({
-      id: m.id,
-      orderId: m.orderId,
-      gender: m.gender,
-      garmentType: m.garmentType,
-      unit: m.measurementUnit,
-      essentialMeasurements: m.essentialMeasurements,
-      postureSpecifics: m.postureSpecifics,
-      fitPreference: m.fitPreference,
-      tailorNotes: m.tailorNotes,
-      source: m.source,
-      status: m.status,
-      date: m.createdAt ? new Date(m.createdAt).toLocaleDateString() : "N/A",
-    })),
+    measurements: measurements.map((m) => {
+      const matchedOrder = customerOrders.find((co) => {
+        if (m.orderId && (m.orderId === co.orderId || m.orderId === co.id)) return true;
+        if (m.orderNumber && (m.orderNumber === co.id || m.orderNumber === co.orderId)) return true;
+        const oItems = itemsForOrders.filter((it) => it.orderId === co.orderId);
+        return oItems.some((it) => m.productId && it.productId === m.productId);
+      });
+
+      return {
+        id: m.id,
+        orderId: m.orderId || matchedOrder?.orderId || null,
+        orderNumber: m.orderNumber || matchedOrder?.id || (m.orderId ? `Order #${m.orderId.slice(-6)}` : null),
+        gender: m.gender,
+        garmentType: m.garmentType,
+        unit: m.measurementUnit,
+        essentialMeasurements: m.essentialMeasurements,
+        postureSpecifics: m.postureSpecifics,
+        fitPreference: m.fitPreference,
+        tailorNotes: m.tailorNotes,
+        source: m.source,
+        status: m.status,
+        isEditable: m.isEditable,
+        editRequested: m.editRequested,
+        editRequestReason: m.editRequestReason,
+        date: m.createdAt ? new Date(m.createdAt).toLocaleDateString() : "N/A",
+      };
+    }),
   };
+}
+
+export async function allowCustomerMeasurementEditRepo(sellerId: string, measurementId: string) {
+  const [existing] = await db
+    .select()
+    .from(customerMeasurementsTable)
+    .where(eq(customerMeasurementsTable.id, measurementId))
+    .limit(1);
+
+  if (!existing) {
+    throw new Error("Measurement record not found.");
+  }
+
+  const [updated] = await db
+    .update(customerMeasurementsTable)
+    .set({
+      isEditable: true,
+      updatedAt: new Date(),
+    })
+    .where(eq(customerMeasurementsTable.id, measurementId))
+    .returning();
+
+  return updated;
 }
 
 export async function createOrLinkWalkInCustomerRepo(sellerId: string, data: CreateWalkInCustomerDto) {
@@ -313,7 +401,7 @@ export async function createOrLinkWalkInCustomerRepo(sellerId: string, data: Cre
   };
 }
 
-export async function createInStoreMeasurementRepo(sellerId: string, data: RecordInStoreMeasurementDto) {
+export async function createInStoreMeasurementRepo(sellerId: string, data: RecordInStoreMeasurementInput) {
   // Fetch user information
   const [user] = await db
     .select()
@@ -344,7 +432,16 @@ export async function createInStoreMeasurementRepo(sellerId: string, data: Recor
   return measurement;
 }
 
-export async function createInStoreOrderRepo(sellerId: string, data: CreateInStoreOrderDto) {
+/**
+ * Repository input: the current DTO shape, or the legacy shape where the
+ * amount arrives as `estimatedAmount` instead of `amount`.
+ */
+export type CreateInStoreOrderRepoInput = Omit<CreateInStoreOrderInput, "amount"> & {
+  amount?: number;
+  estimatedAmount?: number;
+};
+
+export async function createInStoreOrderRepo(sellerId: string, data: CreateInStoreOrderRepoInput) {
   // 1. Fetch customer user record
   const [buyer] = await db
     .select()
@@ -412,11 +509,17 @@ export async function createInStoreOrderRepo(sellerId: string, data: CreateInSto
   }
 
   const orderNum = `BESPOKE-${Date.now().toString(36).toUpperCase()}`;
-  const amountStr = data.amount.toFixed(2);
+  // Legacy callers may send `estimatedAmount` instead of `amount`.
+  const finalAmount = Number(data.amount ?? data.estimatedAmount ?? 0);
+  const amountStr = finalAmount.toFixed(2);
 
-  // Map DTO payment status to DB order_payment_status enum
+  // Map DTO payment status to DB order_payment_status enum. An advance
+  // payment below the full amount implies a partially-paid order unless the
+  // caller stated a payment status explicitly.
+  const advanceImpliesPartial =
+    data.advancePaid != null && data.advancePaid < finalAmount && !data.paymentStatus;
   const mappedPaymentStatus =
-    data.paymentStatus === "PARTIAL"
+    data.paymentStatus === "PARTIAL" || advanceImpliesPartial
       ? "PARTIALLY_PAID"
       : data.paymentStatus || "PAID";
 
@@ -429,9 +532,14 @@ export async function createInStoreOrderRepo(sellerId: string, data: CreateInSto
     COD: "COD",
   };
   const mappedPaymentMethod: PaymentMethod =
-    paymentMethodMap[data.paymentMethod] || "COD";
+    paymentMethodMap[data.paymentMethod ?? "CASH"] || "COD";
+
+  const initialMediaUrls = Array.isArray(data.mediaUrls) && data.mediaUrls.length > 0
+    ? data.mediaUrls
+    : (data.imageUrl ? [data.imageUrl] : []);
 
   // 5. Insert order
+  const isHomeDelivery = data.deliveryMethod === "HOME_DELIVERY";
   const [createdOrder] = await db
     .insert(orders)
     .values({
@@ -443,9 +551,10 @@ export async function createInStoreOrderRepo(sellerId: string, data: CreateInSto
       status: "CONFIRMED",
       tailoringStage: data.tailoringStage || "ORDER_PLACED",
       tailoringNotes: data.tailoringNotes || null,
+      mediaUrls: initialMediaUrls,
       paymentStatus: mappedPaymentStatus,
       paymentMethod: mappedPaymentMethod,
-      shippingMethod: "STANDARD",
+      shippingMethod: isHomeDelivery ? "STANDARD" : "STORE_PICKUP",
       priority: "NORMAL",
       source: "IN_STORE",
       currency: "INR",
@@ -457,6 +566,53 @@ export async function createInStoreOrderRepo(sellerId: string, data: CreateInSto
     })
     .returning();
 
+  // If customer asked for home delivery, record the delivery address snapshot & dispatch entry
+  if (isHomeDelivery && data.shippingAddress) {
+    try {
+      await db.insert(orderAddresses).values({
+        orderId: createdOrder.id,
+        addressType: "DELIVERY",
+        recipientName: data.shippingAddress.recipientName || buyer.name,
+        phoneNumber: data.shippingAddress.phoneNumber || buyer.number || "+91 9999999999",
+        addressLine1: data.shippingAddress.addressLine1,
+        addressLine2: data.shippingAddress.addressLine2 || null,
+        city: data.shippingAddress.city,
+        state: data.shippingAddress.state,
+        postalCode: data.shippingAddress.postalCode,
+        country: "India",
+      });
+    } catch (addrErr) {
+      console.warn("Failed to insert order delivery address:", addrErr);
+    }
+
+    if (data.shippingPartnerId) {
+      try {
+        const [method] = await db
+          .select()
+          .from(shippingMethods)
+          .where(eq(shippingMethods.partnerId, data.shippingPartnerId))
+          .limit(1);
+        const shpNum = `SHP-${Date.now().toString(36).toUpperCase()}`;
+        await db.insert(shipmentOrders).values({
+          orderId: createdOrder.id,
+          sellerId,
+          buyerId: data.customerId,
+          shippingPartnerId: data.shippingPartnerId,
+          shippingMethodId: method?.id || data.shippingPartnerId,
+          shipmentNumber: shpNum,
+          awbNumber: `AWB-${Math.floor(10000000 + Math.random() * 90000000)}`,
+          trackingNumber: `TRK-${Math.floor(10000000 + Math.random() * 90000000)}`,
+          status: "READY_TO_SHIP",
+          shippingCost: "0",
+          estimatedDeliveryAt: data.estimatedDeliveryAt ? new Date(data.estimatedDeliveryAt) : null,
+          notes: "In-store bespoke commission booked for home delivery",
+        });
+      } catch (shpErr) {
+        console.warn("Failed to create dispatch shipment order:", shpErr);
+      }
+    }
+  }
+
   // 6. Insert order item snapshot
   if (product) {
     await db.insert(orderItems).values({
@@ -466,6 +622,8 @@ export async function createInStoreOrderRepo(sellerId: string, data: CreateInSto
       sku: orderNum,
       productSlug: data.garmentName.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
       productName: data.garmentName,
+      imageUrl: data.imageUrl || (initialMediaUrls[0] || null),
+      thumbnailUrl: data.imageUrl || (initialMediaUrls[0] || null),
       unitPrice: amountStr,
       quantity: 1,
       subtotal: amountStr,
@@ -927,4 +1085,85 @@ export async function recordInStoreHandoverRepo(
 
   return updated;
 }
+
+export async function addOrderMediaRepo(
+  sellerId: string,
+  orderId: string,
+  mediaUrl: string,
+  caption?: string
+) {
+  const [existingOrder] = await db
+    .select()
+    .from(orders)
+    .where(and(eq(orders.id, orderId), eq(orders.sellerId, sellerId)))
+    .limit(1);
+
+  if (!existingOrder) {
+    throw new Error("Order not found or unauthorized");
+  }
+
+  const currentMediaUrls: string[] = Array.isArray(existingOrder.mediaUrls) ? [...existingOrder.mediaUrls] : [];
+  if (!currentMediaUrls.includes(mediaUrl)) {
+    currentMediaUrls.push(mediaUrl);
+  }
+
+  const [updatedOrder] = await db
+    .update(orders)
+    .set({
+      mediaUrls: currentMediaUrls,
+      updatedAt: new Date(),
+    })
+    .where(eq(orders.id, orderId))
+    .returning();
+
+  // Also update primary image on orderItems if empty
+  const [firstItem] = await db
+    .select()
+    .from(orderItems)
+    .where(eq(orderItems.orderId, orderId))
+    .limit(1);
+
+  if (firstItem && (!firstItem.imageUrl || firstItem.imageUrl.trim() === "")) {
+    await db
+      .update(orderItems)
+      .set({
+        imageUrl: mediaUrl,
+        thumbnailUrl: mediaUrl,
+        updatedAt: new Date(),
+      })
+      .where(eq(orderItems.id, firstItem.id));
+  }
+
+  // Audit history
+  await db.insert(orderStatusHistory).values({
+    orderId,
+    sellerId,
+    fromStatus: existingOrder.status,
+    toStatus: existingOrder.status,
+    action: "UPDATED",
+    remarks: caption || "Added garment craft progress media (photo/video)",
+  });
+
+  // Notify buyer of craft progress
+  if (existingOrder.buyerId) {
+    try {
+      await db.insert(notifications).values({
+        recipientType: "BUYER",
+        recipientId: existingOrder.buyerId,
+        notificationType: "ORDER_STATUS",
+        title: "Craft Progress Media Added",
+        message: `Master tailor added craft progress photos/video for your order ${existingOrder.orderNumber}. View live updates in your account!`,
+        referenceType: "ORDER",
+        referenceId: orderId,
+        priority: "NORMAL",
+        isRead: false,
+      });
+    } catch (err) {
+      console.warn("Failed to dispatch craft media notification:", err);
+    }
+  }
+
+  return { success: true, mediaUrls: currentMediaUrls, order: updatedOrder };
+}
+
 

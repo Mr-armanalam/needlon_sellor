@@ -5,10 +5,12 @@ export const recordInStoreMeasurementSchema = z.object({
   gender: z.enum(["menswear", "womenswear"]),
   garmentType: z.string().min(2, "Garment type is required"),
   measurementUnit: z.enum(["INCHES", "CM"]).default("INCHES"),
-  essentialMeasurements: z.record(z.union([z.number(), z.string()])),
-  postureSpecifics: z.record(z.union([z.number(), z.string()])).optional().default({}),
+  essentialMeasurements: z.record(z.string(), z.union([z.number(), z.string()])),
+  postureSpecifics: z.record(z.string(), z.union([z.number(), z.string()])).optional().default({}),
   fitPreference: z.enum(["SLIM", "REGULAR", "COMFORT"]).default("REGULAR"),
   tailorNotes: z.string().optional().nullable(),
 });
 
 export type RecordInStoreMeasurementDto = z.infer<typeof recordInStoreMeasurementSchema>;
+/** Caller-side shape before Zod fills defaults; repositories accept this. */
+export type RecordInStoreMeasurementInput = z.input<typeof recordInStoreMeasurementSchema>;

@@ -155,6 +155,9 @@ export interface OrderDomain {
     deliveredAt: Date | null;
     cancelledAt: Date | null;
     returnedAt: Date | null;
+    tailoringStage?: string | null;
+    tailoringNotes?: string | null;
+    mediaUrls?: string[];
     createdAt: Date;
     updatedAt: Date;
     deletedAt: Date | null;
@@ -163,6 +166,51 @@ export interface OrderDomain {
     addresses?: OrderAddressDomain[];
     history?: OrderStatusHistoryDomain[];
     payments?: OrderPaymentDomain[];
+    measurement?: OrderMeasurementDomain | null;
+    shipment?: OrderShipmentDomain | null;
+}
+
+/** Delivery-executive assignment payload stored as JSON in the shipment notes. */
+export interface DeliveryExecutiveAssignment {
+    executiveName?: string;
+    executivePhone?: string;
+    vehicleType?: string;
+    courierPartner?: string;
+    trackingNumber?: string;
+    status?: string;
+    notes?: string;
+}
+
+export interface OrderShipmentDomain {
+    id: string;
+    shipmentNumber: string;
+    awbNumber: string | null;
+    trackingNumber: string | null;
+    status: string;
+    shippingCost: string | null;
+    notes: string | null;
+    /** Delivery-executive assignment parsed from the shipment notes JSON. */
+    executive: DeliveryExecutiveAssignment | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface OrderMeasurementDomain {
+    id: string;
+    garmentType: string;
+    gender?: string | null;
+    measurementUnit: string;
+    fitPreference?: string | null;
+    essentialMeasurements: Record<string, string | number>;
+    postureSpecifics?: Record<string, string | number>;
+    tailorNotes?: string | null;
+    status: string;
+    source: string;
+    isEditable?: boolean;
+    editRequested?: boolean;
+    editRequestReason?: string | null;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 export type initial_tab = "INVOICE" | "PACKING_SLIP" | "SHIPPING_LABEL";

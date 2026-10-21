@@ -97,20 +97,20 @@ export interface SendMessageDto {
     /**
      * Reply target.
      */
-    replyToMessageId: string | null;
+    replyToMessageId?: string | null;
 
     /**
      * Uploaded attachments.
      */
-    attachments: SendMessageAttachmentDto[];
+    attachments?: SendMessageAttachmentDto[];
 
     /**
      * Shared product.
      */
-    sharedProduct: SendSharedProductDto | null;
+    sharedProduct?: SendSharedProductDto | null;
 
     /**
      * Shared order.
      */
-    sharedOrder: SendSharedOrderDto | null;
+    sharedOrder?: SendSharedOrderDto | null;
 }

@@ -28,10 +28,12 @@ export const updateOrderStatus = async ({
 }: UpdateOrderStatusParams) => {
     const execute = async (database: Database) => {
         // Fetch order
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId);
+        const condition = isUuid ? eq(orders.id, orderId) : eq(orders.orderNumber, orderId);
         const orderList = await database
             .select()
             .from(orders)
-            .where(and(eq(orders.id, orderId), eq(orders.sellerId, sellerId), isNull(orders.deletedAt)))
+            .where(and(condition, eq(orders.sellerId, sellerId), isNull(orders.deletedAt)))
             .limit(1);
 
         if (orderList.length === 0) {
@@ -39,6 +41,7 @@ export const updateOrderStatus = async ({
         }
 
         const order = orderList[0];
+        const actualOrderId = order.id;
         const fromStatus = order.status;
         let toStatus = fromStatus;
         const updateData: OrderUpdateData = {};
@@ -91,13 +94,13 @@ export const updateOrderStatus = async ({
         await database
             .update(orders)
             .set(updateData)
-            .where(eq(orders.id, orderId));
+            .where(eq(orders.id, actualOrderId));
 
         // Sync Inventory Stock
         try {
             const { orderItems } = await import("@/db/schema/orders/order-items/table");
             const { reserveStock, releaseStock } = await import("@/modules/products/repository/inventory.repository");
-            const lines = await database.select().from(orderItems).where(eq(orderItems.orderId, orderId));
+            const lines = await database.select().from(orderItems).where(eq(orderItems.orderId, actualOrderId));
             
             for (const line of lines) {
                 if (line.variantId) {
@@ -116,7 +119,7 @@ export const updateOrderStatus = async ({
 
         // Insert status history log
         await database.insert(orderStatusHistory).values({
-            orderId: orderId,
+            orderId: actualOrderId,
             sellerId: sellerId,
             fromStatus: fromStatus,
             toStatus: toStatus,

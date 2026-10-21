@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { Star } from "lucide-react";
+import { Star, Lock } from "lucide-react";
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -32,12 +32,14 @@ type Props = {
   orderItemId: string;
   productId: string;
   isMobile: boolean;
+  isDelivered?: boolean;
 };
 
 const OrderRating = ({
   isMobile,
   orderItemId,
   productId,
+  isDelivered = true,
 }: Props) => {
   const dispatch = useDispatch<AppDispatch>();
 
@@ -90,7 +92,12 @@ const OrderRating = ({
 
   return (
     <section className="m-4 p-4 flex flex-col gap-y-3 dark:bg-black bg-stone-200 rounded-md">
-      {shouldShowForm ? (
+      {!isDelivered ? (
+        <div className="flex items-center gap-2.5 py-1 text-xs text-neutral-600 dark:text-neutral-400">
+          <Lock className="w-4 h-4 text-neutral-500 shrink-0" />
+          <span>Product review & rating will become available once your item has been delivered.</span>
+        </div>
+      ) : shouldShowForm ? (
         <>
           <div className="flex max-md:items-center justify-between">
             <h1 className="font-semibold">{isMobile ? "🫠" : "Rate your experience"}</h1>

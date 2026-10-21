@@ -52,6 +52,9 @@ export interface OrderListItemDto {
     deliveredAt: string | null;
     cancelledAt: string | null;
     returnedAt: string | null;
+    tailoringStage?: string | null;
+    tailoringNotes?: string | null;
+    mediaUrls?: string[];
     createdAt: string;
     updatedAt: string;
     deletedAt: string | null;

@@ -26,18 +26,26 @@ const DisplayOrders = ({ loading, orders }: props) => {
                 key={index}
                 className={`border-y hover:shadow-md cursor-pointer dark:border-stone-900 border-stone-200 mb-1.5 hover:mb-2.5 flex`}
               >
-                <div className="relative md:w-47.5 max-md:w-40 max-md:h-40 md:h-47.5">
-                  <Image
-                    src={order.items[0].image ?? ""}
-                    fill
-                    alt="wishlist items"
-                  />
-                  {order.items.length > 1 && (
+                <div className="relative md:w-47.5 max-md:w-40 max-md:h-40 md:h-47.5 bg-neutral-100 dark:bg-neutral-800 rounded overflow-hidden">
+                  {order.items[0]?.image ? (
+                    <Image
+                      src={order.items[0].image}
+                      fill
+                      alt="order items"
+                      className="object-cover rounded"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-stone-400">
+                      <BoxIcon className="w-8 h-8" />
+                    </div>
+                  )}
+                  {order.items.length > 1 && order.items[1]?.image && (
                     <div className="absolute z-15 bottom-2 p-1 bg-white dark:bg-black dark:border-stone-900 border-white right-2 size-16 border rounded">
                       <Image
-                        src={order.items[1].image!}
+                        src={order.items[1].image}
                         fill
-                        alt="wishlist 2nd item"
+                        alt="order 2nd item"
+                        className="object-cover"
                       />
                     </div>
                   )}
@@ -51,17 +59,17 @@ const DisplayOrders = ({ loading, orders }: props) => {
                 <div className="relative w-full">
                   <div className="md:my-6 max-md:my-3 ml-6 flex-1 dark:text-white/90 text-stone-800">
                     <h1 className="font-semibold">
-                      {order.items[0].productName}
+                      {order.items[0]?.productName || "Tailored Item"}
                     </h1>
                     <p className="text-sm pl-0.5 lowercase dark:text-white/70 text-stone-600">
-                      Size: {order.items[0].properties}
+                      Size: {order.items[0]?.properties || "Standard"}
                     </p>
                     <h2 className="text-2xl font-semibold my-2">
                       ₹{order.total}
                     </h2>
                     <div className="flex max-md:hidden gap-x-6">
-                      <Button className="text-xs rounded-full mt-3">
-                        Order placed
+                      <Button className="text-xs rounded-full mt-3 capitalize">
+                        {order.status === "pending" ? "Order Placed" : order.status}
                       </Button>
                       <Button
                         variant={"outline"}
@@ -71,7 +79,7 @@ const DisplayOrders = ({ loading, orders }: props) => {
                       </Button>
                     </div>
                     <div className="md:hidden text-sm" >
-                      <p>Placed | Prepaid</p>
+                      <p className="capitalize">{order.status === "pending" ? "Placed" : order.status} | Prepaid</p>
                     </div>
                     <p className="absolute md:bottom-6 md:right-4 text-stone-500 dark:text-stone-400 text-xs ">
                       Delivery expected on{" "}

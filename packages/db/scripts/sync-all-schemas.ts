@@ -62,6 +62,14 @@ async function syncAllSchemas() {
       );
     `;
 
+    // The Drizzle schema declares deleted_at (soft delete) on this table,
+    // but the CREATE TABLE above never included it — dashboard payout
+    // aggregates filter on it and failed with "column does not exist".
+    await sql`
+      ALTER TABLE seller_payout_requests
+      ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+    `;
+
     await sql`CREATE INDEX IF NOT EXISTS idx_seller_payout_requests_seller ON seller_payout_requests(seller_id);`;
     await sql`CREATE INDEX IF NOT EXISTS idx_seller_payout_requests_status ON seller_payout_requests(status);`;
     await sql`CREATE INDEX IF NOT EXISTS idx_seller_payout_requests_created ON seller_payout_requests(created_at);`;

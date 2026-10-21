@@ -1,11 +1,12 @@
 import Image from "next/image";
 import HeroTagline from "../components/hero-tagline";
+import type { PlatformStats } from "../../services/platform-stats.service";
 
-const HeroSection = () => {
+const HeroSection = ({ stats }: { stats: PlatformStats }) => {
   return (
     <div className="h-screen bg-gray-100">
       <div className="flex w-full h-full">
-        <HeroTagline />
+        <HeroTagline stats={stats} />
         <div className="relative w-full">
           <Image
             src={"/hero_img/wout_men.png"}

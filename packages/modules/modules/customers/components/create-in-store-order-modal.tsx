@@ -2,8 +2,9 @@
 
 
 import { apiFetch } from "@/modules/auth/lib/auth-client";
-import React, { useState } from 'react';
-import { X, ShoppingBag, Ruler, Banknote, FileText, Loader2 } from 'lucide-react';
+import type { CreateInStoreOrderDto } from "../dto/create-in-store-order.dto";
+import React, { useState, useEffect } from 'react';
+import { X, ShoppingBag, Ruler, Banknote, FileText, Loader2, Camera, Video, UploadCloud, Trash2, Truck, MapPin, Calendar } from 'lucide-react';
 
 interface CreateInStoreOrderModalProps {
   isOpen: boolean;
@@ -29,8 +30,36 @@ export default function CreateInStoreOrderModal({
   const [tailoringNotes, setTailoringNotes] = useState('');
   const [paymentStatus, setPaymentStatus] = useState<'PAID' | 'PENDING' | 'PARTIAL'>('PAID');
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'UPI' | 'COD'>('CASH');
+  const [mediaPreview, setMediaPreview] = useState<string | null>(null);
+  const [mediaType, setMediaType] = useState<'IMAGE' | 'VIDEO' | null>(null);
+
+  // Delivery options state
+  const [deliveryMethod, setDeliveryMethod] = useState<'STORE_PICKUP' | 'HOME_DELIVERY'>('STORE_PICKUP');
+  const [addressLine1, setAddressLine1] = useState('');
+  const [addressLine2, setAddressLine2] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [postalCode, setPostalCode] = useState('');
+  const [estimatedDeliveryAt, setEstimatedDeliveryAt] = useState('');
+  const [shippingPartnerId, setShippingPartnerId] = useState('');
+  const [partners, setPartners] = useState<Array<{ id: string; partnerName: string; partnerCode: string }>>([]);
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      apiFetch('/api/seller/delivery/partners')
+        .then((res) => res.json())
+        .then((json) => {
+          if (json.success && Array.isArray(json.data)) {
+            setPartners(json.data);
+            if (json.data[0]) setShippingPartnerId(json.data[0].id);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -48,21 +77,46 @@ export default function CreateInStoreOrderModal({
       return;
     }
 
+    if (deliveryMethod === 'HOME_DELIVERY') {
+      if (!addressLine1.trim() || !city.trim() || !state.trim() || !postalCode.trim()) {
+        setError('Please fill in street address, city, state, and pincode for home delivery');
+        return;
+      }
+    }
+
     setSubmitting(true);
     try {
+      const payload: CreateInStoreOrderDto = {
+        customerId,
+        measurementId: measurementId || null,
+        garmentName: garmentName.trim(),
+        amount: parsedAmount,
+        tailoringStage: tailoringStage as CreateInStoreOrderDto["tailoringStage"],
+        tailoringNotes: tailoringNotes.trim() || null,
+        paymentStatus,
+        paymentMethod,
+        imageUrl: mediaPreview || null,
+        mediaUrls: mediaPreview ? [mediaPreview] : [],
+        deliveryMethod,
+      };
+
+      if (deliveryMethod === 'HOME_DELIVERY') {
+        payload.shippingAddress = {
+          recipientName: customerName,
+          addressLine1: addressLine1.trim(),
+          addressLine2: addressLine2.trim() || undefined,
+          city: city.trim(),
+          state: state.trim(),
+          postalCode: postalCode.trim(),
+        };
+        payload.shippingPartnerId = shippingPartnerId || undefined;
+        payload.estimatedDeliveryAt = estimatedDeliveryAt || undefined;
+      }
+
       const res = await apiFetch('/api/seller/orders/in-store', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          customerId,
-          measurementId: measurementId || null,
-          garmentName: garmentName.trim(),
-          amount: parsedAmount,
-          tailoringStage,
-          tailoringNotes: tailoringNotes.trim() || null,
-          paymentStatus,
-          paymentMethod,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const json = await res.json();
@@ -76,6 +130,14 @@ export default function CreateInStoreOrderModal({
       setGarmentName('');
       setAmount('');
       setTailoringNotes('');
+      setMediaPreview(null);
+      setMediaType(null);
+      setAddressLine1('');
+      setAddressLine2('');
+      setCity('');
+      setState('');
+      setPostalCode('');
+      setDeliveryMethod('STORE_PICKUP');
     } catch (err: unknown) {
       setError(
         err instanceof Error ? err.message || 'Failed to create in-store order' : 'Failed to create in-store order',
@@ -229,6 +291,120 @@ export default function CreateInStoreOrderModal({
             </div>
           </div>
 
+          {/* Fulfillment & Delivery Method Selection */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">
+              Fulfillment & Delivery Method *
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setDeliveryMethod('STORE_PICKUP')}
+                className={`py-2 px-3 text-xs font-semibold rounded-xl border flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  deliveryMethod === 'STORE_PICKUP'
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-800 shadow-2xs'
+                    : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <ShoppingBag className="w-3.5 h-3.5" />
+                <span>Atelier Pickup (Walk-in)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setDeliveryMethod('HOME_DELIVERY')}
+                className={`py-2 px-3 text-xs font-semibold rounded-xl border flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  deliveryMethod === 'HOME_DELIVERY'
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-800 shadow-2xs'
+                    : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <Truck className="w-3.5 h-3.5" />
+                <span>Home Delivery</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Conditional Delivery Address and Logistics Selection */}
+          {deliveryMethod === 'HOME_DELIVERY' && (
+            <div className="p-3.5 bg-neutral-50/80 border border-neutral-200 rounded-xl space-y-3 animate-in fade-in duration-150">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-800">
+                <MapPin className="w-3.5 h-3.5 text-neutral-600" />
+                <span>Customer Shipping Address</span>
+              </div>
+              <div>
+                <input
+                  type="text"
+                  placeholder="Street Address, Flat / House No., Building *"
+                  value={addressLine1}
+                  onChange={(e) => setAddressLine1(e.target.value)}
+                  className="w-full px-3 py-1.5 text-xs bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="text"
+                  placeholder="Landmark / Locality (Optional)"
+                  value={addressLine2}
+                  onChange={(e) => setAddressLine2(e.target.value)}
+                  className="w-full px-3 py-1.5 text-xs bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+                <input
+                  type="text"
+                  placeholder="City *"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  className="w-full px-3 py-1.5 text-xs bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="text"
+                  placeholder="State *"
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                  className="w-full px-3 py-1.5 text-xs bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+                <input
+                  type="text"
+                  placeholder="Postal Pincode *"
+                  value={postalCode}
+                  onChange={(e) => setPostalCode(e.target.value)}
+                  className="w-full px-3 py-1.5 text-xs bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2 pt-1 border-t border-neutral-200/60">
+                <div>
+                  <label className="block text-[10px] font-semibold text-gray-500 mb-0.5 flex items-center gap-1">
+                    <Truck className="w-3 h-3" /> Assign Carrier / Partner
+                  </label>
+                  <select
+                    value={shippingPartnerId}
+                    onChange={(e) => setShippingPartnerId(e.target.value)}
+                    className="w-full px-2 py-1.5 text-xs bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  >
+                    <option value="">In-House Delivery Partner</option>
+                    {partners.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.partnerName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-semibold text-gray-500 mb-0.5 flex items-center gap-1">
+                    <Calendar className="w-3 h-3" /> Target Delivery Date
+                  </label>
+                  <input
+                    type="date"
+                    value={estimatedDeliveryAt}
+                    onChange={(e) => setEstimatedDeliveryAt(e.target.value)}
+                    className="w-full px-2 py-1.5 text-xs bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="block text-xs font-semibold text-gray-700 mb-1">
               Fabric Specifications & Cutting Notes
@@ -243,6 +419,71 @@ export default function CreateInStoreOrderModal({
                 className="w-full pl-9 pr-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
               />
             </div>
+          </div>
+
+          {/* Garment Media Upload (Photos or Videos) */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Camera className="w-3.5 h-3.5 text-neutral-600" />
+                Garment Reference Photo or Video (Optional)
+              </span>
+              <span className="text-[10px] text-gray-400">JPG, PNG, MP4, WEBM</span>
+            </label>
+            
+            {mediaPreview ? (
+              <div className="relative rounded-xl border border-neutral-200 overflow-hidden bg-black/5 p-2.5 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  {mediaType === 'VIDEO' ? (
+                    <video src={mediaPreview} className="w-14 h-14 rounded-lg object-cover bg-black" controls muted />
+                  ) : (
+                    <img src={mediaPreview} alt="Preview" className="w-14 h-14 rounded-lg object-cover border border-neutral-200" />
+                  )}
+                  <div className="truncate">
+                    <p className="text-xs font-semibold text-neutral-800">
+                      {mediaType === 'VIDEO' ? 'Garment Video Attached' : 'Garment Photo Attached'}
+                    </p>
+                    <p className="text-[10px] text-neutral-500 truncate">
+                      Will be visible to buyer in their live tracking
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMediaPreview(null);
+                    setMediaType(null);
+                  }}
+                  className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer shrink-0"
+                  title="Remove media"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center p-3.5 border-2 border-dashed border-gray-200 hover:border-emerald-500 rounded-xl bg-gray-50/70 hover:bg-emerald-50/20 cursor-pointer transition-all">
+                <UploadCloud className="w-5 h-5 text-gray-400 mb-1" />
+                <span className="text-xs font-medium text-gray-600">Click to upload photo or short video</span>
+                <span className="text-[10px] text-gray-400">Fabric swatch, mannequin, or sample</span>
+                <input
+                  type="file"
+                  accept="image/*,video/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const isVid = file.type.startsWith('video');
+                      setMediaType(isVid ? 'VIDEO' : 'IMAGE');
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setMediaPreview(reader.result as string);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                />
+              </label>
+            )}
           </div>
 
           {/* Action buttons */}

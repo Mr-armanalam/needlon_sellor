@@ -53,3 +53,24 @@ export async function updateOrderStatusClient(
   >(`/api/seller/orders/${orderId}/action`, { action, remarks });
   return { success: true, data };
 }
+
+/** Subset of the updated order row returned by the tailoring-stage endpoint. */
+export interface UpdateTailoringStageResult {
+  id: string;
+  status: string;
+  tailoringStage: string | null;
+  tailoringNotes: string | null;
+}
+
+export async function updateTailoringStageClient(
+  orderId: string,
+  stage: string,
+  notes?: string
+) {
+  const data = await apiClient.patch<UpdateTailoringStageResult, { stage: string; notes?: string }>(
+    `/api/seller/orders/${orderId}/tailoring-stage`,
+    { stage, notes }
+  );
+  return { success: true, data };
+}
+
