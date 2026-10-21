@@ -6,165 +6,48 @@ import { orderStatusHistory } from "@needlon/db/db/schema/orders/order-status-hi
 import { orderShipments } from "@needlon/db/db/schema/orders/order-shipments/table";
 import { orderPayments } from "@needlon/db/db/schema/orders/order-payments/table";
 import { inventoryTable } from "@needlon/db/db/schema/catalog/products/inventory/table";
-import { eq, and, or, ilike, desc, asc, sql, type SQL } from "drizzle-orm";
+import { productsTable } from "@needlon/db/db/schema/catalog/products/table";
+import { productImagesTable } from "@needlon/db/db/schema/catalog/products/product-images/table";
+import {
+  customerMeasurementsTable,
+  type CustomerMeasurementRecord,
+} from "@needlon/db/db/schema/customization/measurements";
+import { usersTable } from "@needlon/db/db/schema/users";
+import { eq, and, or, ilike, desc, asc, sql, isNull, type SQL } from "drizzle-orm";
 import { format } from "date-fns";
 
-const FALLBACK_MOCK_ORDERS = [
-  {
-    orderId: "order-001",
-    createdAt: new Date("2026-09-15T10:30:00"),
-    status: "delivered",
-    total: 7498,
-    currency: "INR",
-    paymentId: "pay_mockABC123",
-    productName: "Classic Oxford Cotton Shirt",
-    image: "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&q=80&w=600",
-    price: 2499,
-    properties: "Size: M",
-  },
-  {
-    orderId: "order-002",
-    createdAt: new Date("2026-09-28T14:00:00"),
-    status: "shipped",
-    total: 6499,
-    currency: "INR",
-    paymentId: "pay_mockDEF456",
-    productName: "Merino Wool Blend Blazer",
-    image: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&q=80&w=600",
-    price: 6499,
-    properties: "Size: 40R",
-  },
-  {
-    orderId: "order-003",
-    createdAt: new Date("2026-10-01T09:15:00"),
-    status: "processing",
-    total: 4999,
-    currency: "INR",
-    paymentId: "pay_mockGHI789",
-    productName: "Silk Satin Formal Evening Dress",
-    image: "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&q=80&w=600",
-    price: 4999,
-    properties: "Size: M",
-  },
-];
+import {
+  FALLBACK_MOCK_ORDERS,
+  FALLBACK_MOCK_ORDER_DETAIL,
+} from "./order-mock-data";
 
-const FALLBACK_MOCK_ORDER_DETAIL = [
-  {
-    orderDate: new Date("2026-09-15T10:30:00"),
-    orderId: "orderitem-001",
-    rawOrderId: "order-001",
-    shippingAddress: {
-      id: "addr-1",
-      userId: "mock-user",
-      name: "Arman Alam",
-      address: "123 Fashion Street",
-      locality: "Near City Mall",
-      city: "Hyderabad",
-      state: "Telangana",
-      pincode: "500001",
-      country: "India",
-      phone: "+91 9876543210",
-      landmark: "",
-      alternate_phone: "",
-      createdAt: new Date("2026-09-15T10:30:00"),
-      updatedAt: new Date("2026-09-15T10:30:00"),
-    },
-    itemName: "Classic Oxford Cotton Shirt",
-    image: "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&q=80&w=600",
-    productId: "p-101",
-    orderItemId: "orderitem-001",
-    orderProperties: "Size: M",
-    paymentMode: "card",
-    shippingCharge: 49,
-    podCharge: 0,
-    priceAtperchage: 2499,
-    totalPurchasePrice: 7498,
-    couponDiscount: 0,
-    orderStatus: "DELIVERED",
-    canCancel: false,
-    timeline: [],
-    shipments: [],
-  },
-];
-
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export function isValidUuid(id: string): boolean {
-  return typeof id === "string" && UUID_REGEX.test(id);
-}
-
-export interface OrderTimelineStep {
-  title: string;
-  date: string;
-  details: string[];
-  isActive: boolean;
-}
-
-/** DB row types inferred from the Drizzle schema. */
-export type OrderRecord = typeof orders.$inferSelect;
-export type OrderStatusHistoryRecord = typeof orderStatusHistory.$inferSelect;
-export type OrderShipmentRecord = typeof orderShipments.$inferSelect;
-
-/** An error carrying an HTTP-style status code, as thrown for ownership / state violations. */
-export type StatusCodeError = Error & { statusCode: number };
-
-export function createStatusCodeError(message: string, statusCode: number): StatusCodeError {
-  return Object.assign(new Error(message), { statusCode });
-}
-
-/** One raw joined order row, as consumed by groupOrderItems. */
-export interface RawUserOrder {
-  orderId: string;
-  orderNumber?: string;
-  createdAt: Date | null;
-  status: string;
-  total: number;
-  currency: string | null;
-  paymentId: string | null;
-  productName: string;
-  image: string | null;
-  price: number;
-  properties: string | null;
-}
-
-export interface OrderShippingAddressSnapshot {
-  id: string;
-  userId: string;
-  name: string;
-  phone: string | null;
-  pincode: string;
-  locality: string;
-  address: string;
-  city: string;
-  state: string;
-  landmark: string;
-  alternate_phone: string;
-  country: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-/** One order-detail entry (one per order item), as consumed by the order views. */
-export interface OrderDetailItem {
-  orderDate: Date;
-  orderId: string;
-  rawOrderId: string;
-  shippingAddress: OrderShippingAddressSnapshot;
-  itemName: string;
-  image: string;
-  productId: string;
-  orderItemId: string;
-  orderProperties: string;
-  paymentMode: string;
-  shippingCharge: number;
-  podCharge: number;
-  priceAtperchage: number;
-  totalPurchasePrice: number;
-  couponDiscount: number;
-  orderStatus: string;
-  timeline: OrderTimelineStep[];
-  shipments: OrderShipmentRecord[];
-  canCancel: boolean;
-}
+export {
+  isValidUuid,
+  createStatusCodeError,
+} from "./order-repository.types";
+export type {
+  OrderTimelineStep,
+  OrderRecord,
+  OrderStatusHistoryRecord,
+  OrderShipmentRecord,
+  CustomerMeasurementRecord,
+  StatusCodeError,
+  RawUserOrder,
+  OrderShippingAddressSnapshot,
+  OrderDetailItem,
+} from "./order-repository.types";
+import type {
+  RawUserOrder,
+  OrderDetailItem,
+  OrderRecord,
+  OrderStatusHistoryRecord,
+  OrderShipmentRecord,
+  OrderTimelineStep,
+} from "./order-repository.types";
+import {
+  isValidUuid,
+  createStatusCodeError,
+} from "./order-repository.types";
 
 export const OrderRepository = {
   /**
@@ -179,15 +62,35 @@ export const OrderRepository = {
     try {
       const isUuid = isValidUuid(userId);
 
-      // If not a valid UUID and is mock-user, check if we have any test orders or fallback
-      let conditions: (SQL | undefined)[] = [];
-      if (isUuid) {
-        conditions.push(eq(orders.buyerId, userId));
-      } else if (userId === "mock-user") {
-        // Fallback to mock data if user is mock-user and no specific UUID session
-        return this.filterMockOrders(FALLBACK_MOCK_ORDERS, search);
-      } else {
+      let targetUserId: string | null = isUuid ? userId : null;
+      let targetEmail: string | null = null;
+
+      if (!targetUserId && userId && userId.includes("@")) {
+        targetEmail = userId;
+        const [userByEmail] = await db
+          .select({ id: usersTable.id, email: usersTable.email })
+          .from(usersTable)
+          .where(eq(usersTable.email, userId))
+          .limit(1);
+        if (userByEmail) {
+          targetUserId = userByEmail.id;
+        }
+      }
+
+      // No demo fallback: an unresolved identity must never see another
+      // buyer's orders (the previous behaviour fell back to the most recent
+      // order's buyer). Unresolved callers get an empty list.
+      if (!targetUserId && !targetEmail) {
         return [];
+      }
+
+      const conditions: (SQL | undefined)[] = [];
+      if (targetUserId && targetEmail) {
+        conditions.push(or(eq(orders.buyerId, targetUserId), eq(orders.buyerEmail, targetEmail)));
+      } else if (targetUserId) {
+        conditions.push(eq(orders.buyerId, targetUserId));
+      } else if (targetEmail) {
+        conditions.push(eq(orders.buyerEmail, targetEmail));
       }
 
       if (search.trim()) {
@@ -206,17 +109,21 @@ export const OrderRepository = {
           order: orders,
           item: orderItems,
           payment: orderPayments,
+          product: productsTable,
+          primaryMedia: productImagesTable.imageUrl,
         })
         .from(orders)
         .leftJoin(orderItems, eq(orders.id, orderItems.orderId))
         .leftJoin(orderPayments, eq(orders.id, orderPayments.orderId))
-        .where(and(...conditions))
+        .leftJoin(productsTable, eq(orderItems.productId, productsTable.id))
+        .leftJoin(
+          productImagesTable,
+          and(eq(productsTable.id, productImagesTable.productId), eq(productImagesTable.isPrimary, true))
+        )
+        .where(conditions.length > 0 ? and(...conditions) : sql`1=1`)
         .orderBy(desc(orders.createdAt));
 
       if (rows.length === 0) {
-        if (userId === "mock-user") {
-          return this.filterMockOrders(FALLBACK_MOCK_ORDERS, search);
-        }
         return [];
       }
 
@@ -229,20 +136,25 @@ export const OrderRepository = {
         total: Number(row.order.grandTotal),
         currency: row.order.currency,
         paymentId: row.payment?.gatewayPaymentId || row.payment?.paymentNumber || row.order.orderNumber,
-        productName: row.item?.productName || "Needlon Item",
+        productName: row.item?.productName || row.product?.name || "Needlon Item",
         image:
-          row.item?.imageUrl ||
-          row.item?.thumbnailUrl ||
-          "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&q=80&w=600",
+          row.order.source === "IN_STORE"
+            ? (row.item?.imageUrl ||
+               row.item?.thumbnailUrl ||
+               (Array.isArray(row.order.mediaUrls) && row.order.mediaUrls[0] ? row.order.mediaUrls[0] : ""))
+            : (row.item?.imageUrl ||
+               row.item?.thumbnailUrl ||
+               row.primaryMedia ||
+               ""),
         price: Number(row.item?.unitPrice || 0),
         properties: row.item?.variantName || "Standard",
+        mediaUrls: (row.order.mediaUrls as string[]) || [],
+        source: row.order.source,
+        tailoringStage: row.order.tailoringStage,
       }));
     } catch (error) {
       console.error("OrderRepository.getRawUserOrders error:", error);
-      if (userId === "mock-user") {
-        return this.filterMockOrders(FALLBACK_MOCK_ORDERS, search);
-      }
-      throw error;
+      return [];
     }
   },
 
@@ -281,16 +193,16 @@ export const OrderRepository = {
         .limit(1);
 
       if (!foundOrder) {
-        // Fallback for mock IDs
-        if (orderId === "orderitem-001" || orderId === "order-001") {
-          return FALLBACK_MOCK_ORDER_DETAIL;
-        }
         return null;
       }
 
       // Security check: Verify buyer ownership
-      if (userId && userId !== "mock-user" && isValidUuid(userId)) {
-        if (foundOrder.buyerId !== userId) {
+      if (userId && userId !== "mock-user") {
+        const isBuyerIdMatch = isValidUuid(userId) && foundOrder.buyerId === userId;
+        const isBuyerEmailMatch = Boolean(
+          foundOrder.buyerEmail && foundOrder.buyerEmail.toLowerCase() === userId.toLowerCase()
+        );
+        if (!isBuyerIdMatch && !isBuyerEmailMatch && isValidUuid(userId)) {
           throw createStatusCodeError("UNAUTHORIZED_ORDER_ACCESS", 403);
         }
       }
@@ -325,76 +237,191 @@ export const OrderRepository = {
       // Build tracking timeline
       const timeline = this.buildTimeline(foundOrder, history, shipments);
 
-      const formattedAddress = {
-        id: address?.id || "addr-snapshot",
+      // Determine fulfillment type
+      const isStorePickup = foundOrder.source === "IN_STORE" && foundOrder.shippingMethod === "STORE_PICKUP";
+      const isClientOrder = foundOrder.source !== "IN_STORE";
+      const isPickup = isStorePickup || (!address && foundOrder.source === "IN_STORE");
+
+      const formattedAddress = address ? {
+        id: address.id || "addr-snapshot",
         userId: foundOrder.buyerId,
-        name: address?.recipientName || foundOrder.buyerName,
-        phone: address?.phoneNumber || foundOrder.buyerPhone,
-        pincode: address?.postalCode || "500001",
-        locality: address?.district || address?.addressLine2 || address?.city || "",
-        address: address?.addressLine1 || "Customer Address",
-        city: address?.city || "",
-        state: address?.state || "",
-        landmark: address?.landmark || "",
+        name: address.recipientName || foundOrder.buyerName,
+        phone: address.phoneNumber || foundOrder.buyerPhone,
+        pincode: address.postalCode || "500001",
+        locality: address.district || address.addressLine2 || address.city || "",
+        address: address.addressLine1 || "Customer Address",
+        city: address.city || "",
+        state: address.state || "",
+        landmark: address.landmark || "",
         alternate_phone: "",
-        country: address?.country || "India",
-        createdAt: address?.createdAt || foundOrder.createdAt,
-        updatedAt: address?.createdAt || foundOrder.createdAt,
-      };
+        country: address.country || "India",
+        createdAt: address.createdAt || foundOrder.createdAt,
+        updatedAt: address.createdAt || foundOrder.createdAt,
+      } : null;
+
+      const resolvedShippingAddress = isPickup ? null : formattedAddress;
 
       const canCancel = ["PENDING", "CONFIRMED"].includes(foundOrder.status);
 
       if (items.length === 0) {
-        // Edge case: Return 1 item container with order totals
+        // Query if any bespoke measurement was attached to this order
+        const [attachedMeasurement] = await db
+          .select()
+          .from(customerMeasurementsTable)
+          .where(eq(customerMeasurementsTable.orderId, foundOrder.id))
+          .limit(1);
+
+        let dynamicName = "Custom Tailored Garment";
+        let dynamicImage = "";
+        const dynamicProductId = attachedMeasurement?.productId || "prod-custom";
+
+        if (foundOrder.source === "IN_STORE") {
+          if (Array.isArray(foundOrder.mediaUrls) && foundOrder.mediaUrls.length > 0) {
+            dynamicImage = foundOrder.mediaUrls[0];
+          } else {
+            dynamicImage = "";
+          }
+        } else if (attachedMeasurement?.productId && isValidUuid(attachedMeasurement.productId)) {
+          const [catProd] = await db
+            .select()
+            .from(productsTable)
+            .where(eq(productsTable.id, attachedMeasurement.productId))
+            .limit(1);
+
+          if (catProd) {
+            dynamicName = catProd.name;
+            const [pMedia] = await db
+              .select()
+              .from(productImagesTable)
+              .where(eq(productImagesTable.productId, catProd.id))
+              .orderBy(desc(productImagesTable.isPrimary), asc(productImagesTable.displayOrder))
+              .limit(1);
+            dynamicImage = pMedia?.imageUrl || "";
+          }
+        }
+
         return [
           {
             orderDate: foundOrder.createdAt,
             orderId: foundOrder.orderNumber,
             rawOrderId: foundOrder.id,
-            shippingAddress: formattedAddress,
-            itemName: "Tailored Garment",
-            image: "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&q=80&w=600",
-            productId: "prod-snapshot",
+            sellerId: foundOrder.sellerId,
+            shippingAddress: resolvedShippingAddress,
+            isClientOrder,
+            isPickup,
+            itemName: dynamicName,
+            image: dynamicImage,
+            productId: dynamicProductId,
             orderItemId: foundOrder.id,
-            orderProperties: "Standard",
+            orderProperties: attachedMeasurement ? `Custom Fit (${attachedMeasurement.garmentType})` : "Standard",
             paymentMode: foundOrder.paymentMethod,
-            shippingCharge: Number(foundOrder.shippingCharge),
+            shippingCharge: isPickup ? 0 : Number(foundOrder.shippingCharge),
             podCharge: foundOrder.paymentMethod === "COD" ? 49 : 0,
             priceAtperchage: Number(foundOrder.grandTotal),
             totalPurchasePrice: Number(foundOrder.grandTotal),
             couponDiscount: Number(foundOrder.couponDiscount),
             orderStatus: foundOrder.status,
+            source: foundOrder.source,
+            mediaUrls: Array.isArray(foundOrder.mediaUrls) ? foundOrder.mediaUrls : [],
             timeline,
             shipments,
             canCancel,
+            hasMeasurement: !!attachedMeasurement,
+            measurementData: attachedMeasurement || null,
           },
         ];
       }
 
-      return items.map((item) => ({
-        orderDate: foundOrder.createdAt,
-        orderId: foundOrder.orderNumber,
-        rawOrderId: foundOrder.id,
-        shippingAddress: formattedAddress,
-        itemName: item.productName,
-        image:
-          item.imageUrl ||
-          item.thumbnailUrl ||
-          "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&q=80&w=600",
-        productId: item.productId,
-        orderItemId: item.id,
-        orderProperties: item.variantName || "",
-        paymentMode: foundOrder.paymentMethod,
-        shippingCharge: Number(foundOrder.shippingCharge),
-        podCharge: foundOrder.paymentMethod === "COD" ? 49 : 0,
-        priceAtperchage: Number(item.unitPrice),
-        totalPurchasePrice: Number(foundOrder.grandTotal),
-        couponDiscount: Number(foundOrder.couponDiscount),
-        orderStatus: foundOrder.status,
-        timeline,
-        shipments,
-        canCancel,
-      }));
+      // Resolve dynamic image, catalog attributes, and measurement for each item
+      const resolvedItems = await Promise.all(
+        items.map(async (item) => {
+          let resolvedImage = item.imageUrl || item.thumbnailUrl;
+          let resolvedName = item.productName;
+          const resolvedProductId = item.productId;
+          let resolvedProperties = item.variantName || "";
+
+          if (foundOrder.source === "IN_STORE") {
+            if (Array.isArray(foundOrder.mediaUrls) && foundOrder.mediaUrls.length > 0) {
+              resolvedImage = foundOrder.mediaUrls[0];
+            } else if (item.imageUrl) {
+              resolvedImage = item.imageUrl;
+            } else {
+              resolvedImage = "";
+            }
+          } else if (isValidUuid(item.productId)) {
+            const [catProd] = await db
+              .select()
+              .from(productsTable)
+              .where(eq(productsTable.id, item.productId))
+              .limit(1);
+
+            if (catProd) {
+              resolvedName = item.productName || catProd.name;
+              if (!resolvedImage) {
+                const [priImg] = await db
+                  .select()
+                  .from(productImagesTable)
+                  .where(eq(productImagesTable.productId, catProd.id))
+                  .orderBy(desc(productImagesTable.isPrimary), asc(productImagesTable.displayOrder))
+                  .limit(1);
+                resolvedImage = priImg?.imageUrl || null;
+              }
+            }
+          }
+
+          // Fetch associated measurement
+          const [measurement] = await db
+            .select()
+            .from(customerMeasurementsTable)
+            .where(
+              or(
+                eq(customerMeasurementsTable.orderItemId, item.id),
+                and(
+                  eq(customerMeasurementsTable.orderId, foundOrder.id),
+                  eq(customerMeasurementsTable.productId, item.productId)
+                ),
+                eq(customerMeasurementsTable.orderId, foundOrder.id)
+              )
+            )
+            .orderBy(desc(customerMeasurementsTable.createdAt))
+            .limit(1);
+
+          if (measurement && !resolvedProperties) {
+            resolvedProperties = `Custom Fit (${measurement.garmentType})`;
+          }
+
+          return {
+            orderDate: foundOrder.createdAt,
+            orderId: foundOrder.orderNumber,
+            rawOrderId: foundOrder.id,
+            sellerId: foundOrder.sellerId,
+            shippingAddress: resolvedShippingAddress,
+            isClientOrder,
+            isPickup,
+            itemName: resolvedName,
+            image: resolvedImage || "",
+            productId: resolvedProductId,
+            orderItemId: item.id,
+            orderProperties: resolvedProperties,
+            paymentMode: foundOrder.paymentMethod,
+            shippingCharge: isPickup ? 0 : Number(foundOrder.shippingCharge),
+            podCharge: foundOrder.paymentMethod === "COD" ? 49 : 0,
+            priceAtperchage: Number(item.unitPrice),
+            totalPurchasePrice: Number(foundOrder.grandTotal),
+            couponDiscount: Number(foundOrder.couponDiscount),
+            orderStatus: foundOrder.status,
+            source: foundOrder.source,
+            mediaUrls: Array.isArray(foundOrder.mediaUrls) ? foundOrder.mediaUrls : [],
+            timeline,
+            shipments,
+            canCancel,
+            hasMeasurement: !!measurement,
+            measurementData: measurement || null,
+          };
+        })
+      );
+
+      return resolvedItems;
     } catch (error) {
       console.error("OrderRepository.getOrderDetail error:", error);
       throw error;
@@ -441,142 +468,101 @@ export const OrderRepository = {
 
     const defaultSteps: OrderTimelineStep[] = [];
 
-    // 1. Placed / Confirmed
-    const createdEvent = history.find((h) => h.toStatus === "PENDING" || h.action === "CREATED");
-    const confirmedEvent = history.find((h) => h.toStatus === "CONFIRMED" || h.action === "ACCEPTED");
-    const packedEvent = history.find((h) => h.toStatus === "PROCESSING" || h.action === "PACKED");
-    const readyEvent = history.find((h) => h.toStatus === "READY_TO_SHIP" || h.action === "READY_FOR_SHIPMENT");
-
-    const confirmedDetails = [
-      `Your Order has been placed. ${orderDateStr} - ${format(order.createdAt, "h:mma")}`,
-    ];
-    if (confirmedEvent) {
-      confirmedDetails.push(
-        `Seller has confirmed your order. ${format(confirmedEvent.changedAt, "EEE, do MMM ''yy - h:mma")}`
-      );
-    } else {
-      confirmedDetails.push("Seller has received your order and is preparing fulfillment.");
-    }
-    if (packedEvent) {
-      confirmedDetails.push(
-        `Seller has packed your items. ${format(packedEvent.changedAt, "EEE, do MMM ''yy - h:mma")}`
-      );
-    }
-    if (readyEvent) {
-      confirmedDetails.push(
-        `Package is ready for carrier pickup. ${format(readyEvent.changedAt, "EEE, do MMM ''yy - h:mma")}`
-      );
-    }
-
-    defaultSteps.push({
-      title: "Order Confirmed",
-      date: orderDateStr,
-      details: confirmedDetails,
-      isActive: true,
-    });
-
-    // Handle cancellation
+    // Handle cancellation early
     if (order.status === "CANCELLED") {
       const cancelEvent = history.find((h) => h.toStatus === "CANCELLED" || h.action === "CANCELLED");
       const cancelDate = cancelEvent?.changedAt || order.cancelledAt || new Date();
-      defaultSteps.push({
-        title: "Cancelled",
-        date: format(cancelDate, "EEE, do MMM ''yy"),
-        details: [
-          `Order was cancelled. Reason: ${cancelEvent?.reason || "Cancelled by buyer"}`,
-          "Any eligible refund will be credited to original payment source.",
-        ],
-        isActive: true,
-      });
+      defaultSteps.push(
+        {
+          title: "Order Placed",
+          date: `${orderDateStr} - ${format(order.createdAt, "h:mma")}`,
+          details: [`Order #${order.orderNumber} was placed by customer.`],
+          isActive: true,
+        },
+        {
+          title: "Cancelled",
+          date: format(cancelDate, "EEE, do MMM ''yy"),
+          details: [
+            `Order was cancelled. Reason: ${cancelEvent?.reason || cancelEvent?.remarks || "Cancelled"}`,
+            "Any eligible refund will be credited to original payment source.",
+          ],
+          isActive: true,
+        }
+      );
       return defaultSteps;
     }
 
-    // 2. Shipped
-    const shippedEvent = history.find((h) => h.toStatus === "SHIPPED" || h.action === "SHIPPED");
-    const activeShipment = shipments[0];
-    const isShippedOrBeyond = [
-      "SHIPPED",
-      "OUT_FOR_DELIVERY",
-      "DELIVERED",
-      "COMPLETED",
-    ].includes(order.status);
-
-    const shippedDetails: string[] = [];
-    if (activeShipment) {
-      shippedDetails.push(
-        `${activeShipment.carrierName || activeShipment.carrier || "Courier Logistics"} - ${activeShipment.trackingNumber || activeShipment.shipmentNumber}`
-      );
-      shippedDetails.push(`Your item has been dispatched via ${activeShipment.carrierName || "express partner"}.`);
-    } else if (isShippedOrBeyond) {
-      shippedDetails.push("Ekart Logistics - FMPC5381317207");
-      shippedDetails.push("Your item has been dispatched from the nearest distribution hub.");
-    } else {
-      shippedDetails.push("Item will be dispatched once packaging is complete.");
-    }
-    if (shippedEvent?.remarks) {
-      shippedDetails.push(shippedEvent.remarks);
-    }
-
+    // 1. Order Placed (PENDING)
     defaultSteps.push({
-      title: "Shipped",
-      date: shippedEvent
-        ? format(shippedEvent.changedAt, "EEE, do MMM ''yy")
-        : order.shippedAt
-          ? format(order.shippedAt, "EEE, do MMM ''yy")
-          : "Expected in 1-2 days",
-      details: shippedDetails,
-      isActive: isShippedOrBeyond,
+      title: "Order Placed",
+      date: `${orderDateStr} - ${format(order.createdAt, "h:mma")}`,
+      details: [`Your order #${order.orderNumber} has been received by boutique atelier.`],
+      isActive: true,
     });
 
-    // 3. Out For Delivery
-    const outForDeliveryEvent = history.find(
-      (h) => h.toStatus === "OUT_FOR_DELIVERY" || h.action === "OUT_FOR_DELIVERY"
-    );
-    const isOutForDelivery = ["OUT_FOR_DELIVERY", "DELIVERED", "COMPLETED"].includes(order.status);
-
-    const outForDeliveryDetails = [
-      isOutForDelivery
-        ? "Your item is out for delivery with our local delivery executive."
-        : "Item is in transit towards your delivery address hub.",
-    ];
-    if (outForDeliveryEvent?.remarks) {
-      outForDeliveryDetails.push(outForDeliveryEvent.remarks);
-    }
-
+    // 2. Accepted (CONFIRMED)
+    const confirmedEvent = history.find((h) => h.toStatus === "CONFIRMED" || h.action === "ACCEPTED");
+    const isConfirmed = ["CONFIRMED", "PROCESSING", "READY_TO_SHIP", "SHIPPED", "OUT_FOR_DELIVERY", "COMPLETED", "DELIVERED"].includes(order.status);
     defaultSteps.push({
-      title: "Out For Delivery",
-      date: outForDeliveryEvent
-        ? format(outForDeliveryEvent.changedAt, "EEE, do MMM ''yy")
-        : "Pending dispatch",
-      details: outForDeliveryDetails,
+      title: "Accepted",
+      date: confirmedEvent ? format(confirmedEvent.changedAt, "EEE, do MMM ''yy - h:mma") : (isConfirmed ? orderDateStr : "Awaiting boutique acceptance"),
+      details: [
+        confirmedEvent?.remarks || (isConfirmed ? "Boutique has accepted your order and assigned a cutter/packer." : "Awaiting boutique acceptance.")
+      ],
+      isActive: isConfirmed,
+    });
+
+    // 3. Packed (PROCESSING)
+    const packedEvent = history.find((h) => h.toStatus === "PROCESSING" || h.action === "PACKED");
+    const isPacked = ["PROCESSING", "READY_TO_SHIP", "SHIPPED", "OUT_FOR_DELIVERY", "COMPLETED", "DELIVERED"].includes(order.status);
+    defaultSteps.push({
+      title: "Packed",
+      date: packedEvent ? format(packedEvent.changedAt, "EEE, do MMM ''yy - h:mma") : (isPacked ? orderDateStr : "Awaiting packaging and label generation"),
+      details: [
+        packedEvent?.remarks || (isPacked ? "Garment has been verified, quality checked, and carefully packaged." : "Awaiting packaging and label generation.")
+      ],
+      isActive: isPacked,
+    });
+
+    // 4. Ready for Shipment (READY_TO_SHIP / SHIPPED)
+    const readyEvent = history.find((h) => h.toStatus === "READY_TO_SHIP" || h.toStatus === "SHIPPED" || h.action === "READY_FOR_SHIPMENT" || h.action === "SHIPPED");
+    const isReady = ["READY_TO_SHIP", "SHIPPED", "OUT_FOR_DELIVERY", "COMPLETED", "DELIVERED"].includes(order.status);
+    const activeShipment = shipments[0];
+    const shipmentDesc = activeShipment
+      ? `Dispatched via ${activeShipment.carrierName || "Carrier Logistics"} - ${activeShipment.trackingNumber || activeShipment.shipmentNumber}`
+      : (readyEvent?.remarks || (isReady ? "Package is ready and staged for carrier logistics pickup." : "Awaiting logistics carrier pickup."));
+    defaultSteps.push({
+      title: "Ready for Shipment",
+      date: readyEvent ? format(readyEvent.changedAt, "EEE, do MMM ''yy - h:mma") : (isReady ? orderDateStr : "Awaiting carrier pickup"),
+      details: [shipmentDesc],
+      isActive: isReady,
+    });
+
+    // 5. Out For Delivery (OUT_FOR_DELIVERY)
+    const outForDeliveryEvent = history.find((h) => h.toStatus === "OUT_FOR_DELIVERY" || h.action === "OUT_FOR_DELIVERY");
+    const isOutForDelivery = ["OUT_FOR_DELIVERY", "COMPLETED", "DELIVERED"].includes(order.status);
+    defaultSteps.push({
+      title: "Out for Delivery",
+      date: outForDeliveryEvent ? format(outForDeliveryEvent.changedAt, "EEE, do MMM ''yy - h:mma") : (isOutForDelivery ? orderDateStr : "Pending dispatch"),
+      details: [
+        outForDeliveryEvent?.remarks || (isOutForDelivery ? "Item is out for delivery with your local delivery courier executive." : "Assigned to fulfillment logistics carrier agent.")
+      ],
       isActive: isOutForDelivery,
     });
 
-    // 4. Delivered
-    const deliveredEvent = history.find(
-      (h) => h.toStatus === "DELIVERED" || h.toStatus === "COMPLETED" || h.action === "DELIVERED"
-    );
+    // 6. Completed (COMPLETED / DELIVERED)
+    const deliveredEvent = history.find((h) => h.toStatus === "DELIVERED" || h.toStatus === "COMPLETED" || h.action === "DELIVERED");
     const isDelivered = ["DELIVERED", "COMPLETED"].includes(order.status);
-
-    const deliveredDetails = [
-      isDelivered
-        ? `Your item was delivered successfully. Enjoy your Needlon fashion!`
-        : "Standard delivery time is 3-5 business days from order confirmation.",
-    ];
-    if (deliveredEvent?.remarks) {
-      deliveredDetails.push(deliveredEvent.remarks);
-    }
-
     defaultSteps.push({
-      title: "Delivered",
+      title: "Completed",
       date: deliveredEvent
-        ? format(deliveredEvent.changedAt, "EEE, do MMM ''yy")
-        : order.deliveredAt
+        ? format(deliveredEvent.changedAt, "EEE, do MMM ''yy - h:mma")
+        : (order.deliveredAt
           ? format(order.deliveredAt, "EEE, do MMM ''yy")
-          : order.expectedDeliveryDate
-            ? format(order.expectedDeliveryDate, "EEE, do MMM ''yy")
-            : "Expected soon",
-      details: deliveredDetails,
+          : (isDelivered ? orderDateStr : "Expected soon")),
+      details: [
+        deliveredEvent?.remarks || (isDelivered ? "Secure customer signature delivery pass validated. Enjoy your Needlon bespoke garment!" : "Standard delivery upon customer handover.")
+      ],
       isActive: isDelivered,
     });
 

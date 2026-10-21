@@ -27,7 +27,7 @@ const ProductCourusel = ({
   
 
   const mainImage = data?.image;
-  const additionalImages = data?.modalImage ?? [];
+  const additionalImages = data?.modalImage.slice(1) ?? [];
 
   const corouselImages = [mainImage, ...additionalImages].filter(Boolean);
 
@@ -63,7 +63,7 @@ const ProductCourusel = ({
       />
       <CarouselNext
         size={"lg"}
-        className=" md:left-98 max-md:right-2 dark:bg-black cursor-pointer border-none shadow-lg"
+        className=" md:left-98 max-md:right-2 dark:bg-black cursor-pointer border-none w-fit shadow-lg"
       />
       {data && <ProductDescriptionn productData={data} />}
     </Carousel>

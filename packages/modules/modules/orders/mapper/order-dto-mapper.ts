@@ -65,6 +65,9 @@ export function toOrderListItemDto(order: OrderDomain): OrderListItemDto {
         deliveredAt: order.deliveredAt ? order.deliveredAt.toISOString() : null,
         cancelledAt: order.cancelledAt ? order.cancelledAt.toISOString() : null,
         returnedAt: order.returnedAt ? order.returnedAt.toISOString() : null,
+        tailoringStage: order.tailoringStage || null,
+        tailoringNotes: order.tailoringNotes || null,
+        mediaUrls: Array.isArray(order.mediaUrls) ? order.mediaUrls : [],
         createdAt: order.createdAt.toISOString(),
         updatedAt: order.updatedAt.toISOString(),
         deletedAt: order.deletedAt ? order.deletedAt.toISOString() : null,
@@ -157,5 +160,11 @@ export function toOrderDetailResponse(order: OrderDomain): OrderDetailResponseDt
         addresses,
         history,
         payments,
+        measurement: order.measurement ? {
+            ...order.measurement,
+            createdAt: order.measurement.createdAt instanceof Date ? order.measurement.createdAt.toISOString() : (order.measurement.createdAt ? String(order.measurement.createdAt) : undefined),
+            updatedAt: order.measurement.updatedAt instanceof Date ? order.measurement.updatedAt.toISOString() : (order.measurement.updatedAt ? String(order.measurement.updatedAt) : undefined),
+        } : null,
+        shipment: order.shipment ? { ...order.shipment } : null,
     };
 }

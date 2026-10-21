@@ -12,6 +12,7 @@
 import { sql } from "drizzle-orm";
 
 import {
+    bigint,
     boolean,
     check,
     index,
@@ -21,9 +22,11 @@ import {
     text,
     timestamp,
     uuid,
+    varchar,
 } from "drizzle-orm/pg-core";
 
 import { seller } from "@/db/schema/seller";
+import { orders } from "@/db/schema/orders/table";
 
 import { conversationsTable } from "../conversations";
 
@@ -106,11 +109,14 @@ export const messagesTable = pgTable(
          * ------------------------------------------------------------------------
          */
 
+        /**
+         * Polymorphic sender: a seller id when senderType is SELLER, a user id
+         * when BUYER. No single FK can express that, so referential integrity
+         * is enforced by the writing services (this matches the physical
+         * database, where this FK was dropped deliberately).
+         */
         senderId: uuid("sender_id")
-            .notNull()
-            .references(() => seller.id, {
-                onDelete: "cascade",
-            }),
+            .notNull(),
 
         senderType: messageSenderTypeEnum(
             "sender_type",
@@ -149,6 +155,12 @@ export const messagesTable = pgTable(
             .notNull(),
 
         text: text("text"),
+        content: text("content"),
+        sequenceNumber: bigint("sequence_number", { mode: "number" }),
+        relatedOrderId: uuid("related_order_id")
+            .references(() => orders.id, {
+                onDelete: "set null",
+            }),
 
         /**
          * ------------------------------------------------------------------------

@@ -6,6 +6,7 @@ import {
   timestamp,
   jsonb,
   index,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { usersTable } from "../users";
 import { seller } from "../seller";
@@ -53,6 +54,13 @@ export const customerMeasurementsTable = pgTable(
     // Channel metadata
     source: varchar("source", { length: 30 }).notNull().default("ONLINE_CUSTOMER"), // 'ONLINE_CUSTOMER' | 'IN_STORE_TAILOR_MASTER'
     status: varchar("status", { length: 30 }).notNull().default("SUBMITTED"), // 'DRAFT' | 'SUBMITTED' | 'VERIFIED' | 'IN_CUTTING' | 'COMPLETED'
+
+    // Customer Revision & Seller Permission Controls
+    isEditable: boolean("is_editable").default(false).notNull(),
+    editRequested: boolean("edit_requested").default(false).notNull(),
+    editRequestReason: text("edit_request_reason"),
+    editRequestedAt: timestamp("edit_requested_at", { withTimezone: true }),
+    lastEditedAt: timestamp("last_edited_at", { withTimezone: true }),
 
     // Timestamps
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

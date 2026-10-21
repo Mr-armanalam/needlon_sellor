@@ -9,6 +9,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { seller } from "../seller";
 import { usersTable } from "../users";
+import { orders } from "../orders/table";
 
 export const chatPermissions = pgTable(
   "chat_permissions",
@@ -20,6 +21,9 @@ export const chatPermissions = pgTable(
     buyerId: uuid("buyer_id")
       .notNull()
       .references(() => usersTable.id, { onDelete: "cascade" }),
+    orderId: uuid("order_id").references(() => orders.id, {
+      onDelete: "cascade",
+    }),
 
     // Status: REQUESTED | ACCEPTED | DECLINED | BLOCKED
     status: varchar("status", { length: 30 }).notNull().default("REQUESTED"),
@@ -35,7 +39,8 @@ export const chatPermissions = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
-  (table) => [
-    uniqueIndex("idx_chat_permissions_unique").on(table.sellerId, table.buyerId),
-  ]
+  (table) => ({
+    // Permissions are per order conversation: one row per seller-buyer-order.
+    chatPermissionsUniqueIdx: uniqueIndex("idx_chat_permissions_unique").on(table.sellerId, table.buyerId, table.orderId),
+  })
 );

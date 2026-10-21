@@ -85,7 +85,7 @@ export default async function SuccessPage({
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link
-            href="/m-account/orders"
+            href="/account/orders"
             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs sm:text-sm font-semibold hover:bg-stone-800 transition cursor-pointer"
           >
             <Package className="w-4 h-4" />

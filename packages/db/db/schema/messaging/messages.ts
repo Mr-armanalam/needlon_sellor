@@ -52,6 +52,7 @@ export const messages = pgTable(
 
     messageType: messageTypeEnum("message_type").default("TEXT").notNull(),
     content: text("content"), // Nullable to easily support attachment-only types
+    text: text("text"),
 
     // Interactive Messaging Fields
     replyToMessageId: uuid("reply_to_message_id").references(

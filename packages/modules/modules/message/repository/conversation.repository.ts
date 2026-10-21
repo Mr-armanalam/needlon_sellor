@@ -116,15 +116,15 @@ export class ConversationRepository {
         sellerId: string,
     ) {
         return db
-            .select({
+            .selectDistinct({
                 conversation:
                 conversations,
             })
             .from(
-                conversationMembers,
-            )
-            .innerJoin(
                 conversations,
+            )
+            .leftJoin(
+                conversationMembers,
                 eq(
                     conversationMembers.conversationId,
                     conversations.id,
@@ -132,12 +132,23 @@ export class ConversationRepository {
             )
             .where(
                 and(
-                    eq(
-                        conversationMembers.sellerId,
-                        sellerId,
+                    or(
+                        eq(
+                            conversations.sellerId,
+                            sellerId,
+                        ),
+                        and(
+                            eq(
+                                conversationMembers.sellerId,
+                                sellerId,
+                            ),
+                            isNull(
+                                conversationMembers.leftAt,
+                            ),
+                        ),
                     ),
                     isNull(
-                        conversationMembers.leftAt,
+                        conversations.deletedAt,
                     ),
                 ),
             )
@@ -164,13 +175,10 @@ export class ConversationRepository {
             .selectDistinct({
                 conversation: conversations,
             })
-            .from(conversationMembers)
-            .innerJoin(
-                conversations,
-                eq(
-                    conversationMembers.conversationId,
-                    conversations.id,
-                ),
+            .from(conversations)
+            .leftJoin(
+                conversationMembers,
+                eq(conversations.id, conversationMembers.conversationId),
             )
             .leftJoin(
                 otherMembers,
@@ -189,8 +197,14 @@ export class ConversationRepository {
             )
             .where(
                 and(
-                    eq(conversationMembers.sellerId, sellerId),
-                    isNull(conversationMembers.leftAt),
+                    or(
+                        eq(conversations.sellerId, sellerId),
+                        and(
+                            eq(conversationMembers.sellerId, sellerId),
+                            isNull(conversationMembers.leftAt),
+                        )
+                    ),
+                    isNull(conversations.deletedAt),
                     or(
                         ilike(conversations.title, `%${query}%`),
                         ilike(seller.name, `%${query}%`),
@@ -290,24 +304,42 @@ export class ConversationRepository {
             await db
                 .select({
                     count:
-                        count(),
+                        sql<number>`cast(count(DISTINCT ${conversations.id}) as int)`,
                 })
                 .from(
+                    conversations,
+                )
+                .leftJoin(
                     conversationMembers,
+                    eq(
+                        conversationMembers.conversationId,
+                        conversations.id,
+                    ),
                 )
                 .where(
                     and(
-                        eq(
-                            conversationMembers.sellerId,
-                            sellerId,
+                        or(
+                            eq(
+                                conversations.sellerId,
+                                sellerId,
+                            ),
+                            and(
+                                eq(
+                                    conversationMembers.sellerId,
+                                    sellerId,
+                                ),
+                                isNull(
+                                    conversationMembers.leftAt,
+                                ),
+                            ),
                         ),
                         isNull(
-                            conversationMembers.leftAt,
+                            conversations.deletedAt,
                         ),
                     ),
                 );
 
-        return result.count;
+        return result?.count ?? 0;
     }
 }
 

@@ -6,6 +6,7 @@ import { sellerProfiles } from "@/db/schema/seller/seller-profile";
 import { sellerBankAccounts } from "@/db/schema/seller/seller-bank-account";
 import { sellerPayoutRequests } from "@/db/schema/seller/seller-payout-request";
 import { productsTable } from "@/db/schema/catalog/products/table";
+import { productVariantsTable } from "@/db/schema/catalog/products/product-variants/table";
 import { inventoryTable } from "@/db/schema/catalog/products/inventory/table";
 import { pricingTable } from "@/db/schema/catalog/products/pricing/table";
 import { and, eq, isNull, sql, desc, gte, lt } from "drizzle-orm";
@@ -30,6 +31,17 @@ export async function getDashboardOverviewData(
   const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
   const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+  // ISO variants for the raw sql`` aggregates below: the postgres driver
+  // cannot serialize raw Date parameters inside sql templates (it throws
+  // "The string argument must be of type string... Received an instance of
+  // Date"), which made the whole dashboard endpoint return 500. Typed
+  // comparisons (gte/lt) keep using the Date objects above.
+  const startOfTodayIso = startOfToday.toISOString();
+  const startOfYesterdayIso = startOfYesterday.toISOString();
+  const sevenDaysAgoIso = sevenDaysAgo.toISOString();
+  const fourteenDaysAgoIso = fourteenDaysAgo.toISOString();
+  const thirtyDaysAgoIso = thirtyDaysAgo.toISOString();
+  const sixtyDaysAgoIso = sixtyDaysAgo.toISOString();
 
   // 1. Fetch Store & Profile
   const [storeRecord] = await db
@@ -57,10 +69,10 @@ export async function getDashboardOverviewData(
   // 2. Welcome Metrics: Today's Sales & Orders vs Yesterday
   const [todaySalesAgg] = await db
     .select({
-      todaySales: sql<string>`COALESCE(SUM(CASE WHEN ${orders.createdAt} >= ${startOfToday} AND ${orders.status} NOT IN ('CANCELLED', 'RETURNED') THEN ${orders.grandTotal} ELSE 0 END), 0)`,
-      yesterdaySales: sql<string>`COALESCE(SUM(CASE WHEN ${orders.createdAt} >= ${startOfYesterday} AND ${orders.createdAt} < ${startOfToday} AND ${orders.status} NOT IN ('CANCELLED', 'RETURNED') THEN ${orders.grandTotal} ELSE 0 END), 0)`,
-      todayOrders: sql<number>`COALESCE(SUM(CASE WHEN ${orders.createdAt} >= ${startOfToday} THEN 1 ELSE 0 END), 0)::int`,
-      yesterdayOrders: sql<number>`COALESCE(SUM(CASE WHEN ${orders.createdAt} >= ${startOfYesterday} AND ${orders.createdAt} < ${startOfToday} THEN 1 ELSE 0 END), 0)::int`,
+      todaySales: sql<string>`COALESCE(SUM(CASE WHEN ${orders.createdAt} >= ${startOfTodayIso} AND ${orders.status} NOT IN ('CANCELLED', 'RETURNED') THEN ${orders.grandTotal} ELSE 0 END), 0)`,
+      yesterdaySales: sql<string>`COALESCE(SUM(CASE WHEN ${orders.createdAt} >= ${startOfYesterdayIso} AND ${orders.createdAt} < ${startOfTodayIso} AND ${orders.status} NOT IN ('CANCELLED', 'RETURNED') THEN ${orders.grandTotal} ELSE 0 END), 0)`,
+      todayOrders: sql<number>`COALESCE(SUM(CASE WHEN ${orders.createdAt} >= ${startOfTodayIso} THEN 1 ELSE 0 END), 0)::int`,
+      yesterdayOrders: sql<number>`COALESCE(SUM(CASE WHEN ${orders.createdAt} >= ${startOfYesterdayIso} AND ${orders.createdAt} < ${startOfTodayIso} THEN 1 ELSE 0 END), 0)::int`,
       pendingOrdersCount: sql<number>`COALESCE(SUM(CASE WHEN ${orders.status} = 'PENDING' THEN 1 ELSE 0 END), 0)::int`,
     })
     .from(orders)
@@ -83,10 +95,10 @@ export async function getDashboardOverviewData(
   const [earningsAgg] = await db
     .select({
       totalDeliveredGross: sql<string>`COALESCE(SUM(CASE WHEN ${orders.status} IN ('DELIVERED', 'COMPLETED') THEN ${orders.grandTotal} ELSE 0 END), 0)`,
-      last7DaysGross: sql<string>`COALESCE(SUM(CASE WHEN ${orders.createdAt} >= ${sevenDaysAgo} AND ${orders.status} NOT IN ('CANCELLED', 'RETURNED') THEN ${orders.grandTotal} ELSE 0 END), 0)`,
-      prev7DaysGross: sql<string>`COALESCE(SUM(CASE WHEN ${orders.createdAt} >= ${fourteenDaysAgo} AND ${orders.createdAt} < ${sevenDaysAgo} AND ${orders.status} NOT IN ('CANCELLED', 'RETURNED') THEN ${orders.grandTotal} ELSE 0 END), 0)`,
-      last30DaysGross: sql<string>`COALESCE(SUM(CASE WHEN ${orders.createdAt} >= ${thirtyDaysAgo} AND ${orders.status} NOT IN ('CANCELLED', 'RETURNED') THEN ${orders.grandTotal} ELSE 0 END), 0)`,
-      prev30DaysGross: sql<string>`COALESCE(SUM(CASE WHEN ${orders.createdAt} >= ${sixtyDaysAgo} AND ${orders.createdAt} < ${thirtyDaysAgo} AND ${orders.status} NOT IN ('CANCELLED', 'RETURNED') THEN ${orders.grandTotal} ELSE 0 END), 0)`,
+      last7DaysGross: sql<string>`COALESCE(SUM(CASE WHEN ${orders.createdAt} >= ${sevenDaysAgoIso} AND ${orders.status} NOT IN ('CANCELLED', 'RETURNED') THEN ${orders.grandTotal} ELSE 0 END), 0)`,
+      prev7DaysGross: sql<string>`COALESCE(SUM(CASE WHEN ${orders.createdAt} >= ${fourteenDaysAgoIso} AND ${orders.createdAt} < ${sevenDaysAgoIso} AND ${orders.status} NOT IN ('CANCELLED', 'RETURNED') THEN ${orders.grandTotal} ELSE 0 END), 0)`,
+      last30DaysGross: sql<string>`COALESCE(SUM(CASE WHEN ${orders.createdAt} >= ${thirtyDaysAgoIso} AND ${orders.status} NOT IN ('CANCELLED', 'RETURNED') THEN ${orders.grandTotal} ELSE 0 END), 0)`,
+      prev30DaysGross: sql<string>`COALESCE(SUM(CASE WHEN ${orders.createdAt} >= ${sixtyDaysAgoIso} AND ${orders.createdAt} < ${thirtyDaysAgoIso} AND ${orders.status} NOT IN ('CANCELLED', 'RETURNED') THEN ${orders.grandTotal} ELSE 0 END), 0)`,
     })
     .from(orders)
     .where(and(eq(orders.sellerId, sellerId), isNull(orders.deletedAt)));
@@ -181,23 +193,27 @@ export async function getDashboardOverviewData(
 
   const [customerAgg] = await db
     .select({
-      totalUniqueCustomers: sql<number>`COUNT(DISTINCT ${orders.customerId})::int`,
-      repeatCustomers: sql<number>`COALESCE(SUM(CASE WHEN cust_counts.order_count > 1 THEN 1 ELSE 0 END), 0)::int`,
+      totalUniqueCustomers: sql<number>`COUNT(DISTINCT ${orders.buyerId})::int`,
     })
-    .from(
-      db
-        .select({
-          customerId: orders.customerId,
-          order_count: sql<number>`COUNT(*)::int`,
-        })
-        .from(orders)
-        .where(and(eq(orders.sellerId, sellerId), isNull(orders.deletedAt)))
-        .groupBy(orders.customerId)
-        .as("cust_counts")
-    );
+    .from(orders)
+    .where(and(eq(orders.sellerId, sellerId), isNull(orders.deletedAt)));
+
+  // Repeat customers = buyers with more than one order. Written as an
+  // explicit SQL query: the Drizzle subquery version generated an unaliased
+  // COUNT(*) column, so the outer order_count reference never resolved.
+  const repeatRows = await db.execute<{ repeat_customers: number }>(sql`
+    SELECT COALESCE(SUM(CASE WHEN order_count > 1 THEN 1 ELSE 0 END), 0)::int AS repeat_customers
+    FROM (
+      SELECT COUNT(*) AS order_count
+      FROM product_orders
+      WHERE seller_id = ${sellerId} AND deleted_at IS NULL
+      GROUP BY buyer_id
+    ) AS cust_counts
+  `);
+  const repeatCustomers = repeatRows[0]?.repeat_customers ?? 0;
 
   const totalCust = customerAgg?.totalUniqueCustomers || 0;
-  const repeatCust = customerAgg?.repeatCustomers || 0;
+  const repeatCust = repeatCustomers;
   const repeatPercentage = totalCust > 0 ? Math.round((repeatCust / totalCust) * 100) : 68;
 
   const rev30Num = parseFloat(earningsAgg?.last30DaysGross || "0");
@@ -245,7 +261,7 @@ export async function getDashboardOverviewData(
     .select({
       id: orders.id,
       orderNumber: orders.orderNumber,
-      customerName: orders.customerName,
+      customerName: orders.buyerName,
       grandTotal: orders.grandTotal,
       status: orders.status,
       createdAt: orders.createdAt,
@@ -295,22 +311,27 @@ export async function getDashboardOverviewData(
   // 7. Smart Insights Generation
   const insights: BusinessInsightDto[] = [];
 
-  // Low stock insight
+  // Low stock insight. Inventory is tracked per variant, so product stock
+  // is the sum across its variants. (This query previously joined inventory
+  // via a productId column that does not exist and crashed the endpoint.)
   const [lowStockProd] = await db
     .select({
       id: productsTable.id,
       name: productsTable.name,
-      stock: inventoryTable.quantity,
+      stock: sql<number>`COALESCE(SUM(${inventoryTable.quantity}), 0)::int`,
     })
     .from(productsTable)
-    .leftJoin(inventoryTable, eq(inventoryTable.productId, productsTable.id))
-    .where(
-      and(
-        eq(productsTable.storeId, sellerId),
-        isNull(productsTable.deletedAt),
-        sql`${inventoryTable.quantity} <= 5`
-      )
+    .leftJoin(
+      productVariantsTable,
+      eq(productVariantsTable.productId, productsTable.id)
     )
+    .leftJoin(
+      inventoryTable,
+      eq(inventoryTable.variantId, productVariantsTable.id)
+    )
+    .where(and(eq(productsTable.storeId, sellerId), isNull(productsTable.deletedAt)))
+    .groupBy(productsTable.id, productsTable.name)
+    .having(sql`COALESCE(SUM(${inventoryTable.quantity}), 0) <= 5`)
     .limit(1);
 
   if (lowStockProd) {
@@ -412,13 +433,22 @@ export async function getDashboardOverviewData(
       id: productsTable.id,
       name: productsTable.name,
       slug: productsTable.slug,
-      stock: sql<number>`COALESCE(${inventoryTable.quantity}, 0)::int`,
-      price: sql<string>`COALESCE(${pricingTable.basePrice}, '0')`,
+      // Stock and pricing both live on variants: aggregate per product.
+      stock: sql<number>`COALESCE(SUM(${inventoryTable.quantity}), 0)::int`,
+      price: sql<string>`COALESCE(MIN(${pricingTable.price}), '0')`,
     })
     .from(productsTable)
-    .leftJoin(inventoryTable, eq(inventoryTable.productId, productsTable.id))
-    .leftJoin(pricingTable, eq(pricingTable.productId, productsTable.id))
+    .leftJoin(
+      productVariantsTable,
+      eq(productVariantsTable.productId, productsTable.id)
+    )
+    .leftJoin(
+      inventoryTable,
+      eq(inventoryTable.variantId, productVariantsTable.id)
+    )
+    .leftJoin(pricingTable, eq(pricingTable.variantId, productVariantsTable.id))
     .where(and(eq(productsTable.storeId, sellerId), isNull(productsTable.deletedAt)))
+    .groupBy(productsTable.id, productsTable.name, productsTable.slug)
     .limit(5);
 
   const colors = [

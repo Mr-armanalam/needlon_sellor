@@ -27,6 +27,8 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { seller } from "@/db/schema/seller";
+import { orders } from "@/db/schema/orders/table";
+import { usersTable } from "@/db/schema/users";
 
 import { ConversationMetadata } from "./metadata";
 
@@ -107,6 +109,20 @@ export const conversationsTable = pgTable(
         title: varchar("title", {
             length: CONVERSATION_TITLE_MAX_LENGTH,
         }),
+
+        orderId: uuid("order_id")
+            .references(() => orders.id, {
+                onDelete: "set null",
+            }),
+        buyerId: uuid("buyer_id")
+            .references(() => usersTable.id, {
+                onDelete: "cascade",
+            }),
+        /**
+         * Legacy free-text mirror of `type`, kept for read compatibility with
+         * rows written by older code paths. New code writes `type` only.
+         */
+        conversationType: varchar("conversation_type"),
 
         /**
          * ------------------------------------------------------------------------

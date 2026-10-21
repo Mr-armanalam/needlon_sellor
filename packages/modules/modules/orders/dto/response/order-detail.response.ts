@@ -77,8 +77,51 @@ export interface OrderDetailPaymentDto {
     deletedAt: string | null;
 }
 
+export interface OrderDetailMeasurementDto {
+    id: string;
+    garmentType: string;
+    gender?: string | null;
+    measurementUnit: string;
+    fitPreference?: string | null;
+    essentialMeasurements: Record<string, string | number>;
+    postureSpecifics?: Record<string, string | number>;
+    tailorNotes?: string | null;
+    status: string;
+    source: string;
+    isEditable?: boolean;
+    editRequested?: boolean;
+    editRequestReason?: string | null;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface OrderDetailExecutiveDto {
+    executiveName?: string;
+    executivePhone?: string;
+    vehicleType?: string;
+    courierPartner?: string;
+    trackingNumber?: string;
+    status?: string;
+    notes?: string;
+}
+
+export interface OrderDetailShipmentDto {
+    id: string;
+    shipmentNumber: string;
+    awbNumber: string | null;
+    trackingNumber: string | null;
+    status: string;
+    shippingCost: string | null;
+    notes: string | null;
+    executive: OrderDetailExecutiveDto | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
 export interface OrderDetailResponseDto extends OrderListItemDto {
     addresses: OrderDetailAddressDto[];
     history: OrderDetailHistoryDto[];
     payments: OrderDetailPaymentDto[];
+    measurement?: OrderDetailMeasurementDto | null;
+    shipment?: OrderDetailShipmentDto | null;
 }

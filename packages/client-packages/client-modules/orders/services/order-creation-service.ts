@@ -15,7 +15,9 @@ import { productVariantsTable } from "@needlon/db/db/schema/catalog/products/pro
 import { inventoryTable } from "@needlon/db/db/schema/catalog/products/inventory/table";
 import { promotions } from "@needlon/db/db/schema/marketing/promotion";
 import { couponRedemptions } from "@needlon/db/db/schema/marketing/coupon-redemption";
-import { eq, sql, inArray } from "drizzle-orm";
+import { customerMeasurementsTable } from "@needlon/db/db/schema/customization/measurements";
+import { productImagesTable } from "@needlon/db/db/schema/catalog/products/product-images/table";
+import { eq, sql, inArray, and, desc, isNull, or, type SQL } from "drizzle-orm";
 
 /** DB row types inferred from the Drizzle schema. */
 type UserRecord = typeof usersTable.$inferSelect;
@@ -261,6 +263,25 @@ export const OrderCreationService = {
         const qty = Number(item.quantity) || 1;
         const itemSubtotal = unitPrice * qty;
 
+        // Resolve product image dynamically from catalog or product media
+        let resolvedImageUrl = item.image || null;
+        if (!resolvedImageUrl && catalogProduct) {
+          const [primaryImg] = await tx
+            .select()
+            .from(productImagesTable)
+            .where(and(eq(productImagesTable.productId, catalogProduct.id), eq(productImagesTable.isPrimary, true)))
+            .limit(1);
+          resolvedImageUrl = primaryImg?.imageUrl || null;
+          if (!resolvedImageUrl) {
+            const [firstImg] = await tx
+              .select()
+              .from(productImagesTable)
+              .where(eq(productImagesTable.productId, catalogProduct.id))
+              .limit(1);
+            resolvedImageUrl = firstImg?.imageUrl || null;
+          }
+        }
+
         const [createdItem] = await tx
           .insert(orderItems)
           .values({
@@ -276,11 +297,83 @@ export const OrderCreationService = {
             quantity: qty,
             subtotal: itemSubtotal.toFixed(2),
             total: itemSubtotal.toFixed(2),
-            imageUrl: item.image || null,
+            imageUrl: resolvedImageUrl,
           })
           .returning();
 
         createdItems.push(createdItem);
+
+        // Check for bespoke measurement attachment for this item
+        const pId = catalogProduct?.id || item.productId;
+        if (isValidUuid(pId)) {
+          let userMatchClause: SQL | undefined = undefined;
+          if (buyerRecord?.id && isValidUuid(buyerRecord.id) && buyerRecord?.email) {
+            userMatchClause = or(
+              eq(customerMeasurementsTable.userId, buyerRecord.id),
+              eq(customerMeasurementsTable.customerEmail, buyerRecord.email)
+            );
+          } else if (buyerRecord?.id && isValidUuid(buyerRecord.id)) {
+            userMatchClause = eq(customerMeasurementsTable.userId, buyerRecord.id);
+          } else if (buyerRecord?.email) {
+            userMatchClause = eq(customerMeasurementsTable.customerEmail, buyerRecord.email);
+          }
+
+          let matchingMeasurement = null;
+          if (userMatchClause) {
+            const [matched] = await tx
+              .select()
+              .from(customerMeasurementsTable)
+              .where(
+                and(
+                  eq(customerMeasurementsTable.productId, pId),
+                  isNull(customerMeasurementsTable.orderId),
+                  userMatchClause
+                )
+              )
+              .orderBy(desc(customerMeasurementsTable.createdAt))
+              .limit(1);
+            matchingMeasurement = matched;
+          }
+
+          if (!matchingMeasurement) {
+            // Check for recent unassigned measurement for this product
+            const [unassigned] = await tx
+              .select()
+              .from(customerMeasurementsTable)
+              .where(
+                and(
+                  eq(customerMeasurementsTable.productId, pId),
+                  isNull(customerMeasurementsTable.orderId)
+                )
+              )
+              .orderBy(desc(customerMeasurementsTable.createdAt))
+              .limit(1);
+            matchingMeasurement = unassigned;
+          }
+
+          if (matchingMeasurement) {
+            await tx
+              .update(customerMeasurementsTable)
+              .set({
+                orderId: newOrder.id,
+                orderItemId: createdItem.id,
+                sellerId: sellerRecord.id,
+                customerEmail: buyerRecord.email,
+                customerName: deliveryAddress.recipientName,
+                customerPhone: deliveryAddress.phoneNumber,
+                updatedAt: new Date(),
+              })
+              .where(eq(customerMeasurementsTable.id, matchingMeasurement.id));
+
+            await tx
+              .update(orders)
+              .set({
+                tailoringStage: "MEASUREMENT_VERIFIED",
+                tailoringNotes: matchingMeasurement.tailorNotes || "Bespoke custom order measurements attached.",
+              })
+              .where(eq(orders.id, newOrder.id));
+          }
+        }
 
         // Decrement inventory if variant exists
         if (variant) {

@@ -4,18 +4,22 @@ import {
     OrderAddressDomain,
     OrderStatusHistoryDomain,
     OrderPaymentDomain,
+    OrderMeasurementDomain,
+    OrderShipmentDomain,
 } from "../types";
 import { orders } from "@/db/schema/orders/table";
 import { orderItems } from "@/db/schema/orders/order-items/table";
 import { orderAddresses } from "@/db/schema/orders/order-address";
 import { orderStatusHistory } from "@/db/schema/orders/order-status-history/table";
 import { orderPayments } from "@/db/schema/orders/order-payments/table";
+import { customerMeasurementsTable } from "@/db/schema/customization/measurements";
 
 type OrderRow = typeof orders.$inferSelect;
 type OrderItemRow = typeof orderItems.$inferSelect;
 type OrderAddressRow = typeof orderAddresses.$inferSelect;
 type OrderStatusHistoryRow = typeof orderStatusHistory.$inferSelect;
 type OrderPaymentRow = typeof orderPayments.$inferSelect;
+type CustomerMeasurementRow = typeof customerMeasurementsTable.$inferSelect;
 
 export function toOrderItemDomain(dbItem: OrderItemRow): OrderItemDomain {
     return {
@@ -144,7 +148,46 @@ export function toOrderPaymentDomain(dbPayment: OrderPaymentRow): OrderPaymentDo
     };
 }
 
-export function toOrderDomain(dbOrder: OrderRow, items?: OrderItemRow[], addresses?: OrderAddressRow[], history?: OrderStatusHistoryRow[], payments?: OrderPaymentRow[]): OrderDomain {
+/**
+ * Narrow a JSONB measurement blob to its scalar entries. The measurement
+ * tables store free-form key/value metrics, so anything that is not a
+ * string/number value is dropped at this boundary.
+ */
+function toMeasurementValues(value: unknown): Record<string, string | number> {
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+        return {};
+    }
+
+    const entries = Object.entries(value).filter(
+        (entry): entry is [string, string | number] =>
+            typeof entry[1] === "string" || typeof entry[1] === "number",
+    );
+
+    return Object.fromEntries(entries);
+}
+
+export function toOrderMeasurementDomain(dbMeasurement: CustomerMeasurementRow | null | undefined): OrderMeasurementDomain | null {
+    if (!dbMeasurement) return null;
+    return {
+        id: dbMeasurement.id,
+        garmentType: dbMeasurement.garmentType,
+        gender: dbMeasurement.gender || null,
+        measurementUnit: dbMeasurement.measurementUnit || "INCHES",
+        fitPreference: dbMeasurement.fitPreference || "REGULAR",
+        essentialMeasurements: toMeasurementValues(dbMeasurement.essentialMeasurements),
+        postureSpecifics: toMeasurementValues(dbMeasurement.postureSpecifics),
+        tailorNotes: dbMeasurement.tailorNotes || null,
+        status: dbMeasurement.status || "SUBMITTED",
+        source: dbMeasurement.source || "ONLINE_CUSTOMER",
+        isEditable: dbMeasurement.isEditable ?? false,
+        editRequested: dbMeasurement.editRequested ?? false,
+        editRequestReason: dbMeasurement.editRequestReason || null,
+        createdAt: dbMeasurement.createdAt ? new Date(dbMeasurement.createdAt) : undefined,
+        updatedAt: dbMeasurement.updatedAt ? new Date(dbMeasurement.updatedAt) : undefined,
+    };
+}
+
+export function toOrderDomain(dbOrder: OrderRow, items?: OrderItemRow[], addresses?: OrderAddressRow[], history?: OrderStatusHistoryRow[], payments?: OrderPaymentRow[], measurement?: CustomerMeasurementRow | null, shipment?: OrderShipmentDomain | null): OrderDomain {
     return {
         id: dbOrder.id,
         sellerId: dbOrder.sellerId,
@@ -183,6 +226,9 @@ export function toOrderDomain(dbOrder: OrderRow, items?: OrderItemRow[], address
         deliveredAt: dbOrder.deliveredAt ? (dbOrder.deliveredAt instanceof Date ? dbOrder.deliveredAt : new Date(dbOrder.deliveredAt)) : null,
         cancelledAt: dbOrder.cancelledAt ? (dbOrder.cancelledAt instanceof Date ? dbOrder.cancelledAt : new Date(dbOrder.cancelledAt)) : null,
         returnedAt: dbOrder.returnedAt ? (dbOrder.returnedAt instanceof Date ? dbOrder.returnedAt : new Date(dbOrder.returnedAt)) : null,
+        tailoringStage: dbOrder.tailoringStage || null,
+        tailoringNotes: dbOrder.tailoringNotes || null,
+        mediaUrls: Array.isArray(dbOrder.mediaUrls) ? dbOrder.mediaUrls : [],
         createdAt: dbOrder.createdAt instanceof Date ? dbOrder.createdAt : new Date(dbOrder.createdAt),
         updatedAt: dbOrder.updatedAt instanceof Date ? dbOrder.updatedAt : new Date(dbOrder.updatedAt),
         deletedAt: dbOrder.deletedAt ? (dbOrder.deletedAt instanceof Date ? dbOrder.deletedAt : new Date(dbOrder.deletedAt)) : null,
@@ -191,5 +237,7 @@ export function toOrderDomain(dbOrder: OrderRow, items?: OrderItemRow[], address
         addresses: addresses ? addresses.map(toOrderAddressDomain) : undefined,
         history: history ? history.map(toOrderStatusHistoryDomain) : undefined,
         payments: payments ? payments.map(toOrderPaymentDomain) : undefined,
+        measurement: measurement ? toOrderMeasurementDomain(measurement) : null,
+        shipment: shipment || null,
     };
 }

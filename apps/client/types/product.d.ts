@@ -1,5 +1,6 @@
 import { Address } from "./address";
 import type {
+  CustomerMeasurementRecord,
   OrderShipmentRecord,
   OrderTimelineStep,
 } from "@/modules/orders/repositories/order-repository";
@@ -75,7 +76,8 @@ export interface OrderItemProp {
   orderDate: Date;
   orderId: string;
   rawOrderId?: string;
-  shippingAddress: Address;
+  sellerId?: string;
+  shippingAddress?: Address | null;
   paymentMode: string;
   shippingCharge: number;
   podCharge: number;
@@ -88,9 +90,15 @@ export interface OrderItemProp {
   couponDiscount: number;
   totalPurchasePrice: number;
   orderStatus?: string;
+  source?: string;
+  isClientOrder?: boolean;
+  isPickup?: boolean;
   timeline?: OrderTimelineStep[];
   shipments?: OrderShipmentRecord[];
   canCancel?: boolean;
+  hasMeasurement?: boolean;
+  measurementData?: CustomerMeasurementRecord | null;
+  mediaUrls?: string[];
 }
 
 export interface suggestionAndRecentSearch {

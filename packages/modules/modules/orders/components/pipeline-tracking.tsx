@@ -1,5 +1,5 @@
 import React from 'react';
-import {CheckCircle2, Clock} from "lucide-react";
+import {CheckCircle2, Clock, Scissors} from "lucide-react";
 
 const PipelineTracking = (
     {
@@ -8,7 +8,8 @@ const PipelineTracking = (
         handleAdvance,
         isFinalState,
         actionLoading,
-        handleCancel
+        handleCancel,
+        isBespoke,
     }:{
         stepsTimeline:{
             label: string
@@ -20,16 +21,18 @@ const PipelineTracking = (
         isFinalState: boolean;
         actionLoading:  boolean;
         handleCancel:  () => Promise<void>;
+        isBespoke?: boolean;
     }
 ) => {
     return (
         <div className="lg:col-span-1 bg-white border border-neutral-100 rounded-2xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.01)] flex flex-col gap-6">
             <div className="flex flex-col gap-0.5">
             <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Clock size={12} /> Pipeline Tracking
+              {isBespoke ? <Scissors size={12} className="text-neutral-800" /> : <Clock size={12} />}
+              {isBespoke ? "Bespoke Tailoring Milestones" : "Pipeline Tracking"}
             </span>
                 <h3 className="text-[15px] font-bold text-neutral-900 mt-1 tracking-tight">
-                    Fulfillment Progress
+                    {isBespoke ? "Tailoring Craft Progress" : "Fulfillment Progress"}
                 </h3>
             </div>
 
@@ -97,7 +100,11 @@ const PipelineTracking = (
                             : 'bg-neutral-900 hover:bg-neutral-800'
                     }`}
                 >
-                    {actionLoading ? "Processing..." : "Advance Step Pipeline"}
+                    {actionLoading
+                        ? "Processing..."
+                        : isBespoke
+                        ? "Advance Tailoring Milestone"
+                        : "Advance Step Pipeline"}
                 </button>
                 <button
                     onClick={handleCancel}

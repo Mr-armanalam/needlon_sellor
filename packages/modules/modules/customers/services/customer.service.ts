@@ -10,6 +10,8 @@ import {
   requestChatPermissionRepo,
   respondChatPermissionRepo,
   toggleChatPermissionRepo,
+  allowCustomerMeasurementEditRepo,
+  addOrderMediaRepo,
 } from "../repository/customer.repository";
 import type { CreateWalkInCustomerDto } from "../dto/walk-in-customer.dto";
 import type { RecordInStoreMeasurementDto } from "../dto/in-store-measurement.dto";
@@ -61,6 +63,16 @@ export async function respondChatPermissionService(buyerId: string, sellerId: st
 
 export async function toggleChatPermissionService(buyerId: string, sellerId: string, isEnabled: boolean) {
   return toggleChatPermissionRepo(buyerId, sellerId, isEnabled);
+}
+
+export async function allowCustomerMeasurementEditService(measurementId: string) {
+  const seller = await getCurrentSellerOrThrow();
+  return allowCustomerMeasurementEditRepo(seller.id, measurementId);
+}
+
+export async function addOrderMediaService(orderId: string, mediaUrl: string, caption?: string) {
+  const seller = await getCurrentSellerOrThrow();
+  return addOrderMediaRepo(seller.id, orderId, mediaUrl, caption);
 }
 
 
