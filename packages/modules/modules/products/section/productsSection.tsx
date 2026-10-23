@@ -216,7 +216,7 @@ export default function ProductManagement() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#FAFAFA] font-sans select-none tracking-tight">
+    <div className="w-full min-h-screen bg-muted font-sans select-none tracking-tight">
       
       {/* ──────────────────────────────────────────────────────────────
           VIEW 1: BOUTIQUE SHELF (Main Catalog Grid View)

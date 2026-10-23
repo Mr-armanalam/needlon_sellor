@@ -27,7 +27,7 @@ function ProductsShelfContent() {
   } = useProductUiSet();
 
   return (
-    <div className="w-full h-screen overflow-y-auto bg-[#FAFAFA] font-sans select-none tracking-tight">
+    <div className="w-full h-screen overflow-y-auto bg-muted font-sans select-none tracking-tight">
       {viewMode === 'shelf' ? (
         <div className="p-6 md:p-8 max-w-400 mx-auto w-full flex flex-col gap-6 animate-fade-in">
           
