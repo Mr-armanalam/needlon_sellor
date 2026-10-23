@@ -1,5 +1,29 @@
 import { ProductRepository, type QueryProductsParams } from "../repositories/product-repository";
-import { transformDbProductToDto } from "./product-transformer";
+import { transformDbProductToDto, type ProductWithCategoryDTO } from "./product-transformer";
+
+/** Home-page sections must never render thin: curated sets (featured,
+ *  seasonal, …) are backfilled with other catalogue products up to this
+ *  many items. If the whole catalogue is smaller, the section simply
+ *  shows everything there is. */
+export const SECTION_MIN_ITEMS = 12;
+
+async function backfillToSectionMin(
+  items: ProductWithCategoryDTO[],
+  fillParams: QueryProductsParams
+): Promise<ProductWithCategoryDTO[]> {
+  if (items.length >= SECTION_MIN_ITEMS) return items;
+  const seen = new Set(items.map((item) => item.product.id));
+  const fill = await fetchDbProducts({ ...fillParams, limit: SECTION_MIN_ITEMS * 2 });
+  const merged = [...items];
+  for (const candidate of fill) {
+    if (merged.length >= SECTION_MIN_ITEMS) break;
+    if (!seen.has(candidate.product.id)) {
+      seen.add(candidate.product.id);
+      merged.push(candidate);
+    }
+  }
+  return merged;
+}
 
 async function fetchDbProducts(filterParams: QueryProductsParams = {}) {
   if (!process.env.DATABASE_URL) return [];
@@ -24,7 +48,8 @@ async function fetchDbProducts(filterParams: QueryProductsParams = {}) {
 
 export const ProductService = {
   async getPremium() {
-    return await fetchDbProducts({ isFeatured: true, limit: 12 });
+    const featured = await fetchDbProducts({ isFeatured: true, limit: 12 });
+    return await backfillToSectionMin(featured, { sort: "newest" });
   },
 
   async getTrending() {
