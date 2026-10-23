@@ -163,22 +163,22 @@
 }
 
 .dark {
-  --background: oklch(0.158 0.007 58);
+  --background: oklch(0.155 0.005 52);
   --foreground: oklch(0.932 0.007 84);
 
-  --card: oklch(0.198 0.008 58);
+  --card: oklch(0.208 0.006 52);
   --card-foreground: oklch(0.932 0.007 84);
 
-  --popover: oklch(0.19 0.008 58);
+  --popover: oklch(0.195 0.006 52);
   --popover-foreground: oklch(0.932 0.007 84);
 
   --primary: oklch(0.795 0.128 85);
   --primary-foreground: oklch(0.205 0.018 72);
 
-  --secondary: oklch(0.238 0.009 58);
+  --secondary: oklch(0.242 0.007 52);
   --secondary-foreground: oklch(0.932 0.007 84);
 
-  --muted: oklch(0.232 0.008 58);
+  --muted: oklch(0.228 0.006 52);
   --muted-foreground: oklch(0.716 0.009 62);
 
   --accent: oklch(0.27 0.02 72);
@@ -186,8 +186,8 @@
 
   --destructive: oklch(0.68 0.185 24);
 
-  --border: oklch(1 0 0 / 9%);
-  --input: oklch(1 0 0 / 13%);
+  --border: oklch(1 0 0 / 11%);
+  --input: oklch(1 0 0 / 14%);
   --ring: oklch(0.795 0.128 85);
 
   --chart-1: oklch(0.795 0.128 85);
@@ -196,7 +196,7 @@
   --chart-4: oklch(0.68 0.13 38);
   --chart-5: oklch(0.68 0.14 285);
 
-  --sidebar: oklch(0.132 0.006 58);
+  --sidebar: oklch(0.126 0.005 52);
   --sidebar-foreground: oklch(0.932 0.007 84);
   --sidebar-primary: oklch(0.795 0.128 85);
   --sidebar-primary-foreground: oklch(0.205 0.018 72);
@@ -289,7 +289,7 @@
 .dark .bg-neutral-800,
 .dark .bg-neutral-900,
 .dark .bg-gray-900 {
-  background-color: oklch(0.25 0.009 58);
+  background-color: oklch(0.252 0.007 52);
 }
 .dark .bg-\[\#FAF8F5\] {
   background-color: var(--muted);
@@ -299,4 +299,201 @@
 }
 .dark .text-\[\#1A1D2E\] {
   color: var(--foreground);
+}
+
+/* ——— Reconciling the hand-written `dark:` variants ———
+   Much of this codebase was styled with explicit dark: pairs
+   written against the STOCK scale values (dark:bg-neutral-900
+   meaning "dark surface", dark:text-stone-300 meaning "light
+   text"). The .dark re-ramps above flip those scale values, so
+   the explicit pairs would invert — near-white panels, light
+   borders, dark-on-dark text. These unlayered rules restore
+   each dark: utility's intended meaning under the new system.
+   They apply only in dark mode; light rendering is untouched. */
+.dark .dark\:bg-neutral-900,
+.dark .dark\:bg-stone-900 {
+  background-color: var(--card);
+}
+.dark .dark\:bg-neutral-800,
+.dark .dark\:bg-stone-800 {
+  background-color: var(--secondary);
+}
+.dark .dark\:bg-stone-900\/80 {
+  background-color: color-mix(in oklab, var(--card) 80%, transparent);
+}
+.dark .dark\:bg-stone-900\/60 {
+  background-color: color-mix(in oklab, var(--card) 60%, transparent);
+}
+.dark .dark\:bg-stone-900\/40 {
+  background-color: color-mix(in oklab, var(--card) 40%, transparent);
+}
+.dark .dark\:bg-stone-900\/30 {
+  background-color: color-mix(in oklab, var(--card) 30%, transparent);
+}
+.dark .dark\:border-neutral-800,
+.dark .dark\:border-neutral-700,
+.dark .dark\:border-stone-800,
+.dark .dark\:border-stone-700,
+.dark .dark\:border-stone-900 {
+  border-color: var(--border);
+}
+.dark .dark\:text-stone-100 {
+  color: oklch(0.97 0.005 70);
+}
+.dark .dark\:text-stone-200,
+.dark .dark\:text-neutral-200 {
+  color: oklch(0.923 0.004 64);
+}
+.dark .dark\:text-stone-300,
+.dark .dark\:text-neutral-300 {
+  color: oklch(0.87 0.005 62);
+}
+.dark .dark\:text-stone-400,
+.dark .dark\:text-neutral-400,
+.dark .dark\:text-gray-400 {
+  color: oklch(0.72 0.006 62);
+}
+.dark .dark\:text-neutral-900 {
+  color: oklch(0.21 0.004 58);
+}
+.dark .dark\:text-stone-900 {
+  color: oklch(0.216 0.006 56);
+}
+
+/* ——— Coverage completion (full-codebase audit) ———
+   The audit found every remaining form: alpha steps, hover
+   forms, the gray/zinc dark: pairs, dark-intent text steps
+   (…-600/700 sit on light chips in dark mode, so they keep a
+   deep value), gray deep chips, and gradient stops. Same rule
+   throughout: restore the intended meaning, dark mode only. */
+.dark .dark\:bg-gray-700 {
+  background-color: var(--muted);
+}
+.dark .dark\:bg-gray-800 {
+  background-color: var(--secondary);
+}
+.dark .dark\:bg-neutral-800\/40 {
+  background-color: color-mix(in oklab, var(--secondary) 40%, transparent);
+}
+.dark .dark\:bg-neutral-800\/50 {
+  background-color: color-mix(in oklab, var(--secondary) 50%, transparent);
+}
+.dark .dark\:bg-neutral-800\/60 {
+  background-color: color-mix(in oklab, var(--secondary) 60%, transparent);
+}
+.dark .dark\:bg-neutral-900\/20 {
+  background-color: color-mix(in oklab, var(--card) 20%, transparent);
+}
+.dark .dark\:bg-neutral-900\/40 {
+  background-color: color-mix(in oklab, var(--card) 40%, transparent);
+}
+.dark .dark\:bg-neutral-900\/80 {
+  background-color: color-mix(in oklab, var(--card) 80%, transparent);
+}
+.dark .dark\:bg-neutral-950,
+.dark .dark\:bg-stone-950 {
+  background-color: var(--background);
+}
+.dark .dark\:bg-stone-800\/40 {
+  background-color: color-mix(in oklab, var(--secondary) 40%, transparent);
+}
+.dark .dark\:bg-stone-900\/50 {
+  background-color: color-mix(in oklab, var(--card) 50%, transparent);
+}
+.dark .dark\:bg-stone-900\/70 {
+  background-color: color-mix(in oklab, var(--card) 70%, transparent);
+}
+.dark .dark\:bg-stone-900\/90 {
+  background-color: color-mix(in oklab, var(--card) 90%, transparent);
+}
+.dark .dark\:bg-stone-950\/60 {
+  background-color: color-mix(in oklab, var(--background) 60%, transparent);
+}
+.dark .dark\:bg-stone-950\/80 {
+  background-color: color-mix(in oklab, var(--background) 80%, transparent);
+}
+.dark .dark\:bg-zinc-900\/70 {
+  background-color: color-mix(in oklab, var(--card) 70%, transparent);
+}
+.dark .dark\:border-gray-400,
+.dark .dark\:border-gray-600,
+.dark .dark\:border-gray-700,
+.dark .dark\:border-gray-800,
+.dark .dark\:border-gray-900 {
+  border-color: var(--border);
+}
+.dark .dark\:border-neutral-800\/50 {
+  border-color: color-mix(in oklab, var(--border) 50%, transparent);
+}
+.dark .dark\:border-stone-700\/80 {
+  border-color: color-mix(in oklab, var(--border) 80%, transparent);
+}
+.dark .dark\:border-stone-800\/60 {
+  border-color: color-mix(in oklab, var(--border) 60%, transparent);
+}
+.dark .dark\:border-stone-800\/80 {
+  border-color: color-mix(in oklab, var(--border) 80%, transparent);
+}
+.dark .dark\:text-gray-100,
+.dark .dark\:text-neutral-100 {
+  color: oklch(0.97 0.004 70);
+}
+.dark .dark\:text-gray-200 {
+  color: oklch(0.923 0.004 64);
+}
+.dark .dark\:text-gray-300 {
+  color: oklch(0.87 0.005 62);
+}
+.dark .dark\:text-gray-500,
+.dark .dark\:text-neutral-500,
+.dark .dark\:text-stone-500 {
+  color: oklch(0.66 0.005 62);
+}
+.dark .dark\:text-neutral-600 {
+  color: oklch(0.44 0.004 58);
+}
+.dark .dark\:text-stone-700 {
+  color: oklch(0.4 0.008 58);
+}
+.dark .dark\:hover\:bg-neutral-100:hover {
+  background-color: var(--accent);
+}
+.dark .dark\:hover\:bg-neutral-700:hover,
+.dark .dark\:hover\:bg-stone-700:hover {
+  background-color: var(--muted);
+}
+.dark .dark\:hover\:bg-stone-800:hover {
+  background-color: var(--secondary);
+}
+.dark .dark\:hover\:border-neutral-700:hover,
+.dark .dark\:hover\:border-stone-700:hover {
+  border-color: var(--border);
+}
+.dark .dark\:hover\:text-stone-100:hover {
+  color: oklch(0.97 0.005 70);
+}
+.dark .dark\:hover\:text-stone-200:hover {
+  color: oklch(0.923 0.005 64);
+}
+.dark .dark\:hover\:text-stone-300:hover {
+  color: oklch(0.87 0.006 62);
+}
+.dark .bg-gray-800,
+.dark .bg-gray-950 {
+  background-color: oklch(0.252 0.007 52);
+}
+.dark .hover\:bg-neutral-800:hover,
+.dark .hover\:bg-stone-800:hover,
+.dark .hover\:bg-stone-900:hover {
+  background-color: oklch(0.3 0.008 52);
+}
+.dark .from-gray-950,
+.dark .from-stone-950 {
+  --tw-gradient-from: oklch(0.2 0.006 52);
+}
+.dark .to-gray-900 {
+  --tw-gradient-to: oklch(0.24 0.006 52);
+}
+.dark .to-stone-800 {
+  --tw-gradient-to: oklch(0.27 0.007 52);
 }
