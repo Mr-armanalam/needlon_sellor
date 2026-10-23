@@ -4,7 +4,7 @@ import SideBarNavigation from "./ui/sidebar-navigation";
 
 export default function Sidebar() {
   return (
-    <aside className="w-70 h-screen bg-[#FAFAFA] border-r border-gray-100 flex flex-col justify-between p-5 font-sans select-none tracking-tight">
+    <aside className="w-70 h-screen bg-sidebar text-sidebar-foreground border-r border-sidebar-border flex flex-col justify-between p-5 font-sans select-none tracking-tight">
       
       <div className="flex flex-col gap-6 overflow-y-auto no-scrollbar">
         <Logo />

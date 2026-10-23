@@ -54,7 +54,7 @@ export default function DashboardHome() {
   };
 
   return (
-    <main className="flex-1 bg-[#FAFAFA] p-6 md:p-8 overflow-y-auto flex flex-col gap-8 no-scrollbar animate-fade-in">
+    <main className="flex-1 bg-muted p-6 md:p-8 overflow-y-auto flex flex-col gap-8 no-scrollbar animate-fade-in">
       <section className="w-full">
         <WelcomeCard metrics={data?.welcomeMetrics} />
       </section>

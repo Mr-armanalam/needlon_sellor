@@ -232,3 +232,53 @@
     background: oklch(0.72 0.115 76 / 0.35);
   }
 }
+
+/* ——— Dark-mode scale re-ramps (Atelier Noir, dark) ———
+   The .dark token block above was designed with the theme but
+   the scales were never re-ramped, so activating dark mode
+   would have left text-gray-900 near-black on near-black. The
+   warm gray/slate ladders flip like the other apps: panels and
+   borders become deep warm surfaces, text steps become warm
+   ivory. The bespoke ivory surface color becomes the dark
+   background; ink and brass are literal brand values and stay
+   (the sidebar is deep ink in both modes by design). */
+.dark {
+  --color-ivory: oklch(0.155 0.006 52);
+
+  --color-gray-50: oklch(0.176 0.006 60);
+  --color-gray-100: oklch(0.214 0.007 60);
+  --color-gray-200: oklch(0.262 0.008 60);
+  --color-gray-300: oklch(0.345 0.009 60);
+  --color-gray-400: oklch(0.615 0.01 62);
+  --color-gray-500: oklch(0.715 0.009 64);
+  --color-gray-600: oklch(0.815 0.007 68);
+  --color-gray-700: oklch(0.875 0.006 72);
+  --color-gray-800: oklch(0.925 0.005 76);
+  --color-gray-900: oklch(0.952 0.004 80);
+  --color-gray-950: oklch(0.982 0.003 84);
+
+  --color-slate-50: oklch(0.176 0.006 60);
+  --color-slate-100: oklch(0.214 0.007 60);
+  --color-slate-200: oklch(0.262 0.008 60);
+  --color-slate-300: oklch(0.345 0.009 60);
+  --color-slate-400: oklch(0.615 0.01 62);
+  --color-slate-500: oklch(0.715 0.009 64);
+  --color-slate-600: oklch(0.815 0.007 68);
+  --color-slate-700: oklch(0.875 0.006 72);
+  --color-slate-800: oklch(0.925 0.005 76);
+  --color-slate-900: oklch(0.952 0.004 80);
+  --color-slate-950: oklch(0.982 0.003 84);
+}
+
+/* Dark surface corrections (unlayered, as in the other apps):
+   bg-white cards become the dark card surface; the deep gray
+   chips keep a deep warm ink because they pair with white text. */
+.dark .bg-white {
+  background-color: var(--card);
+}
+.dark .bg-gray-900 {
+  background-color: oklch(0.25 0.01 55);
+}
+.dark .hover\:bg-gray-800:hover {
+  background-color: oklch(0.3 0.011 55);
+}

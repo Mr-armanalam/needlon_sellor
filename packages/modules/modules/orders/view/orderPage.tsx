@@ -19,7 +19,7 @@ export default function OrdersPage() {
   };
 
   return (
-    <div className="w-full min-h-full bg-[#FAFAFA]">
+    <div className="w-full min-h-full bg-muted">
       {/* CORE WRAPPER BOUNDING BOX CONTAINER */}
       {viewMode === "queue" ? (
         <div className="p-6 md:p-8 max-w-400 mx-auto w-full flex flex-col gap-6">
