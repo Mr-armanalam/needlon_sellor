@@ -5,6 +5,7 @@ import { getCurrentSeller } from "@/modules/auth/lib/get-current-seller";
 
 import AdminNav from "./admin-nav";
 import LogoutButton from "./logout-button";
+import ThemeToggle from "./theme-toggle";
 
 type Props = {
   children: ReactNode;
@@ -89,6 +90,7 @@ export default async function AdminLayout({ children }: Props) {
               <p className="truncate text-white/45">{currentSeller.email}</p>
             </div>
           </div>
+          <ThemeToggle />
           <LogoutButton className="mt-3 w-full rounded-lg px-3 py-2 text-left text-[13px] font-medium text-white/55 transition-colors hover:bg-white/[0.04] hover:text-white" />
         </div>
       </aside>

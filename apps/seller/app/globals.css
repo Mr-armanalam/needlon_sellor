@@ -401,3 +401,104 @@
   --color-purple-900: oklch(0.315 0.075 286);
   --color-purple-950: oklch(0.225 0.05 284);
 }
+
+/* ——— Reconciling the hand-written `dark:` variants ———
+   Settings, subscription and other surfaces were styled with
+   explicit dark: pairs written against the STOCK scale values
+   (dark:bg-neutral-900 meaning "dark surface", dark:text-gray-300
+   meaning "light text"). The .dark re-ramps flip those scale
+   values, so the explicit pairs inverted — near-white page
+   backgrounds, light borders, dark-on-dark text. These unlayered
+   rules restore each dark: utility's intended meaning under the
+   new system, dark mode only; light rendering is untouched. */
+.dark .dark\:bg-neutral-900 {
+  background-color: var(--card);
+}
+.dark .dark\:bg-neutral-800,
+.dark .dark\:bg-gray-700 {
+  background-color: var(--secondary);
+}
+.dark .dark\:bg-neutral-950 {
+  background-color: var(--background);
+}
+.dark .dark\:bg-neutral-950\/60 {
+  background-color: color-mix(in oklab, var(--background) 60%, transparent);
+}
+.dark .dark\:bg-neutral-800\/60,
+.dark .dark\:hover\:bg-neutral-800\/60:hover {
+  background-color: color-mix(in oklab, var(--secondary) 60%, transparent);
+}
+.dark .dark\:border-neutral-800,
+.dark .dark\:border-neutral-700 {
+  border-color: var(--border);
+}
+.dark .dark\:border-neutral-800\/80 {
+  border-color: color-mix(in oklab, var(--border) 80%, transparent);
+}
+.dark .dark\:ring-neutral-900 {
+  --tw-ring-color: var(--border);
+}
+.dark .dark\:text-neutral-200 {
+  color: oklch(0.92 0.003 264);
+}
+.dark .dark\:text-neutral-300 {
+  color: oklch(0.87 0.004 262);
+}
+.dark .dark\:text-neutral-400 {
+  color: oklch(0.71 0.004 260);
+}
+.dark .dark\:text-gray-200 {
+  color: oklch(0.922 0.005 264);
+}
+.dark .dark\:text-gray-300 {
+  color: oklch(0.87 0.006 262);
+}
+.dark .dark\:text-gray-400 {
+  color: oklch(0.71 0.006 262);
+}
+
+/* ——— Dark gradient stops ———
+   Hero / CTA / plan cards use bg-gradient-to-br from-slate-900
+   to-slate-800: in dark those stops follow the flipped slate
+   ramp and render near-WHITE, with white text on top. Pin the
+   gradient stops to deep iris-ink values in dark mode. (In
+   Tailwind v4 a stop is just the --tw-gradient-from / -to
+   custom property, so overriding the property is the fix.) */
+.dark .from-slate-900 {
+  --tw-gradient-from: oklch(0.27 0.014 262);
+}
+.dark .from-slate-950 {
+  --tw-gradient-from: oklch(0.22 0.012 262);
+}
+.dark .to-slate-900 {
+  --tw-gradient-to: oklch(0.28 0.014 262);
+}
+.dark .to-slate-800 {
+  --tw-gradient-to: oklch(0.32 0.014 262);
+}
+
+/* ——— Coverage completion (full-codebase audit) ———
+   The class audit found dark-sensitive forms the first pass
+   missed: hover forms of the explicit dark: pairs, the 950
+   chip steps, and group-hover / peer-checked deep chips. Same
+   treatment: restore the intended meaning, dark mode only. */
+.dark .dark\:hover\:bg-neutral-800:hover,
+.dark .dark\:hover\:bg-neutral-700:hover {
+  background-color: var(--secondary);
+}
+.dark .dark\:hover\:border-neutral-700:hover {
+  border-color: var(--border);
+}
+.dark .bg-neutral-950,
+.dark .bg-slate-950 {
+  background-color: oklch(0.27 0.012 265);
+}
+.dark .hover\:bg-neutral-800:hover {
+  background-color: oklch(0.33 0.016 265);
+}
+.dark .group:hover .group-hover\:bg-neutral-900 {
+  background-color: oklch(0.27 0.012 265);
+}
+.dark .peer:checked ~ .peer-checked\:bg-neutral-900 {
+  background-color: oklch(0.27 0.012 265);
+}
