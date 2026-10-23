@@ -13,6 +13,67 @@
 @theme {
   --font-garamond: "EB Garamond", serif;
   --font-roboto-sans: "Roboto", sans-serif;
+
+  /* ——— Needlon client dark theme: "Atelier Gold Noir" ———
+     The storefront's light identity is warm stone + metallic
+     gold #D4AF37 (used as arbitrary hexes across the shop — those
+     stay literal and read beautifully on dark). These ramps are
+     the stock Tailwind values in light; under .dark below they
+     are re-ramped so the stone/gray/neutral/zinc utilities that
+     make up the storefront follow the dark theme. */
+  --color-gold-300: oklch(0.87 0.1 88);
+  --color-gold-400: oklch(0.83 0.12 86);
+  --color-gold-500: oklch(0.795 0.128 85);
+  --color-gold-600: oklch(0.7 0.125 78);
+  --color-gold-700: oklch(0.58 0.11 68);
+
+  --color-stone-50: oklch(0.985 0.001 106);
+  --color-stone-100: oklch(0.97 0.001 106);
+  --color-stone-200: oklch(0.923 0.003 49);
+  --color-stone-300: oklch(0.869 0.005 56);
+  --color-stone-400: oklch(0.709 0.01 56);
+  --color-stone-500: oklch(0.553 0.013 58);
+  --color-stone-600: oklch(0.439 0.011 54);
+  --color-stone-700: oklch(0.374 0.01 68);
+  --color-stone-800: oklch(0.268 0.007 34);
+  --color-stone-900: oklch(0.216 0.006 56);
+  --color-stone-950: oklch(0.147 0.004 49);
+
+  --color-gray-50: oklch(0.985 0.002 248);
+  --color-gray-100: oklch(0.967 0.003 265);
+  --color-gray-200: oklch(0.928 0.006 265);
+  --color-gray-300: oklch(0.872 0.01 258);
+  --color-gray-400: oklch(0.707 0.022 261);
+  --color-gray-500: oklch(0.551 0.027 264);
+  --color-gray-600: oklch(0.446 0.03 257);
+  --color-gray-700: oklch(0.373 0.034 260);
+  --color-gray-800: oklch(0.278 0.033 257);
+  --color-gray-900: oklch(0.21 0.034 265);
+  --color-gray-950: oklch(0.13 0.028 262);
+
+  --color-neutral-50: oklch(0.985 0 0);
+  --color-neutral-100: oklch(0.97 0 0);
+  --color-neutral-200: oklch(0.922 0 0);
+  --color-neutral-300: oklch(0.87 0 0);
+  --color-neutral-400: oklch(0.708 0 0);
+  --color-neutral-500: oklch(0.556 0 0);
+  --color-neutral-600: oklch(0.439 0 0);
+  --color-neutral-700: oklch(0.371 0 0);
+  --color-neutral-800: oklch(0.269 0 0);
+  --color-neutral-900: oklch(0.205 0 0);
+  --color-neutral-950: oklch(0.145 0 0);
+
+  --color-zinc-50: oklch(0.985 0 0);
+  --color-zinc-100: oklch(0.967 0.001 286);
+  --color-zinc-200: oklch(0.92 0.004 286);
+  --color-zinc-300: oklch(0.871 0.006 286);
+  --color-zinc-400: oklch(0.705 0.015 286);
+  --color-zinc-500: oklch(0.552 0.016 286);
+  --color-zinc-600: oklch(0.442 0.017 286);
+  --color-zinc-700: oklch(0.37 0.013 286);
+  --color-zinc-800: oklch(0.274 0.006 286);
+  --color-zinc-900: oklch(0.21 0.006 286);
+  --color-zinc-950: oklch(0.141 0.005 286);
 }
 
 @layer utilities {
@@ -102,37 +163,98 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: oklch(0.158 0.007 58);
+  --foreground: oklch(0.932 0.007 84);
+
+  --card: oklch(0.198 0.008 58);
+  --card-foreground: oklch(0.932 0.007 84);
+
+  --popover: oklch(0.19 0.008 58);
+  --popover-foreground: oklch(0.932 0.007 84);
+
+  --primary: oklch(0.795 0.128 85);
+  --primary-foreground: oklch(0.205 0.018 72);
+
+  --secondary: oklch(0.238 0.009 58);
+  --secondary-foreground: oklch(0.932 0.007 84);
+
+  --muted: oklch(0.232 0.008 58);
+  --muted-foreground: oklch(0.716 0.009 62);
+
+  --accent: oklch(0.27 0.02 72);
+  --accent-foreground: oklch(0.9 0.03 84);
+
+  --destructive: oklch(0.68 0.185 24);
+
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 13%);
+  --ring: oklch(0.795 0.128 85);
+
+  --chart-1: oklch(0.795 0.128 85);
+  --chart-2: oklch(0.7 0.14 165);
+  --chart-3: oklch(0.75 0.01 70);
+  --chart-4: oklch(0.68 0.13 38);
+  --chart-5: oklch(0.68 0.14 285);
+
+  --sidebar: oklch(0.132 0.006 58);
+  --sidebar-foreground: oklch(0.932 0.007 84);
+  --sidebar-primary: oklch(0.795 0.128 85);
+  --sidebar-primary-foreground: oklch(0.205 0.018 72);
+  --sidebar-accent: oklch(0.225 0.014 62);
+  --sidebar-accent-foreground: oklch(0.932 0.007 84);
+  --sidebar-border: oklch(1 0 0 / 8%);
+  --sidebar-ring: oklch(0.795 0.128 85);
+
+  /* Dark re-ramps: panels and borders become deep warm surfaces,
+     text steps become warm ivory. Stone carries the warmth;
+     gray / neutral / zinc follow the same ladder, cooler. */
+  --color-stone-50: oklch(0.176 0.006 58);
+  --color-stone-100: oklch(0.214 0.007 58);
+  --color-stone-200: oklch(0.262 0.008 58);
+  --color-stone-300: oklch(0.345 0.009 58);
+  --color-stone-400: oklch(0.615 0.009 60);
+  --color-stone-500: oklch(0.715 0.008 60);
+  --color-stone-600: oklch(0.815 0.006 66);
+  --color-stone-700: oklch(0.875 0.005 70);
+  --color-stone-800: oklch(0.925 0.004 76);
+  --color-stone-900: oklch(0.952 0.003 80);
+  --color-stone-950: oklch(0.982 0.002 84);
+
+  --color-gray-50: oklch(0.176 0.004 60);
+  --color-gray-100: oklch(0.214 0.004 60);
+  --color-gray-200: oklch(0.262 0.005 60);
+  --color-gray-300: oklch(0.345 0.005 60);
+  --color-gray-400: oklch(0.615 0.005 60);
+  --color-gray-500: oklch(0.715 0.004 60);
+  --color-gray-600: oklch(0.815 0.004 64);
+  --color-gray-700: oklch(0.875 0.003 68);
+  --color-gray-800: oklch(0.925 0.003 74);
+  --color-gray-900: oklch(0.952 0.002 78);
+  --color-gray-950: oklch(0.982 0.001 82);
+
+  --color-neutral-50: oklch(0.176 0.002 60);
+  --color-neutral-100: oklch(0.214 0.002 60);
+  --color-neutral-200: oklch(0.262 0.002 60);
+  --color-neutral-300: oklch(0.345 0.002 60);
+  --color-neutral-400: oklch(0.615 0.002 60);
+  --color-neutral-500: oklch(0.715 0.002 60);
+  --color-neutral-600: oklch(0.815 0.002 64);
+  --color-neutral-700: oklch(0.875 0.002 68);
+  --color-neutral-800: oklch(0.925 0.002 74);
+  --color-neutral-900: oklch(0.952 0.002 78);
+  --color-neutral-950: oklch(0.982 0.001 82);
+
+  --color-zinc-50: oklch(0.176 0.003 60);
+  --color-zinc-100: oklch(0.214 0.003 60);
+  --color-zinc-200: oklch(0.262 0.003 60);
+  --color-zinc-300: oklch(0.345 0.003 60);
+  --color-zinc-400: oklch(0.615 0.003 60);
+  --color-zinc-500: oklch(0.715 0.003 60);
+  --color-zinc-600: oklch(0.815 0.003 64);
+  --color-zinc-700: oklch(0.875 0.003 68);
+  --color-zinc-800: oklch(0.925 0.003 74);
+  --color-zinc-900: oklch(0.952 0.002 78);
+  --color-zinc-950: oklch(0.982 0.001 82);
 }
 
 @layer base {
@@ -142,4 +264,39 @@
   body {
     @apply bg-background text-foreground;
   }
+  ::selection {
+    background: oklch(0.795 0.128 85 / 0.35);
+  }
+}
+
+/* ——— Dark-theme surface corrections ———
+   Unlayered on purpose so they win over the utilities layer.
+   bg-white cards become the dark card surface. The deep chip /
+   panel backgrounds (bg-stone-800/900/950, bg-neutral-800/900,
+   bg-gray-900) pair with light text, so they stay deep warm ink
+   instead of following the text-oriented end of the re-ramps.
+   The brand's arbitrary hexes get dark equivalents: the warm
+   off-white panels become muted surfaces, the grey panels become
+   cards, and the deep navy text becomes the warm foreground.
+   The gold #D4AF37 hexes need no correction — metallic gold is
+   already luminous on dark. */
+.dark .bg-white {
+  background-color: var(--card);
+}
+.dark .bg-stone-800,
+.dark .bg-stone-900,
+.dark .bg-stone-950,
+.dark .bg-neutral-800,
+.dark .bg-neutral-900,
+.dark .bg-gray-900 {
+  background-color: oklch(0.25 0.009 58);
+}
+.dark .bg-\[\#FAF8F5\] {
+  background-color: var(--muted);
+}
+.dark .bg-\[\#EAEAEA\] {
+  background-color: var(--card);
+}
+.dark .text-\[\#1A1D2E\] {
+  color: var(--foreground);
 }
